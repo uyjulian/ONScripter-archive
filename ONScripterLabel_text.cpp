@@ -287,7 +287,7 @@ int ONScripterLabel::clickWait( char *out_text )
         }
         else /*if ( cursor_info[ CURSOR_WAIT_NO ].num_of_cells > 0 )*/{
             event_mode |= WAIT_ANIMATION_MODE;
-            startTimer( MINIMUM_TIMER_RESOLUTION );
+            advancePhase();
         }
         return RET_WAIT;
     }
@@ -301,7 +301,7 @@ int ONScripterLabel::clickNewPage( char *out_text )
     
     if ( skip_flag ){
         event_mode = WAIT_SLEEP_MODE;
-        startTimer( MINIMUM_TIMER_RESOLUTION );
+        advancePhase();
     }
     else{
         key_pressed_flag = false;
@@ -320,13 +320,13 @@ int ONScripterLabel::clickNewPage( char *out_text )
         }
         else /*if ( cursor_info[ CURSOR_NEWPAGE_NO ].num_of_cells > 0 )*/{
             event_mode |= WAIT_ANIMATION_MODE;
-            startTimer( MINIMUM_TIMER_RESOLUTION );
+            advancePhase();
         }
     }
     return RET_WAIT;
 }
 
-int ONScripterLabel::textCommand( char *text )
+int ONScripterLabel::textCommand()
 {
     int i, j, ret = enterTextDisplayMode();
     if ( ret != RET_NOMATCH ) return ret;

@@ -91,7 +91,9 @@ void AnimationInfo::removeTag(){
         delete[] mask_file_name;
         mask_file_name = NULL;
     }
+    current_cell = 0;
     num_of_cells = 0;
+    remaining_time = 0;
     is_animatable = false;
 }
 

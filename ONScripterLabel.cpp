@@ -263,6 +263,7 @@ ONScripterLabel::ONScripterLabel( bool cdaudio_flag, char *default_font, char *d
 
     internal_timer = SDL_GetTicks();
     autoclick_timer = 0;
+    remaining_time = 0;
     btntime_value = 0;
     btnwait_time = 0;
     btndown_flag = false;
@@ -620,7 +621,7 @@ int ONScripterLabel::parseLine( )
 
     /* Text */
     text_line_flag = true;
-    ret = textCommand( &string_buffer[string_buffer_offset] );
+    ret = textCommand();
     if ( string_buffer[ string_buffer_offset ] == '\0' ){
         if ( !new_line_skip_flag && text_char_flag ){
             sentence_font.xy[0] = 0;

@@ -37,7 +37,7 @@ int ONScripterLabel::setEffect( int effect_no, char *buf )
     effect_counter = 0;
     effect_command = buf;
     event_mode = EFFECT_EVENT_MODE;
-    startTimer( MINIMUM_TIMER_RESOLUTION );
+    advancePhase();
     return RET_WAIT_NEXT;
 }
 

@@ -589,14 +589,11 @@ void ONScripterLabel::leaveSystemCall( bool restore_flag )
 
     //printf("leaveSystemCall %d %d\n",event_mode, clickstr_state);
 
-    if ( event_mode & WAIT_SLEEP_MODE ){
+    if ( event_mode & WAIT_SLEEP_MODE )
         event_mode &= ~WAIT_SLEEP_MODE;
-        startTimer( MINIMUM_TIMER_RESOLUTION );
-    }
-    else{
+    else
         event_mode |= WAIT_ANIMATION_MODE;
-        startTimer( MINIMUM_TIMER_RESOLUTION );
-    }
+    advancePhase();
 }
 
 void ONScripterLabel::executeSystemCall()
@@ -663,7 +660,7 @@ void ONScripterLabel::executeSystemMenu()
             link = link->next;
         }
 
-        startTimer( MINIMUM_TIMER_RESOLUTION );
+        advancePhase();
     }
     else{
         refreshSurface( text_surface, NULL );
@@ -712,7 +709,7 @@ void ONScripterLabel::executeSystemReset()
         if ( yesno_caller == SYSTEM_NULL )
             yesno_caller = SYSTEM_RESET;
         system_menu_mode = SYSTEM_YESNO;
-        startTimer( MINIMUM_TIMER_RESOLUTION );
+        advancePhase();
     }
 }
 
@@ -749,7 +746,7 @@ void ONScripterLabel::executeSystemLoad()
             yesno_selected_file_no = current_button_state.button;
             yesno_caller = SYSTEM_LOAD;
             system_menu_mode = SYSTEM_YESNO;
-            startTimer( MINIMUM_TIMER_RESOLUTION );
+            advancePhase();
         }
         else{
             deleteButtonLink();
@@ -817,7 +814,7 @@ void ONScripterLabel::executeSystemSave()
             yesno_selected_file_no = current_button_state.button;
             yesno_caller = SYSTEM_SAVE;
             system_menu_mode = SYSTEM_YESNO;
-            startTimer( MINIMUM_TIMER_RESOLUTION );
+            advancePhase();
             return;
         }
         leaveSystemCall();
@@ -903,7 +900,7 @@ void ONScripterLabel::executeSystemYesNo()
         }
 		else{
             system_menu_mode = yesno_caller;
-            startTimer( MINIMUM_TIMER_RESOLUTION );
+            advancePhase();
         }
     }
     else{

@@ -205,7 +205,7 @@ int ONScripterLabel::systemcallCommand()
 
     enterSystemCall();
     
-    startTimer( MINIMUM_TIMER_RESOLUTION );
+    advancePhase();
     return RET_WAIT_NEXT;
 }
 
@@ -632,6 +632,7 @@ int ONScripterLabel::resetCommand()
     skip_flag      = false;
     monocro_flag   = false;
     saveon_flag    = true;
+    clickstr_state = CLICK_NONE;
     
     deleteLabelLink();
     current_link_label_info->label_info = lookupLabel( "start" );
@@ -1730,7 +1731,7 @@ int ONScripterLabel::btnwaitCommand()
 
         if ( textbtn_flag ){
             event_mode |= WAIT_ANIMATION_MODE;
-            startTimer( MINIMUM_TIMER_RESOLUTION );
+            advancePhase();
         }
         
         return RET_WAIT;

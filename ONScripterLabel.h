@@ -178,6 +178,8 @@ protected:
     void mouseMoveEvent( SDL_MouseMotionEvent *event );
     void timerEvent();
     void startTimer( int count );
+    void advancePhase( int count=MINIMUM_TIMER_RESOLUTION );
+    void trapHandler();
     int SetVideoMode();
     
 private:
@@ -203,6 +205,7 @@ private:
     
     long internal_timer;
     long autoclick_timer;
+    long remaining_time;
 
     FILE *tmp_save_fp;
     bool saveon_flag;
@@ -345,7 +348,7 @@ private:
     void restoreTextBuffer( SDL_Surface *surface = NULL );
     int clickWait( char *out_text );
     int clickNewPage( char *out_text );
-    int textCommand( char *text );
+    int textCommand();
     
     /* ---------------------------------------- */
     /* Effect related variables */

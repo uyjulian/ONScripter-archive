@@ -39,7 +39,7 @@
 #define DEFAULT_BLIT_FLAG (0)
 //#define DEFAULT_BLIT_FLAG (SDL_RLEACCEL)
 
-#define MAX_SPRITE_NUM 50
+#define MAX_SPRITE_NUM 256
 
 class ONScripterLabel : public ScriptParser
 {
@@ -101,6 +101,7 @@ public:
     int cspCommand();
     int clickCommand();
     int clCommand();
+    int btnwait2Command();
     int btnwaitCommand();
     int btndefCommand();
     int btnCommand();

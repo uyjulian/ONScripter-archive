@@ -38,6 +38,7 @@
 #define MINIMUM_TIMER_RESOLUTION 10
 
 #define VARIABLE_RANGE 4096
+#define ARRAY_VARIABLE_RANGE 200
 #define MAX_SAVE_FILE 20
 
 #define MENU_TOP_X
@@ -47,16 +48,6 @@
 
 #define WIDTH  640
 #define HEIGHT 480
-
-#define setNumVariable(no,val) {\
-    int _no = (no);\
-    int _i = (val);\
-    if ( num_limit_flag[_no] ){\
-        if ( _i < num_limit_lower[_no] ) _i = num_limit_lower[_no];\
-        else if ( _i > num_limit_upper[_no] ) _i = num_limit_upper[_no];\
-    }\
-    num_variables[_no] = _i;\
-}
 
 typedef unsigned char uchar3[3];
 
@@ -115,9 +106,9 @@ public:
     struct LabelInfo lookupLabelNext( const char* label );
     int parseLine();
 
-    bool readToken( char **src_buf, char *dst_buf, bool comma_check_flag = true );
-    int readInt( char **src_buf, char *dst_buf, bool comma_check_flag = true );
-    bool readStr( char **src_buf, char *dst_buf, bool comma_check_flag = true );
+    bool readToken( char **src_buf, char *dst_buf, bool skip_space_flag = false );
+    //int readInt( char **src_buf, char *dst_buf );
+    bool readStr( char **src_buf, char *dst_buf );
     void skipToken();
     void saveGlovalData();
     void saveFileLog();
@@ -143,6 +134,7 @@ public:
     int mulCommand();
     int movCommand();
     int modCommand();
+    int midCommand();
     int menusetwindowCommand();
     int menuselectcolorCommand();
     int lookbackcolorCommand();
@@ -162,6 +154,7 @@ public:
     int effectblankCommand();
     int effectCommand();
     int divCommand();
+    int dimCommand();
     int decCommand();
     int dateCommand();
     int cmpCommand();
@@ -199,13 +192,28 @@ protected:
     int underline_value;
     
     /* ---------------------------------------- */
-    /* Number variables and string variables */
+    /* Number, string and array variables */
+    typedef enum{ VAR_INT, VAR_STR, VAR_ARRAY } VARIABLE_TYPE;
     int num_variables[ VARIABLE_RANGE ];
     int num_limit_upper[ VARIABLE_RANGE ];
     int num_limit_lower[ VARIABLE_RANGE ];
     bool num_limit_flag[ VARIABLE_RANGE ];
     char *str_variables[ VARIABLE_RANGE ];
+    struct ArrayVariable{
+        int num_dim;
+        int dim[20];
+        int *data;
+        ArrayVariable(){
+            data = NULL;
+        };
+    } array_variables[ ARRAY_VARIABLE_RANGE ], tmp_array_variable;
 
+    int decodeArraySub( char **buf, struct ArrayVariable *array );
+    int *decodeArray( char **buf );
+    int readInt( char **buf );
+    void setInt( char *buf, int val );
+    void setNumVariable( int no, int val );
+    
     int effect_blank;
 
     void gosubReal( char *label );
@@ -231,7 +239,9 @@ protected:
         int current_line;
         int offset;
         char *current_script;
-        int variable_no;
+        int var_type;
+        int *p_var;
+        int var_no;
         int to;
         int step;
     } root_for_link, *current_for_link;
@@ -274,6 +284,7 @@ protected:
         int num_xy[2];
         int xy[2];
     } text_buffer[ MAX_TEXT_BUFFER ], *current_text_buffer; // ring buffer
+    int text_history_num;
     bool text_line_flag;
     int  clickstr_num;
     char *clickstr_list;

@@ -111,8 +111,9 @@ int ONScripterLabel::loadSaveFile( int no )
 
     /* ---------------------------------------- */
     /* Load text history */
+    loadInt( fp, &text_history_num );
     struct TextBuffer *tb = &text_buffer[0];
-    for ( i=0 ; i<MAX_TEXT_BUFFER ; i++ ){
+    for ( i=0 ; i<text_history_num ; i++ ){
         loadInt( fp, &tb->num_xy[0] );
         loadInt( fp, &tb->num_xy[1] );
         loadInt( fp, &tb->xy[0] );
@@ -244,6 +245,8 @@ int ONScripterLabel::loadSaveFile( int no )
         }
     }
 
+    /* ---------------------------------------- */
+    /* Load current sprites */
     for ( i=0 ; i<MAX_SPRITE_NUM ; i++ ){
         loadInt( fp, &j );
         sprite_info[i].valid = (j==1)?true:false;
@@ -304,8 +307,9 @@ int ONScripterLabel::saveSaveFile( int no )
 
     /* ---------------------------------------- */
     /* Save text history */
+    saveInt( fp, text_history_num );
     struct TextBuffer *tb = current_text_buffer;
-    for ( i=0 ; i<MAX_TEXT_BUFFER ; i++ ){
+    for ( i=0 ; i<text_history_num ; i++ ){
         saveInt( fp, tb->num_xy[0] );
         saveInt( fp, tb->num_xy[1] );
         saveInt( fp, tb->xy[0] );

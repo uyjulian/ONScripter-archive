@@ -85,6 +85,7 @@ static struct FuncLUT{
     {"playstop",   &ONScripterLabel::playstopCommand},
     {"playonce",   &ONScripterLabel::playCommand},
     {"play",   &ONScripterLabel::playCommand},
+    {"nega", &ONScripterLabel::negaCommand},
     {"msp", &ONScripterLabel::mspCommand},
     {"mp3vol", &ONScripterLabel::mp3volCommand},
     {"mp3save", &ONScripterLabel::mp3Command},
@@ -262,6 +263,7 @@ ONScripterLabel::ONScripterLabel( bool cdaudio_flag, char *default_font, char *d
     saveon_flag = true;
     
     monocro_flag = monocro_flag_new = false;
+    nega_mode = 0;
     trap_flag = false;
     trap_dist = NULL;
     
@@ -424,7 +426,7 @@ void ONScripterLabel::mouseOverCheck( int x, int y )
             if ( current_button_link.button_type == SPRITE_BUTTON || 
                  current_button_link.button_type == EX_SPRITE_BUTTON ){
                 sprite_info[ current_button_link.sprite_no ].current_cell = 0;
-                refreshSurface( text_surface, &current_button_link.image_rect, REFRESH_SHADOW_MODE );
+                refreshSurface( text_surface, &current_button_link.image_rect, (display_mode&TEXT_DISPLAY_MODE)?REFRESH_SHADOW_MODE:REFRESH_NORMAL_MODE );
             }
             else{
                 SDL_BlitSurface( select_surface, &current_button_link.image_rect, text_surface, &current_button_link.image_rect );
@@ -452,12 +454,14 @@ void ONScripterLabel::mouseOverCheck( int x, int y )
                 else if ( p_button_link->button_type == SPRITE_BUTTON || 
                           p_button_link->button_type == EX_SPRITE_BUTTON ){
                     sprite_info[ p_button_link->sprite_no ].current_cell = 1;
-                    refreshSurface( text_surface, &p_button_link->image_rect, REFRESH_SHADOW_MODE );
+                    refreshSurface( text_surface, &p_button_link->image_rect, (display_mode&TEXT_DISPLAY_MODE)?REFRESH_SHADOW_MODE:REFRESH_NORMAL_MODE );
                     if ( p_button_link->button_type == EX_SPRITE_BUTTON ){
                         drawExbtn( p_button_link->exbtn_ctl );
                     }
                 }
+                if ( nega_mode == 1 && !(event_mode & WAIT_INPUT_MODE) ) makeNegaSurface( text_surface, &p_button_link->image_rect );
                 if ( monocro_flag && !(event_mode & WAIT_INPUT_MODE) ) makeMonochromeSurface( text_surface, &p_button_link->image_rect );
+                if ( nega_mode == 2 && !(event_mode & WAIT_INPUT_MODE) ) makeNegaSurface( text_surface, &p_button_link->image_rect );
                 flush( &p_button_link->image_rect );
             }
             if ( f_flag ) flush( &current_button_link.image_rect );
@@ -1155,6 +1159,44 @@ struct ONScripterLabel::ButtonLink *ONScripterLabel::getSelectableSentence( char
     return button_link;
 }
 
+void ONScripterLabel::makeNegaSurface( SDL_Surface *surface, SDL_Rect *dst_rect )
+{
+    int i, j;
+    SDL_Rect rect;
+    Uint32 *buf, cr, cg, cb;
+
+    if ( dst_rect ){
+        rect.x = dst_rect->x;
+        rect.y = dst_rect->y;
+        rect.w = dst_rect->w;
+        rect.h = dst_rect->h;
+        if ( rect.x + rect.w > surface->w ) rect.w = surface->w - rect.x;
+        if ( rect.y + rect.h > surface->h ) rect.h = surface->h - rect.y;
+    }
+    else{
+        rect.x = rect.y = 0;
+        rect.w = surface->w;
+        rect.h = surface->h;
+    }
+
+    SDL_LockSurface( surface );
+    buf = (Uint32 *)surface->pixels + rect.y * surface->w + rect.x;
+    
+    for ( i=rect.y ; i<rect.y + rect.h ; i++ ){
+        for ( j=rect.x ; j<rect.x + rect.w ; j++, buf++ ){
+            cr = ((*buf >> surface->format->Rshift) & 0xff) ^ 0xff;
+            cg = ((*buf >> surface->format->Gshift) & 0xff) ^ 0xff;
+            cb = ((*buf >> surface->format->Bshift) & 0xff) ^ 0xff;
+            *buf = cr << surface->format->Rshift |
+                   cg << surface->format->Gshift |
+                   cb << surface->format->Bshift;
+        }
+        buf += surface->w - rect.w;
+    }
+
+    SDL_UnlockSurface( surface );
+}
+
 void ONScripterLabel::makeMonochromeSurface( SDL_Surface *surface, SDL_Rect *dst_rect, FontInfo *info )
 {
     int i, j;
@@ -1269,7 +1311,9 @@ void ONScripterLabel::refreshSurface( SDL_Surface *surface, SDL_Rect *clip, int 
 
     if ( refresh_mode & REFRESH_SHADOW_MODE && !windowback_flag ) shadowTextDisplay( surface, surface, clip );
     
+    if ( nega_mode == 1 ) makeNegaSurface( surface, clip );
     if ( monocro_flag ) makeMonochromeSurface( surface, clip );
+    if ( nega_mode == 2 ) makeNegaSurface( surface, clip );
 
     if ( refresh_mode & REFRESH_CURSOR_MODE && !textgosub_label ){
         if ( clickstr_state == CLICK_WAIT )
@@ -1282,18 +1326,24 @@ void ONScripterLabel::refreshSurface( SDL_Surface *surface, SDL_Rect *clip, int 
 int ONScripterLabel::refreshSprite( SDL_Surface *surface, int sprite_no, bool active_flag, int cell_no, bool draw_flag, bool change_flag )
 {
     int area = 0;
-    
-    if ( sprite_no == -1 ){
+
+    if ( sprite_no == -1 )
+    {
         sprite_no = cell_no;
         cell_no = -1;
     }
+    else
+    {
+        sprite_info[ sprite_no ].current_cell = cell_no;
+    }
 
-    if ( cell_no >= 0 ) sprite_info[ sprite_no ].current_cell = cell_no;
-
-    if ( sprite_info[ sprite_no ].valid != active_flag )
+    if ( cell_no >= 0 || sprite_info[ sprite_no ].valid != active_flag )
         area = sprite_info[ sprite_no ].pos.w * sprite_info[ sprite_no ].pos.h;
 
-    if ( draw_flag && surface && sprite_info[ sprite_no ].valid != active_flag ){
+    if ( draw_flag &&
+         surface &&
+         ( cell_no >= 0 || sprite_info[ sprite_no ].valid != active_flag ) )
+    {
         sprite_info[ sprite_no ].valid = active_flag;
         refreshSurface( surface, &sprite_info[ sprite_no ].pos );
         flush( &sprite_info[ sprite_no ].pos );

@@ -93,8 +93,8 @@ void ONScripterLabel::drawChar( char* text, struct FontInfo *info, bool flush_fl
         color.r = color.g = color.b = 0;
         tmp_surface = TTF_RenderGlyph_Blended( (TTF_Font*)info->ttf_font, unicode, color );
         src_rect.x = src_rect.y = 0;
-        src_rect.w = tmp_surface->w;
-        src_rect.h = tmp_surface->h;
+        dst_rect.w = src_rect.w = tmp_surface->w;
+        dst_rect.h = src_rect.h = tmp_surface->h;
 
         if ( tmp_surface ){
             if ( surface ){
@@ -124,8 +124,8 @@ void ONScripterLabel::drawChar( char* text, struct FontInfo *info, bool flush_fl
     if ( !(text[0] & 0x80) && text[1] ) dst_rect.x += info->pitch_xy[0] / 2;
     dst_rect.y = xy[1] + TTF_FontAscent( (TTF_Font*)info->ttf_font ) - maxy;
     src_rect.x = src_rect.y = 0;
-    src_rect.w = tmp_surface->w;
-    src_rect.h = tmp_surface->h;
+    dst_rect.w = src_rect.w = tmp_surface->w;
+    dst_rect.h = src_rect.h = tmp_surface->h;
     if ( tmp_surface ){
         if ( surface ){
             bool out_of_region = false;

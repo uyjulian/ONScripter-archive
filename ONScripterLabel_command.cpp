@@ -632,6 +632,7 @@ int ONScripterLabel::resetCommand()
     text_char_flag = false;
     skip_flag      = false;
     monocro_flag   = false;
+    nega_mode      = 0;
     saveon_flag    = true;
     clickstr_state = CLICK_NONE;
     
@@ -658,7 +659,7 @@ int ONScripterLabel::resetCommand()
 
 int ONScripterLabel::repaintCommand()
 {
-    refreshSurface( accumulation_surface, NULL, REFRESH_SHADOW_MODE );
+    refreshSurface( accumulation_surface, NULL, (display_mode&TEXT_DISPLAY_MODE)?REFRESH_SHADOW_MODE:REFRESH_NORMAL_MODE );
     SDL_BlitSurface( accumulation_surface, NULL, text_surface, NULL );
     restoreTextBuffer();
     flush();
@@ -844,6 +845,16 @@ int ONScripterLabel::playCommand()
         setStr( &music_file_name, tmp_string_buffer );
         playMIDIFile();
     }
+
+    return RET_CONTINUE;
+}
+
+int ONScripterLabel::negaCommand()
+{
+    char *p_string_buffer = string_buffer + string_buffer_offset + 4;
+
+    nega_mode = readInt( &p_string_buffer );
+    need_refresh_flag = true;
 
     return RET_CONTINUE;
 }

@@ -106,6 +106,7 @@ public:
     int playstopCommand();
     int playonceCommand();
     int playCommand();
+    int negaCommand();
     int mspCommand();
     int mp3volCommand();
     int mp3Command();
@@ -219,6 +220,7 @@ private:
     uchar3 monocro_color, monocro_color_new;
     uchar3 monocro_color_lut[256];
     bool need_refresh_flag;
+    int  nega_mode;
 
     bool trap_flag;
     char *trap_dist;
@@ -442,6 +444,7 @@ private:
     int resizeSurface( SDL_Surface *src, SDL_Rect *src_rect, SDL_Surface *dst, SDL_Rect *dst_rect );
     SDL_Surface *loadImage( char *file_name );
     void drawTaggedSurface( SDL_Surface *dst_surface, AnimationInfo *anim, SDL_Rect *clip );
+    void makeNegaSurface( SDL_Surface *surface, SDL_Rect *dst_rect=NULL );
     void makeMonochromeSurface( SDL_Surface *surface, SDL_Rect *dst_rect=NULL, FontInfo *info=NULL );
     void refreshSurfaceParameters();
     void refreshSurface( SDL_Surface *surface, SDL_Rect *clip=NULL, int refresh_mode = REFRESH_NORMAL_MODE );

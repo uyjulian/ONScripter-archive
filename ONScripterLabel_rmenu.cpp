@@ -35,7 +35,7 @@
 
 #define SAVEFILE_MAGIC_NUMBER "ONS"
 #define SAVEFILE_VERSION_MAJOR 1
-#define SAVEFILE_VERSION_MINOR 3
+#define SAVEFILE_VERSION_MINOR 4
 
 #define READ_LENGTH 4096
 
@@ -135,7 +135,7 @@ int ONScripterLabel::loadSaveFile( int no )
         fseek( fp, 0, SEEK_SET );
     }
     else{
-        file_version = (fgetc( fp ) * 100) | fgetc( fp );
+        file_version = (fgetc( fp ) * 100) + fgetc( fp );
     }
     printf("Save file version is %d.%d\n", file_version/100, file_version%100 );
     if ( file_version > SAVEFILE_VERSION_MAJOR*100 + SAVEFILE_VERSION_MINOR ){
@@ -280,6 +280,10 @@ int ONScripterLabel::loadSaveFile( int no )
         monocro_color_lut[i][2] = (monocro_color[2] * i) >> 8;
     }
     
+    /* Load nega flag */
+    if ( file_version >= 104 ){
+        nega_mode = (unsigned char)fgetc( fp );
+    }
     /* ---------------------------------------- */
     /* Load current images */
     bg_info.remove();
@@ -516,6 +520,9 @@ int ONScripterLabel::saveSaveFile( int no )
 
     need_refresh_flag?fputc(1,fp):fputc(0,fp);
     
+    /* Save nega flag */
+    fputc( nega_mode, fp );
+
     /* ---------------------------------------- */
     /* Save current images */
     fputc( bg_info.color[0], fp );

@@ -35,14 +35,13 @@
 
 #define SAVEFILE_MAGIC_NUMBER "ONS"
 #define SAVEFILE_VERSION_MAJOR 1
-#define SAVEFILE_VERSION_MINOR 1
+#define SAVEFILE_VERSION_MINOR 2
 
 #define READ_LENGTH 4096
 
 void ONScripterLabel::searchSaveFiles( int no )
 {
-    unsigned int i;
-    int start, end;
+    unsigned int i, start, end;
     char file_name[256];
 
     if ( no == -1 ){
@@ -227,6 +226,10 @@ int ONScripterLabel::loadSaveFile( int no )
         
         loadInt( fp, &current_link_label_info->current_line );
         loadInt( fp, &current_link_label_info->offset );
+        loadInt( fp, &j );
+        if ( file_version >= 102 ){
+            current_link_label_info->end_of_line_flag = (j==1)?true:false;
+        }
         loadInt( fp, &address );
         current_link_label_info->current_script =
             current_link_label_info->label_info.start_address + address;
@@ -481,6 +484,7 @@ int ONScripterLabel::saveSaveFile( int no )
         fputc( 0, fp );
         saveInt( fp, info->current_line );
         saveInt( fp, info->offset );
+        saveInt( fp, info->end_of_line_flag?1:0 );
         saveInt( fp, info->current_script - info->label_info.start_address );
         if ( info->next ) fputc( 1, fp );
         info = info->next;

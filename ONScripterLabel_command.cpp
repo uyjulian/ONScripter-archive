@@ -519,6 +519,11 @@ int ONScripterLabel::savetimeCommand()
     char *p_string_buffer = string_buffer + string_buffer_offset + 8;
 
     int no = readInt( &p_string_buffer ) - 1;
+
+    if ( no >= MAX_SAVE_FILE ){
+        setInt( p_string_buffer, 0 );
+        return RET_CONTINUE;
+    }
     
     searchSaveFiles( no );
 

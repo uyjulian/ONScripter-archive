@@ -26,6 +26,7 @@
 extern void initSJIS2UTF16();
 
 static SDL_TimerID timer_id = NULL;
+SDL_TimerID timer_cdaudio_id = NULL;
 
 #define FONT_SIZE 26
 
@@ -35,8 +36,9 @@ static SDL_TimerID timer_id = NULL;
 #define DEFAULT_DECODEBUF 16384
 #define DEFAULT_AUDIOBUF  4096
 
-#define ONS_TIMER_EVENT (SDL_USEREVENT)
-#define ONS_SOUND_EVENT (SDL_USEREVENT+1)
+#define ONS_TIMER_EVENT   (SDL_USEREVENT)
+#define ONS_SOUND_EVENT   (SDL_USEREVENT+1)
+#define ONS_CDAUDIO_EVENT (SDL_USEREVENT+2)
 
 #define DEFAULT_TEXT_SPEED1 40 // Low speed
 #define DEFAULT_TEXT_SPEED2 20 // Middle speed
@@ -166,6 +168,18 @@ Uint32 timerCallback( Uint32 interval, void *param )
     return interval;
 }
 
+Uint32 cdaudioCallback( Uint32 interval, void *param )
+{
+    SDL_RemoveTimer( timer_cdaudio_id );
+    timer_cdaudio_id = NULL;
+
+    SDL_Event event;
+    event.type = ONS_CDAUDIO_EVENT;
+    SDL_PushEvent( &event );
+
+    return interval;
+}
+
 void ONScripterLabel::startTimer( int count )
 {
     if ( timer_id != NULL ){
@@ -177,14 +191,21 @@ void ONScripterLabel::startTimer( int count )
         timer_id = SDL_AddTimer( MINIMUM_TIMER_RESOLUTION, timerCallback, NULL );
 }
 
-ONScripterLabel::ONScripterLabel()
+ONScripterLabel::ONScripterLabel( bool cdaudio_flag )
 {
     int i;
 
     if ( open() ) exit(-1);
 
-    printf("ONScripterLabel::ONScripterLabel\n");
-    
+    printf("ONScripter\n");
+
+	if ( SDL_Init(SDL_INIT_VIDEO|SDL_INIT_TIMER|SDL_INIT_AUDIO|SDL_INIT_CDROM) < 0 ) {
+		fprintf(stderr,
+			"Couldn't initialize SDL: %s\n", SDL_GetError());
+		exit(1);
+	}
+	atexit(SDL_Quit);
+
     SetVideoMode();
     SDL_WM_SetCaption( "ONScripter", "ONScripter" );
 
@@ -269,6 +290,21 @@ ONScripterLabel::ONScripterLabel()
     
     /* ---------------------------------------- */
     /* Sound related variables */
+    this->cdaudio_flag = cdaudio_flag;
+    if ( cdaudio_flag ){
+        if ( SDL_CDNumDrives() > 0 ) cdrom_info = SDL_CDOpen( 0 );
+        if ( !cdrom_info ){
+            fprintf(stderr, "Couldn't open default CD-ROM: %s\n", SDL_GetError());
+        }
+        else if ( cdrom_info && !CD_INDRIVE( SDL_CDStatus( cdrom_info ) ) ) {
+            SDL_CDClose( cdrom_info );
+            cdrom_info = NULL;
+        }
+    }
+    else{
+        cdrom_info = NULL;
+    }
+    
     mp3_sample = NULL;
     mp3_file_name = NULL;
     mp3_buffer = NULL;
@@ -304,12 +340,13 @@ ONScripterLabel::ONScripterLabel()
     sentence_font.display_shadow = true;
     sentence_font.display_transparency = true;
     sentence_font.window_color[0] = sentence_font.window_color[1] = sentence_font.window_color[2] = 0x99;
+#if 0    
     sentence_font.window_image = NULL;
     sentence_font.window_rect[0] = 0;
     sentence_font.window_rect[1] = 0;
-    sentence_font.window_rect[2] = 639;
-    sentence_font.window_rect[3] = 479;
-
+    sentence_font.window_rect[2] = screen_width - 1;
+    sentence_font.window_rect[3] = screen_height - 1;
+#endif
     sentence_font.on_color[0] = sentence_font.on_color[1] = sentence_font.on_color[2] = 0xff;
     sentence_font.off_color[0] = sentence_font.off_color[1] = sentence_font.off_color[2] = 0x80;
     
@@ -371,14 +408,33 @@ int ONScripterLabel::eventLoop()
             break;
                 
           case ONS_SOUND_EVENT:
-            playstopCommand();
-            if ( !mp3_play_once_flag ) playMP3( current_cd_track );
+            if ( !mp3_play_once_flag ){
+                stopBGM( true );
+                playMP3( current_cd_track );
+            }
+            else{
+                stopBGM( false );
+            }
             break;
                 
+          case ONS_CDAUDIO_EVENT:
+            if ( !mp3_play_once_flag ){
+                stopBGM( true );
+                playCDAudio( current_cd_track );
+            }
+            else{
+                stopBGM( false );
+            }
+            break;
+
           case SDL_QUIT:
             saveGlovalData();
             saveFileLog();
             saveLabelLog();
+            if ( cdrom_info ){
+                SDL_CDStop( cdrom_info );
+                SDL_CDClose( cdrom_info );
+            }
             return(0);
             
           default:
@@ -1533,27 +1589,20 @@ void ONScripterLabel::clearCurrentTextBuffer()
 void ONScripterLabel::shadowTextDisplay()
 {
     if ( sentence_font.display_transparency ){
-        SDL_Rect rect;
         SDL_BlitSurface( accumulation_surface, NULL, text_surface, NULL );
-        rect.x = sentence_font.window_rect[0];
-        rect.y = sentence_font.window_rect[1];
-        rect.w = sentence_font.window_rect[2] - sentence_font.window_rect[0] + 1;
-        rect.h = sentence_font.window_rect[3] - sentence_font.window_rect[1] + 1;
-        makeMonochromeSurface( text_surface, &rect, false );
+        makeMonochromeSurface( text_surface, &sentence_font_info.pos, false );
     }
     else{
-        SDL_Surface *tmp_surface = loadPixmap( &sentence_font_tag );
-        if ( tmp_surface ){
-            int tmp_w, tmp_x3;
-            if ( sentence_font_tag.trans_mode == TRANS_ALPHA )
-                tmp_x3 = tmp_w = tmp_surface->w / 2;
-            else
-                tmp_x3 = 0, tmp_w  = tmp_surface->w;
-            alphaBlend( text_surface, sentence_font.window_rect[0], sentence_font.window_rect[1],
-                        accumulation_surface, sentence_font.window_rect[0], sentence_font.window_rect[1], tmp_w, tmp_surface->h,
-                        tmp_surface, 0, 0,
-                        tmp_x3, 0, -sentence_font_tag.trans_mode );
-            SDL_FreeSurface( tmp_surface );
+        if ( sentence_font_info.image_surface ){
+            /* drawTaggedSurface must be used intead !! */
+            int tmp_x3 = 0;
+            if ( sentence_font_info.tag.trans_mode == TRANS_ALPHA )
+                tmp_x3 = sentence_font_info.pos.w;
+            alphaBlend( text_surface, sentence_font_info.pos.x, sentence_font_info.pos.y,
+                        accumulation_surface, sentence_font_info.pos.x, sentence_font_info.pos.y,
+                        sentence_font_info.pos.w, sentence_font_info.pos.h,
+                        sentence_font_info.image_surface, 0, 0,
+                        tmp_x3, 0, -sentence_font_info.tag.trans_mode );
         }
     }
 }
@@ -1616,6 +1665,17 @@ int ONScripterLabel::playMP3( int cd_no )
     return 0;
 }
 
+int ONScripterLabel::playCDAudio( int cd_no )
+{
+    int length = cdrom_info->track[cd_no - 1].length / 75;
+
+    printf("playCDAudio %d\n", cd_no );
+    SDL_CDPlayTracks( cdrom_info, cd_no - 1, 0, 1, 0 );
+
+    timer_cdaudio_id = SDL_AddTimer( length * 1000, cdaudioCallback, NULL );
+
+    return 0;
+}
 
 int ONScripterLabel::playWave( char *file_name, bool loop_flag, int channel )
 {
@@ -1640,6 +1700,36 @@ int ONScripterLabel::playWave( char *file_name, bool loop_flag, int channel )
     Mix_PlayChannel( channel, wave_sample[channel], loop_flag?-1:0 );
 
     return 0;
+}
+
+void ONScripterLabel::stopBGM( bool continue_flag )
+{
+    if ( cdaudio_flag && cdrom_info ){
+        extern SDL_TimerID timer_cdaudio_id;
+
+        if ( timer_cdaudio_id ){
+            SDL_RemoveTimer( timer_cdaudio_id );
+            timer_cdaudio_id = NULL;
+        }
+
+        if (SDL_CDStatus( cdrom_info ) >= CD_PLAYING )
+            SDL_CDStop( cdrom_info );
+    }
+
+    if ( mp3_sample ){
+        SMPEG_stop( mp3_sample );
+        SMPEG_delete( mp3_sample );
+        Mix_HookMusic( NULL, NULL );
+        mp3_sample = NULL;
+
+        if ( mp3_buffer ){
+            delete[] mp3_buffer;
+            mp3_buffer = NULL;
+        }
+        if ( !continue_flag ) setStr( &mp3_file_name, NULL );
+    }
+
+    if ( !continue_flag ) current_cd_track = -1;
 }
 
 struct ONScripterLabel::ButtonLink *ONScripterLabel::getSelectableSentence( char *buffer, struct FontInfo *info, bool flush_flag, bool nofile_flag )
@@ -1776,6 +1866,7 @@ void ONScripterLabel::makeMonochromeSurface( SDL_Surface *surface, SDL_Rect *dst
 
     SDL_LockSurface( surface );
     buf = (Uint32 *)surface->pixels + rect.y * surface->w + rect.x;
+    
     for ( i=rect.y ; i<rect.y + rect.h ; i++ ){
         for ( j=rect.x ; j<rect.x + rect.w ; j++, buf++ ){
             if ( one_color_flag ){
@@ -2017,3 +2108,4 @@ void ONScripterLabel::endCursor( int click )
     }
     event_mode &= ~WAIT_ANIMATION_MODE;
 }
+

@@ -248,9 +248,8 @@ ScriptParser::ScriptParser()
         system_font.nofile_color[i] = 0x80;
     }
     
-    last_menu_link = &root_menu_link;
-    last_menu_link->next = NULL;
-    last_menu_link->label = NULL;
+    root_menu_link.next = NULL;
+    root_menu_link.label = NULL;
     menu_link_num = 0;
     menu_link_width = 0;
     
@@ -808,7 +807,7 @@ bool ScriptParser::readToken( char **src_buf, char *dst_buf, bool skip_space_fla
     bool quat_flag = false;
 
     end_with_comma_flag = false;
-    
+
     /* If it reaces to the end of the buffer, just return. */
     if ( *src_buf >= string_buffer + strlen(string_buffer) ){
         dst_buf[0] = '\0';
@@ -820,10 +819,12 @@ bool ScriptParser::readToken( char **src_buf, char *dst_buf, bool skip_space_fla
     SKIP_SPACE( *src_buf );
 
     //printf("token start %c:\n", **src_buf);
+#if 0    
     if ( **src_buf == '(' ){
         *dst_buf++ = *(*src_buf)++;
         SKIP_SPACE( *src_buf );
     }
+#endif    
     if ( **src_buf == '"' ){
         quat_flag = true;
         (*src_buf)++;
@@ -873,11 +874,22 @@ bool ScriptParser::readToken( char **src_buf, char *dst_buf, bool skip_space_fla
 
 bool ScriptParser::readStr( char **src_buf, char *dst_buf )
 {
-    bool ret = readToken( src_buf, dst_buf );
+    bool condition_flag = false;
+    bool ret;
+    
+    SKIP_SPACE( *src_buf );
+    if ( (*src_buf)[0] == '(' ){
+        condition_flag = true;
+        (*src_buf)++;
+        readStr( src_buf, dst_buf );
+    }
+    else{
+        ret = readToken( src_buf, dst_buf );
+    }
 
-    if ( dst_buf[0] == '(' ){ // check condition code
-        if ( cBR->getAccessFlag( dst_buf + 1 ) ){
-            readStr( src_buf, dst_buf );
+    if ( condition_flag ){ // check condition code
+        if ( cBR->getAccessFlag( dst_buf ) ){
+            ret = readStr( src_buf, dst_buf );
             char *buf = new char[ strlen( dst_buf ) + 1 ];
             memcpy( buf, dst_buf, strlen( dst_buf ) + 1 );
             readStr( src_buf, dst_buf );
@@ -886,9 +898,10 @@ bool ScriptParser::readStr( char **src_buf, char *dst_buf )
         }
         else{
             readStr( src_buf, dst_buf );
-            readStr( src_buf, dst_buf );
+            ret = readStr( src_buf, dst_buf );
         }
     }
+    
     if ( dst_buf[0] == '$' ){
         char *p_dst_buf = dst_buf+1;
         int no = readInt( &p_dst_buf );
@@ -1297,4 +1310,15 @@ void ScriptParser::setNumVariable( int no, int val )
         else if ( val > num_limit_upper[no] ) val = num_limit_upper[no];
     }
     num_variables[no] = val;
+}
+
+void ScriptParser::setStr( char **dst, char *src )
+{
+    if ( *dst ) delete[] *dst;
+    if ( src ){
+        *dst = new char[ strlen( src ) + 1 ];
+        memcpy( *dst, src, strlen( src ) + 1 );
+    }
+    else
+        *dst = NULL;
 }

@@ -22,6 +22,7 @@
  */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -39,8 +40,12 @@ int main( int argc, char **argv )
     unsigned int i, j, count;
     FILE *fp;
     struct stat file_stat;
-    
-    cSR.open();
+
+    if ( argc != 2 ){
+        fprintf( stderr, "Usage: sardec arc_file\n");
+        exit(-1);
+    }
+    cSR.open( argv[1] );
     count = cSR.getNumFiles();
 
     SarReader::FileInfo sFI;

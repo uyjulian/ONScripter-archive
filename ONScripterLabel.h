@@ -31,6 +31,8 @@
 #include <smpeg.h>
 #include <SDL_mixer.h>
 
+#define ONS_VERSION "beta"
+
 #define FONT_NAME "default.ttf"
 
 #define DEFAULT_SURFACE_FLAG (SDL_SWSURFACE)
@@ -44,7 +46,7 @@
 class ONScripterLabel : public ScriptParser
 {
 public:
-    ONScripterLabel();
+    ONScripterLabel( bool cdaudio_flag );
     ~ONScripterLabel();
 
     bool skip_flag;
@@ -213,17 +215,6 @@ private:
     SDL_Surface *shelter_text_surface; // Intermediate buffer to store text_surface when entering system menu
 
     /* ---------------------------------------- */
-    /* Text related variables */
-    struct TaggedInfo sentence_font_tag;
-
-    void drawChar( char* text, struct FontInfo *info, bool flush_flag = true, SDL_Surface *surface = NULL, bool buffering_flag = true );
-    void drawString( char *str, uchar3 color, FontInfo *info, bool flush_flag, SDL_Surface *surface, SDL_Rect *rect = NULL );
-    void restoreTextBuffer();
-    int clickWait( char *out_text );
-    int clickNewPage( char *out_text );
-    int textCommand( char *text );
-    
-    /* ---------------------------------------- */
     /* Button related variables */
     struct ButtonState{
         int x, y, button;
@@ -331,18 +322,18 @@ private:
     /* ---------------------------------------- */
     /* Tachi-e related variables */
     /* 0 ... left, 1 ... center, 2 ... right */
-    struct AnimationInfo tachi_info[3];
+    AnimationInfo tachi_info[3];
 
     /* ---------------------------------------- */
     /* Sprite related variables */
-    struct AnimationInfo sprite_info[MAX_SPRITE_NUM];
+    AnimationInfo sprite_info[MAX_SPRITE_NUM];
     
     /* ---------------------------------------- */
     /* Cursor related variables */
     typedef enum{ CURSOR_WAIT_NO = 0,
                       CURSOR_NEWPAGE_NO = 1
                       } CURSOR_NO;
-    struct AnimationInfo cursor_info[2];
+    AnimationInfo cursor_info[2];
 
     void proceedAnimation( AnimationInfo *anim );
     void showAnimation( AnimationInfo *anim );
@@ -351,10 +342,23 @@ private:
     void endCursor( int click );
     
     /* ---------------------------------------- */
+    /* Text related variables */
+    AnimationInfo sentence_font_info;
+
+    void drawChar( char* text, struct FontInfo *info, bool flush_flag = true, SDL_Surface *surface = NULL, bool buffering_flag = true );
+    void drawString( char *str, uchar3 color, FontInfo *info, bool flush_flag, SDL_Surface *surface, SDL_Rect *rect = NULL );
+    void restoreTextBuffer();
+    int clickWait( char *out_text );
+    int clickNewPage( char *out_text );
+    int textCommand( char *text );
+    
+    /* ---------------------------------------- */
     /* Sound related variables */
     SDL_AudioSpec audio_format;
     bool audio_open_flag;
-
+    bool cdaudio_flag;
+    
+    SDL_CD *cdrom_info;
     int current_cd_track;
     bool mp3_play_once_flag;
     char *mp3_file_name;
@@ -366,7 +370,9 @@ private:
     bool wave_play_once_flag;
 
     int playMP3( int cd_no );
+    int playCDAudio( int cd_no );
     int playWave( char *file_name, bool loop_flag, int channel );
+    void stopBGM( bool continue_flag );
     
     /* ---------------------------------------- */
     /* Text event related variables */

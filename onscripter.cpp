@@ -23,17 +23,57 @@
 
 #include "ONScripterLabel.h"
 
+void optionHelp()
+{
+    printf( "Usage: onscripter [option ...]\n" );
+    printf( "      --cdaudio\t\tuse CD audio if available\n");
+    printf( "  -h, --help\t\tdisplay this help and exit\n");
+    printf( "  -v, --version\t\toutput version information and exit\n");
+    exit(0);
+}
+
+void optionVersion()
+{
+    printf("ONScripter version %s\n", ONS_VERSION );
+    printf("Written by Ogapee<ogapee@aqua.dti2.ne.jp>\n\n");
+    printf("Copyright (c) 2001-2002 Ogapee.\n");
+    printf("This is free software; see the source for copying conditions.\n");
+    exit(0);
+}
+
 int main( int argc, char **argv )
 {
-	if ( SDL_Init(SDL_INIT_VIDEO|SDL_INIT_TIMER|SDL_INIT_AUDIO) < 0 ) {
-		fprintf(stderr,
-			"Couldn't initialize SDL: %s\n", SDL_GetError());
-		exit(1);
-	}
-	atexit(SDL_Quit);
-
-    ONScripterLabel *osl = new ONScripterLabel();
-    osl->eventLoop();
+    bool cdaudio_flag = false;
+    
+    /* ---------------------------------------- */
+    /* Parse options */
+    argv++;
+    while( argc > 1 ){
+        if ( argv[0][0] == '-' ){
+            if ( !strcmp( argv[0]+1, "h" ) || !strcmp( argv[0]+1, "-help" ) ){
+                optionHelp();
+            }
+            else if ( !strcmp( argv[0]+1, "v" ) || !strcmp( argv[0]+1, "-version" ) ){
+                optionVersion();
+            }
+            else if ( !strcmp( argv[0]+1, "-cdaudio" ) ){
+                cdaudio_flag = true;
+            }
+            else{
+                optionHelp();
+            }
+        }
+        else{
+            optionHelp();
+        }
+        argc--;
+        argv++;
+    }
+    
+    /* ---------------------------------------- */
+    /* Run ONScripter */
+    ONScripterLabel *ons = new ONScripterLabel( cdaudio_flag );
+    ons->eventLoop();
     
     exit(0);
 }

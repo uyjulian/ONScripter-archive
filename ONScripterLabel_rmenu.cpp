@@ -157,13 +157,18 @@ int ONScripterLabel::loadSaveFile( int no )
         loadInt( fp, &j );
         sentence_font.window_color[i] = j;
     }
-    loadStr( fp, &sentence_font.window_image );
-    if ( !sentence_font.display_transparency )
-        parseTaggedString( sentence_font.window_image, &sentence_font_tag );
+    loadStr( fp, &sentence_font_info.image_name );
 
-    for ( i=0 ; i<4 ; i++ )
-        loadInt( fp, &sentence_font.window_rect[i] );
+    loadInt( fp, &j ); sentence_font_info.pos.x = j; 
+    loadInt( fp, &j ); sentence_font_info.pos.y = j;
+    loadInt( fp, &j ); sentence_font_info.pos.w = j - sentence_font_info.pos.x + 1;
+    loadInt( fp, &j ); sentence_font_info.pos.h = j - sentence_font_info.pos.y + 1;
 
+    if ( !sentence_font.display_transparency ){
+        parseTaggedString( sentence_font_info.image_name, &sentence_font_info.tag );
+        setupAnimationInfo( &sentence_font_info );
+    }
+    
     if ( sentence_font.ttf_font ) TTF_CloseFont( (TTF_Font*)sentence_font.ttf_font );
     sentence_font.ttf_font = (void*)TTF_OpenFont( FONT_NAME, sentence_font.font_size );
 
@@ -274,12 +279,20 @@ int ONScripterLabel::loadSaveFile( int no )
     
     /* ---------------------------------------- */
     /* Load current playing CD track */
-    playstopCommand();
+    stopBGM( false );
     current_cd_track = fgetc( fp );
     mp3_play_once_flag = (fgetc( fp )==1)?true:false;
     if ( current_cd_track == 255 ) current_cd_track = -1;
     loadStr( fp, &mp3_file_name );
-    if ( current_cd_track >= 0 || mp3_file_name ) playMP3( current_cd_track );
+
+    if ( current_cd_track >= 0 || mp3_file_name ){
+        if ( cdaudio_flag ){
+            if ( cdrom_info && current_cd_track >= 0 ) playCDAudio( current_cd_track );
+        }
+        else{
+            playMP3( current_cd_track );
+        }
+    }
 
     /* ---------------------------------------- */
     /* Load rmode flag */
@@ -339,9 +352,11 @@ int ONScripterLabel::saveSaveFile( int no )
     /* Should be char, not integer !! */
     for ( i=0 ; i<3 ; i++ )
         saveInt( fp, sentence_font.window_color[i] );
-    saveStr( fp, sentence_font.window_image );
-    for ( i=0 ; i<4 ; i++ )
-        saveInt( fp, sentence_font.window_rect[i] );
+    saveStr( fp, sentence_font_info.image_name );
+    saveInt( fp, sentence_font_info.pos.x );
+    saveInt( fp, sentence_font_info.pos.y );
+    saveInt( fp, sentence_font_info.pos.w - sentence_font_info.pos.x + 1);
+    saveInt( fp, sentence_font_info.pos.h - sentence_font_info.pos.y + 1);
 
     saveInt( fp, clickstr_state );
     saveInt( fp, new_line_skip_flag?1:0 );
@@ -491,13 +506,12 @@ void ONScripterLabel::executeSystemCall()
 
 void ONScripterLabel::executeSystemMenu()
 {
-    MenuLink *tmp_menu_link;
+    MenuLink *link;
 
     if ( event_mode & (WAIT_INPUT_MODE | WAIT_BUTTON_MODE) ){
 
         if ( current_button_state.button == 0 ) return;
         event_mode = IDLE_EVENT_MODE;
-        int counter = 1;
 
         deleteButtonLink();
 
@@ -506,13 +520,13 @@ void ONScripterLabel::executeSystemMenu()
             return;
         }
     
-        last_menu_link = root_menu_link.next;
-        while ( last_menu_link ){
+        int counter = 1;
+        link = root_menu_link.next;
+        while ( link ){
             if ( current_button_state.button == counter++ ){
-                //printf("label %s is selected \n",last_menu_link->label );
-                system_menu_mode = last_menu_link->system_call_no;
+                system_menu_mode = link->system_call_no;
             }
-            last_menu_link = last_menu_link->next;
+            link = link->next;
         }
 
         startTimer( MINIMUM_TIMER_RESOLUTION );
@@ -530,15 +544,15 @@ void ONScripterLabel::executeSystemMenu()
         menu_font.xy[1] = (menu_font.num_xy[1] - menu_link_num) / 2;
 
 
-        tmp_menu_link = root_menu_link.next;
+        link = root_menu_link.next;
         int counter = 1;
-        while( tmp_menu_link ){
-            last_button_link->next = getSelectableSentence( tmp_menu_link->label, &menu_font, false );
+        while( link ){
+            last_button_link->next = getSelectableSentence( link->label, &menu_font, false );
             last_button_link = last_button_link->next;
             last_button_link->no = counter++;
 
-            //printf(" link label %s\n", tmp_menu_link->label );
-            tmp_menu_link = tmp_menu_link->next;
+            //printf(" link label %s\n", link->label );
+            link = link->next;
             flush();
         }
         SDL_BlitSurface( text_surface, NULL, select_surface, NULL );
@@ -723,14 +737,14 @@ void ONScripterLabel::setupLookbackButton()
     
         last_button_link->button_type = NORMAL_BUTTON;
         last_button_link->no = 1;
-        last_button_link->select_rect.x = 0;
-        last_button_link->select_rect.y = 0;
-        last_button_link->select_rect.w = screen_width;
-        last_button_link->select_rect.h = screen_height/3;
+        last_button_link->select_rect.x = sentence_font_info.pos.x;
+        last_button_link->select_rect.y = sentence_font_info.pos.y;
+        last_button_link->select_rect.w = sentence_font_info.pos.w;
+        last_button_link->select_rect.h = sentence_font_info.pos.h/3;
 
         if ( lookback_image_surface[0] ){
-            last_button_link->image_rect.x = screen_width - lookback_image_surface[0]->w;
-            last_button_link->image_rect.y = 0;
+            last_button_link->image_rect.x = sentence_font_info.pos.x + sentence_font_info.pos.w - lookback_image_surface[0]->w;
+            last_button_link->image_rect.y = sentence_font_info.pos.y;
             last_button_link->image_rect.w = lookback_image_surface[0]->w;
             last_button_link->image_rect.h = lookback_image_surface[0]->h;
             
@@ -758,14 +772,14 @@ void ONScripterLabel::setupLookbackButton()
     
         last_button_link->button_type = NORMAL_BUTTON;
         last_button_link->no = 2;
-        last_button_link->select_rect.x = 0;
-        last_button_link->select_rect.y = screen_height*2/3;
-        last_button_link->select_rect.w = screen_width;
-        last_button_link->select_rect.h = screen_height/3;
+        last_button_link->select_rect.x = sentence_font_info.pos.x;
+        last_button_link->select_rect.y = sentence_font_info.pos.y + sentence_font_info.pos.h*2/3;
+        last_button_link->select_rect.w = sentence_font_info.pos.w;
+        last_button_link->select_rect.h = sentence_font_info.pos.h/3;
 
         if ( lookback_image_surface[2] ){
-            last_button_link->image_rect.x = screen_width - lookback_image_surface[2]->w;
-            last_button_link->image_rect.y = screen_height - lookback_image_surface[2]->h;
+            last_button_link->image_rect.x = sentence_font_info.pos.x + sentence_font_info.pos.w - lookback_image_surface[2]->w;
+            last_button_link->image_rect.y = sentence_font_info.pos.y + sentence_font_info.pos.h - lookback_image_surface[2]->h;
             last_button_link->image_rect.w = lookback_image_surface[2]->w;
             last_button_link->image_rect.h = lookback_image_surface[2]->h;
             
@@ -793,6 +807,7 @@ void ONScripterLabel::executeSystemLookback()
     
     SDL_BlitSurface( shelter_select_surface, NULL, select_surface, NULL );
     shadowTextDisplay();
+    SDL_BlitSurface( text_surface, NULL, select_surface, NULL );
 
     if ( event_mode & (WAIT_INPUT_MODE | WAIT_BUTTON_MODE) ){
         if ( current_button_state.button == 0 ) return;

@@ -201,18 +201,19 @@ int ScriptParser::roffCommand()
 int ScriptParser::rmenuCommand()
 {
     char *p_string_buffer = string_buffer + string_buffer_offset + 5; // strlen("rmode") = 5
-    MenuLink *menu;
+    MenuLink *menu, *link;
     
     /* ---------------------------------------- */
     /* Delete old MenuLink */
-    last_menu_link = root_menu_link.next;
-    while( last_menu_link ){
-        menu = last_menu_link->next;
-        if ( last_menu_link->label ) delete[] last_menu_link->label;
-        delete last_menu_link;
-        last_menu_link = menu;
+    link = root_menu_link.next;
+    while( link ){
+        menu = link->next;
+        if ( link->label ) delete[] link->label;
+        delete link;
+        link = menu;
     }
-    last_menu_link = &root_menu_link;
+
+    link = &root_menu_link;
     menu_link_num = 0;
     menu_link_width = 0;
 
@@ -229,8 +230,8 @@ int ScriptParser::rmenuCommand()
         menu->system_call_no = getSystemCallNo( tmp_string_buffer );
 
         menu->next = NULL;
-        last_menu_link->next = menu;
-        last_menu_link = menu;
+        link->next = menu;
+        link = menu;
         menu_link_num++;
     }
     

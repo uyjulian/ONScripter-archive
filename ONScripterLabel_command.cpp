@@ -26,6 +26,8 @@
 #define DEFAULT_WAVE_CHANNEL 1
 #define ONSCRIPTER_VERSION 196
 
+#define CONTINUOUS_PLAY
+
 int ONScripterLabel::waveCommand()
 {
     char *p_string_buffer;
@@ -148,11 +150,7 @@ int ONScripterLabel::systemcallCommand()
 int ONScripterLabel::stopCommand()
 {
     wavestopCommand();
-    playstopCommand();
-    if ( mp3_file_name ){
-        delete[] mp3_file_name;
-        mp3_file_name = NULL;
-    }
+    stopBGM( false );
     
     return RET_CONTINUE;
 }
@@ -233,24 +231,23 @@ int ONScripterLabel::setwindowCommand()
         if ( strlen( tmp_string_buffer ) != 7 ) errorAndExit( string_buffer + string_buffer_offset );
         readColor( &sentence_font.window_color, tmp_string_buffer + 1 );
 
-        sentence_font.window_rect[0] = readInt( &p_string_buffer );
-        sentence_font.window_rect[1] = readInt( &p_string_buffer );
-        sentence_font.window_rect[2] = readInt( &p_string_buffer );
-        sentence_font.window_rect[3] = readInt( &p_string_buffer );
+        sentence_font_info.pos.x = readInt( &p_string_buffer );
+        sentence_font_info.pos.y = readInt( &p_string_buffer );
+        sentence_font_info.pos.w = readInt( &p_string_buffer ) - sentence_font_info.pos.x + 1;
+        sentence_font_info.pos.h = readInt( &p_string_buffer ) - sentence_font_info.pos.y + 1;
 #if 0
         printf("    trans %u %u %u rect %d %d %d %d\n",
                sentence_font.window_color[0], sentence_font.window_color[1], sentence_font.window_color[2],
-               sentence_font.window_rect[0], sentence_font.window_rect[1], sentence_font.window_rect[2], sentence_font.window_rect[3] );
+               sentence_font_info.pos.x, sentence_font_info.pos.y, sentence_font_info.pos.w, sentence_font_info.pos.h );
 #endif        
     }
     else{
         sentence_font.display_transparency = false;
-        if ( sentence_font.window_image ) delete[] sentence_font.window_image;
-        sentence_font.window_image = new char[ strlen( tmp_string_buffer ) + 1 ];
-        memcpy( sentence_font.window_image, tmp_string_buffer, strlen( tmp_string_buffer ) + 1 );
-        parseTaggedString( sentence_font.window_image, &sentence_font_tag );
-        sentence_font.window_rect[0] = readInt( &p_string_buffer );
-        sentence_font.window_rect[1] = readInt( &p_string_buffer );
+        sentence_font_info.setImageName( tmp_string_buffer );
+        parseTaggedString( sentence_font_info.image_name, &sentence_font_info.tag );
+        setupAnimationInfo( &sentence_font_info );
+        sentence_font_info.pos.x = readInt( &p_string_buffer );
+        sentence_font_info.pos.y = readInt( &p_string_buffer );
 #if 0        
         printf("    image %s rect %d %d \n",
                sentence_font.window_image,
@@ -532,11 +529,7 @@ int ONScripterLabel::resetCommand()
     deleteSelectLink();
 
     wavestopCommand();
-    playstopCommand();
-    if ( mp3_file_name ){
-        delete[] mp3_file_name;
-        mp3_file_name = NULL;
-    }
+    stopBGM( false );
     
     SDL_FillRect( background_surface, NULL, SDL_MapRGBA( background_surface->format, 0, 0, 0, 0 ) );
     SDL_BlitSurface( background_surface, NULL, accumulation_surface, NULL );
@@ -579,18 +572,7 @@ int ONScripterLabel::printCommand()
 
 int ONScripterLabel::playstopCommand()
 {
-    if ( mp3_sample ){
-        SMPEG_stop( mp3_sample );
-        SMPEG_delete( mp3_sample );
-        Mix_HookMusic( NULL, NULL );
-        mp3_sample = NULL;
-
-        if ( mp3_buffer ){
-            delete[] mp3_buffer;
-            mp3_buffer = NULL;
-        }
-    }
-
+    stopBGM( false );
     return RET_CONTINUE;
 }
 
@@ -610,20 +592,27 @@ int ONScripterLabel::playCommand()
     readStr( &p_string_buffer, tmp_string_buffer );
 
     if ( tmp_string_buffer[0] == '*' ){
-        playstopCommand();
-        if ( mp3_file_name ){
-            delete[] mp3_file_name;
-            mp3_file_name = NULL;
+        int new_cd_track = atoi( tmp_string_buffer + 1 );
+#ifdef CONTINUOUS_PLAY        
+        if ( current_cd_track != new_cd_track ) {
+#endif        
+            stopBGM( false );
+            current_cd_track = new_cd_track;
+
+            if ( cdaudio_flag ){
+                if ( cdrom_info ) playCDAudio( current_cd_track );
+            }
+            else{
+                playMP3( current_cd_track );
+            }
+#ifdef CONTINUOUS_PLAY        
         }
-        current_cd_track = atoi( tmp_string_buffer + 1 );
-        playMP3( current_cd_track );
-        
-        return RET_CONTINUE;
+#endif
     }
     else{ // play MIDI
-        return RET_CONTINUE;
     }
-    
+
+    return RET_CONTINUE;
 }
 
 int ONScripterLabel::mspCommand()
@@ -670,13 +659,11 @@ int ONScripterLabel::mp3Command()
         p_string_buffer = string_buffer + string_buffer_offset + 3; // strlen("mp3") = 3
     }
 
+    stopBGM( false );
+    
     readStr( &p_string_buffer, tmp_string_buffer );
+    setStr( &mp3_file_name, tmp_string_buffer );
 
-    playstopCommand();
-
-    if ( mp3_file_name ) delete[] mp3_file_name;
-    mp3_file_name = new char[ strlen(tmp_string_buffer) + 1 ];
-    memcpy( mp3_file_name, tmp_string_buffer, strlen(tmp_string_buffer) + 1 );
     playMP3( 0 );
         
     return RET_CONTINUE;

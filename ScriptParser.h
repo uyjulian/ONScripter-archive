@@ -214,6 +214,7 @@ protected:
     int readInt( char **buf );
     void setInt( char *buf, int val, int offset = 0 );
     void setNumVariable( int no, int val );
+    void setStr( char **dst, char *src );
     
     int effect_blank;
 
@@ -317,8 +318,8 @@ protected:
         bool display_transparency;
         //char window_color[8];
         uchar3  window_color;
-        char *window_image;
-        int window_rect[4]; // Top left and bottom right of the text window
+        //char *window_image;
+        //int window_rect[4]; // Top left and bottom right of the text window
     } sentence_font, system_font, menu_font;
 
     /* ---------------------------------------- */
@@ -327,7 +328,7 @@ protected:
         struct MenuLink *next;
         char *label;
         int system_call_no;
-    } root_menu_link, *last_menu_link;
+    } root_menu_link;
     unsigned int  menu_link_num, menu_link_width;
     uchar3 menu_select_on_color;
     uchar3 menu_select_off_color;

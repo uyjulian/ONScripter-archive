@@ -75,7 +75,7 @@ int main( int argc, char **argv )
             buffer_length = length;
         }
         if ( cSR.getFile( sFI.name, buffer ) != length ){
-            fprintf( stderr, "file %s can't be retrieved\n", sFI.name );
+            fprintf( stderr, "file %s can't be retrieved %ld\n", sFI.name, length );
             continue;
         }
 

@@ -56,7 +56,7 @@ int main( int argc, char **argv )
     }
 
     if ( (fp = fopen( argv[3], "wb" ) ) == NULL ){
-        fprintf( stderr, "can't open file %s for writing.\n", argv[2] );
+        fprintf( stderr, "can't open file %s for writing.\n", argv[3] );
         exit(-1);
     }
     cSR.openForConvert( argv[2] );
@@ -65,8 +65,8 @@ int main( int argc, char **argv )
     SarReader::FileInfo sFI;
 
     for ( i=0 ; i<count ; i++ ){
-        printf( "%d/%d\n", i, count );
         sFI = cSR.getFileByIndex( i );
+        printf( "%d/%d\n", i, count );
         if ( i==0 ) offset = sFI.offset;
         length = cSR.getFileLength( sFI.name );
         if ( length > buffer_length ){
@@ -75,7 +75,7 @@ int main( int argc, char **argv )
             buffer_length = length;
         }
         if ( cSR.getFile( sFI.name, buffer ) != length ){
-            fprintf( stderr, "file %s can't be retrieved %d\n", sFI.name, length );
+            fprintf( stderr, "file %s can't be retrieved %ld\n", sFI.name, length );
             continue;
         }
 

@@ -105,21 +105,22 @@ int SarReader::readArchive( struct ArchiveInfo *ai, bool nsa_flag )
         /* SPB check */
         else if ( count >= 3 && !strncmp( &ai->fi_list[i].name[count-3], "SPB", 3 ) ){
             fpos_t pos;
-            char str[30];
             fgetpos( ai->file_handle, &pos );
             fseek( ai->file_handle, ai->fi_list[i].offset, SEEK_SET );
-            int width  = readShort( ai->file_handle );
-            int height = readShort( ai->file_handle );
-            sprintf( str, "P6 %d %d 255\n", width , height );
+            size_t width  = readShort( ai->file_handle );
+            size_t height = readShort( ai->file_handle );
+
+            size_t width_pad  = (4 - width * 3 % 4) % 4;
+            
             ai->fi_list[i].compression_type = SPB_COMPRESSION;
-            ai->fi_list[i].original_length = width * height * 3 + strlen( str );
+            ai->fi_list[i].original_length = (width * 3 +width_pad) * height + 54;
             fsetpos( ai->file_handle, &pos );
         }
 
         ai->fi_list[i].access_flag = false;
     }
     ai->num_of_accessed = 0;
-
+    
     return 0;
 }
 
@@ -164,10 +165,16 @@ void SarReader::putFileSub( ArchiveInfo *ai, FILE *fp, int no, size_t offset, si
     ai->fi_list[no].length = length;
     
     fseek( fp, ai->fi_list[no].offset, SEEK_SET );
-    if ( ai->fi_list[no].compression_type == NBZ_COMPRESSION )
+    if ( ai->fi_list[no].compression_type == NBZ_COMPRESSION ){
         writeLong( fp, ai->fi_list[no].original_length );
-    else if ( modified_flag )
+    }
+    if ( modified_flag ){
         ai->fi_list[no].compression_type = NO_COMPRESSION;
+    }
+    else{
+        fseek( ai->file_handle, ai->fi_list[no].offset, SEEK_SET );
+        fread( buffer, 1, ai->fi_list[no].length, ai->file_handle );
+    }
 
     size_t len = ai->fi_list[no].length, c;
     while( len > 0 ){

@@ -169,11 +169,12 @@ FILE *DirectReader::getFileHandle( const char *file_name, int &compression_type,
             fseek( fp, 0, SEEK_SET );
         }
         else if ( (!strncmp( &capital_name[len-3], "SPB", 3 ) || !strncmp( &capital_name[len-3], "spb", 3 )) ){
-            char str[30];
-            int width  = readShort( fp );
-            int height = readShort( fp );
-            sprintf( str, "P6 %d %d 255\n", width , height );
-            *length = width * height * 3 + strlen( str );
+            size_t width  = readShort( fp );
+            size_t height = readShort( fp );
+            
+            size_t width_pad  = (4 - width * 3 % 4) % 4;
+    
+            *length = (width * 3 + width_pad) * height + 54;
             compression_type = SPB_COMPRESSION;
             fseek( fp, 0, SEEK_SET );
         }
@@ -273,20 +274,38 @@ int DirectReader::getbit( FILE *fp, int n )
 size_t DirectReader::decodeSPB( FILE *fp, size_t offset, unsigned char *buf )
 {
     unsigned int count;
-    unsigned short width, height;
     unsigned char *pbuf, *psbuf;
     int i, j, k, c, n, m;
-    char str[30];
 
     getbit_mask = 0;
     
     fseek( fp, offset, SEEK_SET );
-    width  = readShort( fp );
-    height = readShort( fp );
-    sprintf( str, "P6 %d %d 255\n", width , height );
+    size_t width  = readShort( fp );
+    size_t height = readShort( fp );
 
-    memcpy( buf, str, strlen( str ) );
-    buf += strlen( str );
+    size_t width_pad  = (4 - width * 3 % 4) % 4;
+
+    size_t total_size = (width * 3 + width_pad) * height + 54;
+
+    /* ---------------------------------------- */
+    /* Write header */
+    memset( buf, 0, 54 );
+    buf[0] = 'B'; buf[1] = 'M';
+    buf[2] = total_size & 0xff;
+    buf[3] = (total_size >>  8) & 0xff;
+    buf[4] = (total_size >> 16) & 0xff;
+    buf[5] = (total_size >> 24) & 0xff;
+    buf[10] = 54; // offset to the body
+    buf[14] = 40; // header size
+    buf[18] = width & 0xff;
+    buf[19] = (width >> 8)  & 0xff;
+    buf[22] = height & 0xff;
+    buf[23] = (height >> 8)  & 0xff;
+    buf[26] = 1; // the number of the plane
+    buf[28] = 24; // bpp
+    buf[34] = total_size - 54; // size of the body
+
+    buf += 54;
 
     unsigned char *spb_buffer = new unsigned char[ width * height + 4 ];
     
@@ -322,22 +341,22 @@ size_t DirectReader::decodeSPB( FILE *fp, size_t offset, unsigned char *buf )
             }
         }
 
-        pbuf  = buf + 2 - i;
+        pbuf  = buf + (width * 3 + width_pad)*(height-1) + i;
         psbuf = spb_buffer;
 
         for ( j=0 ; j<height ; j++ ){
             if ( j & 1 ){
                 for ( k=0 ; k<width ; k++, pbuf -= 3 ) *pbuf = *psbuf++;
-                pbuf += (width+1) * 3;
+                pbuf -= width * 3 + width_pad - 3;
             }
             else{
                 for ( k=0 ; k<width ; k++, pbuf += 3 ) *pbuf = *psbuf++;
-                pbuf += (width-1) * 3;
+                pbuf -= width * 3 + width_pad + 3;
             }
         }
     }
     
     delete[] spb_buffer;
     
-    return width * height * 3 + strlen( str );
+    return total_size;
 }

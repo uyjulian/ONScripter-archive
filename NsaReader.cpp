@@ -77,7 +77,7 @@ int NsaReader::open( char *nsa_path )
 int NsaReader::openForConvert( char *nsa_name )
 {
     sar_flag = false;
-    if ( ( archive_info.file_handle = fopen( nsa_name, "rb" ) ) == NULL ){
+    if ( ( archive_info.file_handle = ::fopen( nsa_name, "rb" ) ) == NULL ){
         fprintf( stderr, "can't open file %s\n", nsa_name );
         return -1;
     }
@@ -137,9 +137,6 @@ bool NsaReader::getAccessFlag( const char *file_name )
 
 size_t NsaReader::getFileLengthSub( ArchiveInfo *ai, const char *file_name )
 {
-    char str[30];
-    int width, height;
-
     int i = getIndexFromFile( ai, file_name );
 
     if ( i == ai->num_of_files ) return 0;
@@ -152,11 +149,13 @@ size_t NsaReader::getFileLengthSub( ArchiveInfo *ai, const char *file_name )
         return ai->fi_list[i].original_length;
     
     fseek( ai->file_handle, ai->fi_list[i].offset, SEEK_SET );
-    width  = readShort( ai->file_handle );
-    height = readShort( ai->file_handle );
-    sprintf( str, "P6 %d %d 255\n", width , height );
 
-    return width * height * 3 + strlen( str );
+    size_t width  = readShort( ai->file_handle );
+    size_t height = readShort( ai->file_handle );
+
+    size_t width_pad  = (4 - width * 3 % 4) % 4;
+    
+    return (width * 3 + width_pad) * height + 54;
 }
 
 size_t NsaReader::getFileLength( const char *file_name )

@@ -596,7 +596,7 @@ int ScriptParser::ifCommand()
     char *p_string_buffer;
     int left_value, right_value;
     bool if_flag, condition_flag = true, f;
-    char eval_str[3], *token_start;
+    char eval_str[3], *token_start, *tmp_buffer;
 
     if ( string_buffer[0] == 'n' ){ // notif command
         if_flag = false;
@@ -622,6 +622,33 @@ int ScriptParser::ifCommand()
             f = getLabelAccessFlag( tmp_string_buffer+1 );
             //printf("lchk %s(%d,%d) ", tmp_string_buffer, getLabelAccessFlag( tmp_string_buffer+1 ), condition_flag );
         }
+        else if ( *p_string_buffer == '$' || *p_string_buffer == '"' ){
+            readStr( &p_string_buffer, tmp_string_buffer );
+            tmp_buffer = new char[ strlen( tmp_string_buffer ) + 1 ];
+            memcpy( tmp_buffer, tmp_string_buffer, strlen( tmp_string_buffer ) + 1 );
+            
+            SKIP_SPACE( p_string_buffer );
+            token_start = p_string_buffer;
+            while ( *p_string_buffer == '>' || *p_string_buffer == '<' ||
+                    *p_string_buffer == '=' || *p_string_buffer == '!' ) p_string_buffer++;
+            memcpy( eval_str, token_start, p_string_buffer-token_start );
+            eval_str[ p_string_buffer-token_start ] = '\0';
+            //printf("%s ", eval_str );
+
+            readStr( &p_string_buffer, tmp_string_buffer );
+
+            int val = strcmp( tmp_buffer, tmp_string_buffer );
+            if ( !strcmp( eval_str, ">=" ) )      f = (val >= 0);
+            else if ( !strcmp( eval_str, "<=" ) ) f = (val <= 0);
+            else if ( !strcmp( eval_str, "==" ) ) f = (val == 0);
+            else if ( !strcmp( eval_str, "!=" ) ) f = (val != 0);
+            else if ( !strcmp( eval_str, "<>" ) ) f = (val != 0);
+            else if ( !strcmp( eval_str, "<" ) )  f = (val <  0);
+            else if ( !strcmp( eval_str, ">" ) )  f = (val >  0);
+            else if ( !strcmp( eval_str, "=" ) )  f = (val == 0);
+
+            delete[] tmp_buffer;
+        }
         else{
             left_value = readInt( &p_string_buffer );
             //printf("%s(%d) ", tmp_string_buffer, left_value );
@@ -634,8 +661,6 @@ int ScriptParser::ifCommand()
             eval_str[ p_string_buffer-token_start ] = '\0';
             //printf("%s ", eval_str );
 
-            SKIP_SPACE( p_string_buffer );
-
             right_value = readInt( &p_string_buffer );
             //printf("%s(%d) ", tmp_string_buffer, right_value );
 
@@ -644,8 +669,8 @@ int ScriptParser::ifCommand()
             else if ( !strcmp( eval_str, "==" ) ) f = (left_value == right_value);
             else if ( !strcmp( eval_str, "!=" ) ) f = (left_value != right_value);
             else if ( !strcmp( eval_str, "<>" ) ) f = (left_value != right_value);
-            else if ( !strcmp( eval_str, "<" ) )  f = (left_value < right_value);
-            else if ( !strcmp( eval_str, ">" ) )  f = (left_value > right_value);
+            else if ( !strcmp( eval_str, "<" ) )  f = (left_value <  right_value);
+            else if ( !strcmp( eval_str, ">" ) )  f = (left_value >  right_value);
             else if ( !strcmp( eval_str, "=" ) )  f = (left_value == right_value);
         }
         condition_flag &= (if_flag)?(f):(!f);
@@ -823,27 +848,8 @@ int ScriptParser::forCommand()
 
 int ScriptParser::filelogCommand()
 {
-    printf(" filelogCommand\n" );
-    FILE *fp;
-    int i, j, ch, count = 0;
-    char buf[100];
-    
-    if ( ( fp = fopen( "NScrflog.dat", "rb" ) ) != NULL ){
-        while( (ch = fgetc( fp )) != 0x0a ){
-            count = count * 10 + ch - '0';
-        }
+    if ( current_mode != DEFINE_MODE ) errorAndExit( string_buffer + string_buffer_offset );
 
-        for ( i=0 ; i<count ; i++ ){
-            fgetc( fp );
-            j = 0;
-            while( (ch = fgetc( fp )) != '"' ) buf[j++] = ch ^ 0x84;
-            buf[j] = '\0';
-
-            cBR->getFileLength( buf );
-        }
-        
-        fclose( fp );
-    }
     filelog_flag = true;
     return RET_CONTINUE;
 }

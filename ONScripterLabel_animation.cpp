@@ -134,6 +134,8 @@ void ONScripterLabel::setupAnimationInfo( AnimationInfo *anim )
             f_info.font_size_xy[1] = f_info.pitch_xy[1] = anim->font_size_xy[1];
             f_info.num_xy[0] = strlen( anim->file_name );
             f_info.num_xy[1] = 1;
+            if ( anim->font_pitch >= 0 )
+                f_info.pitch_xy[0] = anim->font_pitch;
             f_info.ttf_font = NULL;
         }
 
@@ -199,6 +201,13 @@ void ONScripterLabel::parseTaggedString( AnimationInfo *anim )
             buffer++;
             i=0;
             anim->num_of_cells = 0;
+            if ( buffer[0] == '/' ){
+                buffer++;
+                anim->font_size_xy[0] = readInt( &buffer );
+                anim->font_size_xy[1] = readInt( &buffer );
+                anim->font_pitch = readInt( &buffer ) + anim->font_size_xy[0];
+                buffer++;
+            }
             while( buffer[i] == '#' ){
                 anim->num_of_cells++;
                 i += 7;
@@ -297,6 +306,8 @@ void ONScripterLabel::drawTaggedSurface( SDL_Surface *dst_surface, AnimationInfo
             f_info.font_size_xy[1] = f_info.pitch_xy[1] = anim->font_size_xy[1];
             f_info.num_xy[0] = strlen( anim->file_name );
             f_info.num_xy[1] = 1;
+            if ( anim->font_pitch >= 0 )
+                f_info.pitch_xy[0] = anim->font_pitch;
             f_info.ttf_font = NULL;
         }
 

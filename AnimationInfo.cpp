@@ -42,6 +42,7 @@ AnimationInfo::AnimationInfo(){
     trans = 255;
 
     font_size_xy[0] = font_size_xy[1] = -1;
+    font_pitch = -1;
     remaining_time = 0;
 }
 

@@ -133,6 +133,7 @@ public:
     FILE *fopen(const char *path, const char *mode);
     void skipToken();
     void saveGlovalData();
+    void loadFileLog();
     void saveFileLog();
     void saveLabelLog();
     

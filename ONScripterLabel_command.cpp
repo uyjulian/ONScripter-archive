@@ -643,6 +643,9 @@ int ONScripterLabel::resetCommand()
 
     barclearCommand();
     prnumclearCommand();
+    for ( int i=0 ; i<MAX_SPRITE_NUM ; i++ ){
+        sprite_info[i].remove();
+    }
 
     deleteButtonLink();
     deleteSelectLink();
@@ -1253,6 +1256,10 @@ int ONScripterLabel::gameCommand()
     loadCursor( CURSOR_NEWPAGE_NO, DEFAULT_CURSOR_NEWPAGE, 0, 0 );
     
     /* ---------------------------------------- */
+    /* Load log files */
+    if ( filelog_flag ) loadFileLog();
+
+    /* ---------------------------------------- */
     /* Lookback related variables */
     for ( i=0 ; i<4 ; i++ ){
         setStr( &lookback_info[i].image_name, lookback_image_name[i] );
@@ -1367,9 +1374,14 @@ int ONScripterLabel::dwaveCommand()
         p_string_buffer = string_buffer + string_buffer_offset + 5;
     }
 
-    wavestopCommand();
-
     int ch = readInt( &p_string_buffer );
+
+    if ( wave_sample[ch] ){
+        Mix_Pause( ch );
+        Mix_FreeChunk( wave_sample[ch] );
+        wave_sample[ch] = NULL;
+    }
+
     readStr( &p_string_buffer, tmp_string_buffer );
     playWave( tmp_string_buffer, wave_play_once_flag, ch );
         

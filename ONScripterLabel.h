@@ -347,7 +347,7 @@ private:
     int erase_text_window_mode;
     bool text_on_flag;
 
-    void drawChar( char* text, struct FontInfo *info, bool flush_flag, SDL_Surface *surface, bool buffering_flag = true, SDL_Rect *clip=NULL );
+    void drawChar( char* text, FontInfo *info, bool flush_flag, SDL_Surface *surface, bool buffering_flag = true, SDL_Rect *clip=NULL );
     void drawString( char *str, uchar3 color, FontInfo *info, bool flush_flag, SDL_Surface *surface, SDL_Rect *rect = NULL, bool buffering_flag = false, SDL_Rect *clip=NULL );
     void restoreTextBuffer( SDL_Surface *surface = NULL );
     int clickWait( char *out_text );
@@ -389,7 +389,7 @@ private:
     int shortcut_mouse_line;
 
     void deleteSelectLink();
-    struct ONScripterLabel::ButtonLink *getSelectableSentence( char *buffer, struct FontInfo *info, bool flush_flag = true, bool nofile_flag = false );
+    struct ONScripterLabel::ButtonLink *getSelectableSentence( char *buffer, FontInfo *info, bool flush_flag = true, bool nofile_flag = false );
     
     /* ---------------------------------------- */
     /* Sound related variables */

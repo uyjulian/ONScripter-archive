@@ -71,7 +71,8 @@ public:
     SDL_Surface *image_surface;
     SDL_Surface *mask_surface;
 
-    int font_size_xy[2]; // used by prnum
+    int font_size_xy[2]; // used by prnum and lsp string
+    int font_pitch; // used by lsp string
     int remaining_time;
 
     AnimationInfo();

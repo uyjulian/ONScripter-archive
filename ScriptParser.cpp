@@ -982,6 +982,30 @@ void ScriptParser::saveGlovalData()
     fclose( fp );
 }
 
+void ScriptParser::loadFileLog()
+{
+    FILE *fp; 
+    int i, j, ch, count = 0;
+    char buf[100];
+
+    if ( ( fp = fopen( "NScrflog.dat", "rb" ) ) != NULL ){
+        while( (ch = fgetc( fp )) != 0x0a ){
+            count = count * 10 + ch - '0';
+        }
+
+        for ( i=0 ; i<count ; i++ ){
+            fgetc( fp );
+            j = 0; 
+            while( (ch = fgetc( fp )) != '"' ) buf[j++] = ch ^ 0x84;
+            buf[j] = '\0';
+
+            cBR->getFileLength( buf );
+        }
+
+        fclose( fp );
+    }
+}
+
 void ScriptParser::saveFileLog()
 {
     if ( !filelog_flag ) return;

@@ -34,7 +34,7 @@ extern unsigned short convSJIS2UTF16( unsigned short in );
           ( *(x) == (char)0x81 && *((x)+1) == (char)0x76 ) || \
           ( *(x) == (char)0x81 && *((x)+1) == (char)0x5b ) )
 
-void ONScripterLabel::drawChar( char* text, struct FontInfo *info, bool flush_flag, SDL_Surface *surface, bool buffering_flag, SDL_Rect *clip )
+void ONScripterLabel::drawChar( char* text, FontInfo *info, bool flush_flag, SDL_Surface *surface, bool buffering_flag, SDL_Rect *clip )
 {
     int xy[2];
     SDL_Rect src_rect, dst_rect, clipped_rect;

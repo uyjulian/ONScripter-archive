@@ -173,7 +173,6 @@ int ONScripterLabel::loadSaveFile( int no )
         loadInt( fp, &current_link_label_info->current_line );
         loadInt( fp, &current_link_label_info->offset );
         loadInt( fp, &address );
-        printf("hoe %s %d %d\n",current_link_label_info->label_info.name, current_link_label_info->current_line, current_link_label_info->offset );
         current_link_label_info->current_script =
             current_link_label_info->label_info.start_address + address;
 
@@ -228,7 +227,6 @@ int ONScripterLabel::loadSaveFile( int no )
     /* Load Tachi image and Sprite */
     for ( i=0 ; i<3 ; i++ ){
         loadStr( fp, &tachi_image_name[i] );
-        printf("load tach %s\n",tachi_image_name[i]);
         tachi_image_surface[i] = NULL;
         if ( tachi_image_name[i] ){
             parseTaggedString( tachi_image_name[i], &tagged_info );
@@ -244,9 +242,7 @@ int ONScripterLabel::loadSaveFile( int no )
         loadInt( fp, &sprite_info[i].trans );
         loadStr( fp, &sprite_info[i].name );
         if ( sprite_info[i].name ){
-            printf("load sprite %s\n",sprite_info[i].name );
             parseTaggedString( sprite_info[i].name, &sprite_info[i].tag );
-            printf("load tag %s %p\n", sprite_info[i].tag.file_name, &sprite_info[i].tag);
             if ( sprite_info[i].image_surface ) SDL_FreeSurface( sprite_info[i].image_surface );
             sprite_info[i].image_surface = loadPixmap( &sprite_info[i].tag );
         }

@@ -681,7 +681,7 @@ void ONScripterLabel::executeLabel()
 
     i = current_link_label_info->current_line;
     while ( i<current_link_label_info->label_info.num_of_lines ){
-        //printf("process line %d(%d): \n",i, line_cache );
+        //printf("process line %d(%d/%d): \n",i, line_cache, current_link_label_info->label_info.num_of_lines );
         /* If comment */
         if ( line_cache != i ){
             line_cache = i;
@@ -2437,7 +2437,7 @@ int ONScripterLabel::rndCommand()
     }
     
     num_variables[ no ] = lower + (int)( (double)(upper-lower+1)*rand()/(RAND_MAX+1.0));
-    printf("rndCommand %d\n", num_variables[ no ] );
+    //printf("rndCommand %d\n", num_variables[ no ] );
 
     return RET_CONTINUE;
 }
@@ -2662,7 +2662,7 @@ int ONScripterLabel::mspCommand()
 
 int ONScripterLabel::lspCommand()
 {
-    printf("lspCommand %d\n", event_mode);
+    //printf("lspCommand %d\n", event_mode);
     bool v;
     int no;
     char *p_string_buffer;
@@ -2788,14 +2788,14 @@ int ONScripterLabel::ldCommand()
 
 int ONScripterLabel::jumpfCommand()
 {
-    printf("jumpfCommand\n");
+    //printf("jumpfCommand\n");
     jumpf_flag = true;
     return RET_CONTINUE;
 }
 
 int ONScripterLabel::jumpbCommand()
 {
-    printf("jumpbCommand\n");
+    //printf("jumpbCommand\n");
     current_link_label_info->label_info = last_tilde.label_info;
     current_link_label_info->current_line = last_tilde.current_line;
     current_link_label_info->offset = last_tilde.offset;
@@ -3014,7 +3014,7 @@ int ONScripterLabel::btnwaitCommand()
 
         assert( tmp_string_buffer[0] == '%' );
         num_variables[atoi( tmp_string_buffer+1 )] = current_button_state.button;
-        printf("btwait button num_variables[ %d ] %d\n",atoi( tmp_string_buffer+1 ),current_button_state.button);
+        //printf("btwait button num_variables[ %d ] %d\n",atoi( tmp_string_buffer+1 ),current_button_state.button);
 
         if ( current_button_state.button > 0 ) deleteButtonLink();
 

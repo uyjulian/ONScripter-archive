@@ -23,10 +23,6 @@
 
 #include "ScriptParser.h"
 
-#ifndef SEEK_END
-#define SEEK_END 2
-#endif
-
 #define READ_LENGTH 4096
 #define VERSION_STR1 "ONScripter"
 #define VERSION_STR2 "Copyright (C) 2001 Studio O.G.A. All Rights Reserved."
@@ -263,8 +259,8 @@ int ScriptParser::readScript()
 {
     FILE *fp;
     char file_name[10];
-    int  i, j, file_counter = 0;
-    long length;
+    int  i, j, file_counter = 0, c;
+    long len;
     bool encrypt_flag = false;
     char *p_script_buffer;
     
@@ -275,7 +271,6 @@ int ScriptParser::readScript()
             fseek( fp, 0, SEEK_END );
             script_buffer_length += ftell( fp );
             sprintf( file_name, "%d.txt", ++file_counter );
-            printf("length %ld\n",script_buffer_length);
             fclose( fp );
         }
         while( (fp = fopen( file_name, "rb" )) != NULL );
@@ -297,9 +292,16 @@ int ScriptParser::readScript()
     
     if ( encrypt_flag ){
         fp = fopen( "nscript.dat", "rb" );
-        while( (length = fread( p_script_buffer, 1, READ_LENGTH, fp )) ){
-            for ( j=0 ; j<length ; j++ ) p_script_buffer[j] ^= 0x84;
-            p_script_buffer += length;
+        fseek( fp, 0, SEEK_END );
+        len = ftell( fp );
+        fseek( fp, 0, SEEK_SET );
+        while( len > 0 ){
+            if ( len > READ_LENGTH ) c = READ_LENGTH;
+            else                     c = len;
+            len -= c;
+            fread( p_script_buffer, 1, c, fp );
+            for ( j=0 ; j<c ; j++ ) p_script_buffer[j] ^= 0x84;
+            p_script_buffer += c;
         }
         fclose( fp );
     }
@@ -307,7 +309,16 @@ int ScriptParser::readScript()
         for ( i=0 ; i<file_counter ; i++ ){
             sprintf( file_name, "%d.txt", i );
             fp = fopen( file_name, "rb" );
-            while( (length = fread( p_script_buffer, 1, READ_LENGTH, fp ) )) p_script_buffer += length;
+            fseek( fp, 0, SEEK_END );
+            len = ftell( fp );
+            fseek( fp, 0, SEEK_SET );
+            while( len > 0 ){
+                if ( len > READ_LENGTH ) c = READ_LENGTH;
+                else                     c = len;
+                len -= c;
+                fread( p_script_buffer, 1, c, fp );
+                p_script_buffer += c;
+            }
             fclose( fp );
         }
     }
@@ -606,7 +617,7 @@ int ScriptParser::labelScript()
     }
 
     label_info = new struct LabelInfo[ num_of_labels ];
-    
+
     p_script_buffer = p_start_buffer;
     while( !readLine( &p_script_buffer, true ) ){
         if ( string_buffer[0] == '*' ){
@@ -627,10 +638,10 @@ int ScriptParser::labelScript()
         }
     }
 #if 0
-    printf("num_of_labels = %d\n", num_of_labels);
     for ( int i=0 ; i<num_of_labels ; i++ ){
-        printf("name [%s] %p %d\n", label_info[i].name, label_info[i].start_address, label_info[i].num_of_lines );
+        printf("name [%s] %p %d\n", label_info[i].name, label_info[i].start_address - script_buffer, label_info[i].num_of_lines );
     }
+    printf("num_of_labels = %d %d\n", num_of_labels, script_buffer_length );
 #endif
 
     return 0;
@@ -649,7 +660,7 @@ int ScriptParser::parseLine()
     char *p_string_buffer = string_buffer + string_buffer_offset;
     readToken( &p_string_buffer, tmp_string_buffer );
     command_len = strlen( tmp_string_buffer );
-    
+
     while( func_lut[ lut_counter ].method ){
         if ( !strcmp( func_lut[ lut_counter ].command, tmp_string_buffer ) ){
             ret = (this->*func_lut[ lut_counter ].method)();

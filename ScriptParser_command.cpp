@@ -77,7 +77,7 @@ int ScriptParser::timeCommand()
     assert ( tmp_string_buffer[0] == '%' );
     num_variables[ atoi( tmp_string_buffer + 1 ) ] = tm->tm_sec;
 
-    printf("timeCommand %d, %d %d\n", tm->tm_hour, tm->tm_min, tm->tm_sec );
+    //printf("timeCommand %d, %d %d\n", tm->tm_hour, tm->tm_min, tm->tm_sec );
 
     return RET_CONTINUE;
 }
@@ -131,7 +131,7 @@ int ScriptParser::skipCommand()
     char *p_string_buffer = string_buffer + string_buffer_offset + 4; // strlen("skip") = 4
     int skip_num = readInt( &p_string_buffer, tmp_string_buffer );
     int skip_offset = current_link_label_info->current_line + skip_num;
-    printf("skipCommand %d\n", skip_num );
+    //printf("skipCommand %d\n", skip_num );
 
     while ( skip_offset >= current_link_label_info->label_info.num_of_lines ){ 
         skip_offset -= current_link_label_info->label_info.num_of_lines;
@@ -176,7 +176,6 @@ int ScriptParser::savenameCommand()
 
 int ScriptParser::rmenuCommand()
 {
-    printf(" rmenuCommand \n");
     MenuLink *menu;
     
     /* ---------------------------------------- */
@@ -212,8 +211,6 @@ int ScriptParser::rmenuCommand()
         last_menu_link = menu;
         menu_link_num++;
     }
-    
-        
     
     return RET_CONTINUE;
 }
@@ -288,14 +285,14 @@ int ScriptParser::movCommand()
     
     if ( num_flag ){
         num_variables[ no ] = readInt( &p_string_buffer, tmp_string_buffer );
-        printf("movCommand num_variables[ %d ] = %d\n",no, num_variables[no]);
+        //printf("movCommand num_variables[ %d ] = %d\n",no, num_variables[no]);
     }
     else{
         readStr( &p_string_buffer, tmp_string_buffer );
         delete[] str_variables[ no ];
         str_variables[ no ] = new char[ strlen( tmp_string_buffer ) + 1 ];
         memcpy( str_variables[ no ], tmp_string_buffer, strlen( tmp_string_buffer ) + 1 );
-        printf("movCommand str_variables[ %d ] = %s\n",no, str_variables[no]);
+        //printf("movCommand str_variables[ %d ] = %s\n",no, str_variables[no]);
     }
 
     //string_buffer_offset = p_string_buffer - string_buffer;
@@ -398,12 +395,12 @@ int ScriptParser::ifCommand()
     if ( string_buffer[0] == 'n' ){
         if_flag = false;
         p_string_buffer = string_buffer + string_buffer_offset + 5; // strlen("notif") = 5
-        printf("notifCommand %s\n", p_string_buffer );
+        //printf("notifCommand %s\n", p_string_buffer );
     }
     else{
         if_flag = true;
         p_string_buffer = string_buffer + string_buffer_offset + 2; // strlen("if") = 2
-        printf("ifCommand %s\n", p_string_buffer );
+        //printf("ifCommand %s\n", p_string_buffer );
     }
     //readStr( &p_string_buffer, tmp_string_buffer, false );
 
@@ -414,17 +411,17 @@ int ScriptParser::ifCommand()
             readStr( &p_string_buffer, tmp_string_buffer );
             readStr( &p_string_buffer, tmp_string_buffer );
             f = cBR->getAccessFlag( tmp_string_buffer );
-            printf("fchk %s(%d,%d) ", tmp_string_buffer, cBR->getAccessFlag( tmp_string_buffer ), condition_flag );
+            //printf("fchk %s(%d,%d) ", tmp_string_buffer, cBR->getAccessFlag( tmp_string_buffer ), condition_flag );
         }
         else if ( *p_string_buffer == 'l' ){ // lchk
             readStr( &p_string_buffer, tmp_string_buffer );
             readStr( &p_string_buffer, tmp_string_buffer );
             f = getLabelAccessFlag( tmp_string_buffer+1 );
-            printf("lchk %s(%d,%d) ", tmp_string_buffer, getLabelAccessFlag( tmp_string_buffer+1 ), condition_flag );
+            //printf("lchk %s(%d,%d) ", tmp_string_buffer, getLabelAccessFlag( tmp_string_buffer+1 ), condition_flag );
         }
         else{
             left_value = readInt( &p_string_buffer, tmp_string_buffer );
-            printf("%s(%d) ", tmp_string_buffer, left_value );
+            //printf("%s(%d) ", tmp_string_buffer, left_value );
 
             while ( *p_string_buffer == ' ' || *p_string_buffer == '\t' ) p_string_buffer++;
             token_start = p_string_buffer;
@@ -432,12 +429,12 @@ int ScriptParser::ifCommand()
                     *p_string_buffer == '=' || *p_string_buffer == '!' ) p_string_buffer++;
             memcpy( eval_str, token_start, p_string_buffer-token_start );
             eval_str[ p_string_buffer-token_start ] = '\0';
-            printf("%s ", eval_str );
+            //printf("%s ", eval_str );
 
             while ( *p_string_buffer == ' ' || *p_string_buffer == '\t' ) p_string_buffer++;
 
             right_value = readInt( &p_string_buffer, tmp_string_buffer );
-            printf("%s(%d) ", tmp_string_buffer, right_value );
+            //printf("%s(%d) ", tmp_string_buffer, right_value );
 
             if ( !strcmp( eval_str, ">=" ) )      f = (left_value >= right_value);
             else if ( !strcmp( eval_str, "<=" ) ) f = (left_value <= right_value);
@@ -452,7 +449,7 @@ int ScriptParser::ifCommand()
         while ( *p_string_buffer == ' ' || *p_string_buffer == '\t' ) p_string_buffer++;
 
         if ( *p_string_buffer == '&' ){
-            printf("& " );
+            //printf("& " );
             while ( *p_string_buffer == '&' ) p_string_buffer++;
             continue;
         }
@@ -461,12 +458,12 @@ int ScriptParser::ifCommand()
 
     /* Execute command */
     if ( condition_flag ){
-        printf(" = true (%d, %d)\n", if_flag, condition_flag );
+        //printf(" = true (%d, %d)\n", if_flag, condition_flag );
         string_buffer_offset = p_string_buffer - string_buffer;
         return RET_CONTINUE_NONEXT;
     }
     else{
-        printf(" = false\n");
+        //printf(" = false\n");
         while ( *p_string_buffer != '\0' ) p_string_buffer++;
         string_buffer_offset = p_string_buffer - string_buffer;
         return RET_CONTINUE;
@@ -582,8 +579,6 @@ int ScriptParser::globalonCommand()
 
 int ScriptParser::gameCommand()
 {
-    printf(" gameCommand\n" );
-
     current_link_label_info->label_info = lookupLabel( "start" );
     current_link_label_info->current_line = 0;
     current_link_label_info->offset = 0;
@@ -719,7 +714,7 @@ int ScriptParser::dateCommand()
     assert ( tmp_string_buffer[0] == '%' );
     num_variables[ atoi( tmp_string_buffer + 1 ) ] = tm->tm_mday;
 
-    printf("dateCommand %d, %d %d\n", tm->tm_year + 1900, tm->tm_mon + 1, tm->tm_mday );
+    //printf("dateCommand %d, %d %d\n", tm->tm_year + 1900, tm->tm_mon + 1, tm->tm_mday );
 
     return RET_CONTINUE;
 }

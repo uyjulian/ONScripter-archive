@@ -86,14 +86,22 @@ size_t DirectReader::getFileLength( char *file_name )
 size_t DirectReader::getFile( char *file_name, unsigned char *buffer )
 {
     FILE *fp;
-    size_t length = 0;
+    int c;
+    size_t total, len = 0;
     
     if ( (fp = fopen( file_name, "rb" )) != NULL ){
-        while( (length = fread( buffer, 1, READ_LENGTH, fp )) ){
-            buffer += length;
+        fseek( fp, 0, SEEK_END );
+        total = len = ftell( fp );
+        fseek( fp, 0, SEEK_SET );
+        while( len > 0 ){
+            if ( len > READ_LENGTH ) c = READ_LENGTH;
+            else                     c = len;
+            len -= c;
+            fread( buffer, 1, c, fp );
+            buffer += c;
         }
         fclose( fp );
     }
 
-    return length;
+    return total;
 }

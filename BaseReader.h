@@ -27,6 +27,10 @@
 #include <stdio.h>
 #include <assert.h>
 
+#ifndef SEEK_END
+#define SEEK_END 2
+#endif
+
 struct BaseReader
 {
     struct FileInfo{

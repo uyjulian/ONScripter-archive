@@ -59,6 +59,25 @@ int ScriptParser::versionstrCommand()
     return RET_CONTINUE;
 }
 
+int ScriptParser::transmodeCommand()
+{
+    assert( current_mode == DEFINE_MODE );
+    char *p_string_buffer = string_buffer + string_buffer_offset + 9; // strlen("transmode") = 9
+
+    readStr( &p_string_buffer, tmp_string_buffer );
+
+    if ( !strcmp( tmp_string_buffer, "leftup" ) ){
+        trans_mode = TRANS_TOPLEFT;
+    }
+    else if ( !strcmp( tmp_string_buffer, "copy" ) ){
+        trans_mode = TRANS_COPY;
+    }
+    else if ( !strcmp( tmp_string_buffer, "alpha" ) ){
+        trans_mode = TRANS_ALPHA;
+    }
+    return RET_CONTINUE;
+}
+
 int ScriptParser::timeCommand()
 {
     char *p_string_buffer = string_buffer + string_buffer_offset + 4; // strlen("time") = 4

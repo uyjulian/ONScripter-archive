@@ -94,6 +94,7 @@ static struct FuncLUT{
     {"dwavestop", &ONScripterLabel::dwavestopCommand},
     {"dwaveloop", &ONScripterLabel::dwaveCommand},
     {"dwave", &ONScripterLabel::dwaveCommand},
+    {"delay", &ONScripterLabel::delayCommand},
     {"csp", &ONScripterLabel::cspCommand},
     {"click", &ONScripterLabel::clickCommand},
     {"cl", &ONScripterLabel::clCommand},
@@ -390,6 +391,7 @@ void ONScripterLabel::flush( int x, int y, int wx, int wy )
         rect.y = y;
         rect.w = wx;
         rect.h = wy;
+        
         SDL_BlitSurface( text_surface, &rect, screen_surface, &rect );
         SDL_UpdateRect( screen_surface, x, y, wx, wy );
     }
@@ -428,7 +430,7 @@ int ONScripterLabel::eventLoop()
             break;
                 
           case ONS_SOUND_EVENT:
-            printf("stoped music\n");
+            //printf("stoped music\n");
             playstopCommand();
             if ( !mp3_play_once_flag ) playMP3( current_cd_track );
             break;
@@ -957,10 +959,16 @@ int ONScripterLabel::setEffect( int immediate_flag, char *buf )
 
 int ONScripterLabel::doEffect( int effect_no, struct TaggedInfo *tag, int effect_image )
 {
+    effect_start_time = SDL_GetTicks();
+    if ( effect_counter == 0 ) effect_start_time_old = effect_start_time - 1;
+    //printf("effect_counter %d timer between %d %d\n",effect_counter,effect_start_time,effect_start_time_old);
+    effect_timer_resolution = effect_start_time - effect_start_time_old;
+    effect_start_time_old = effect_start_time;
+    
     //printf("doEffect %d %d\n", effect_no, effect_counter );
     int i;
-    int width, width2, width3, width_old;
-    int height, height2, height3, height_old;
+    int width, width2;
+    int height, height2;
     SDL_Rect src_rect, dst_rect;
 
     if ( effect_counter == 0 ){
@@ -1052,15 +1060,13 @@ int ONScripterLabel::doEffect( int effect_no, struct TaggedInfo *tag, int effect
         break;
 
       case 6: // Left curtain
-        width     = EFFECT_STRIPE_CURTAIN_WIDTH * effect_counter * 2 / effect.duration;
-        width_old = EFFECT_STRIPE_CURTAIN_WIDTH * (effect_counter - EFFECT_TIMER_RESOLUTION) * 2 / effect.duration;
-        for ( i=0 ; i<WIDTH/EFFECT_STRIPE_CURTAIN_WIDTH ; i++ ){
-            width2 = width     - EFFECT_STRIPE_CURTAIN_WIDTH * EFFECT_STRIPE_CURTAIN_WIDTH * i / WIDTH;
-            width3 = width_old - EFFECT_STRIPE_CURTAIN_WIDTH * EFFECT_STRIPE_CURTAIN_WIDTH * i / WIDTH;
-            if ( width3 >= 0 && width2 - width3 <= EFFECT_STRIPE_CURTAIN_WIDTH ){
-                src_rect.x = dst_rect.x = i * EFFECT_STRIPE_CURTAIN_WIDTH + width3;
+        width = EFFECT_STRIPE_CURTAIN_WIDTH * effect_counter * 2 / effect.duration;
+        for ( i=0 ; i<=WIDTH/EFFECT_STRIPE_CURTAIN_WIDTH ; i++ ){
+            width2 = width - EFFECT_STRIPE_CURTAIN_WIDTH * EFFECT_STRIPE_CURTAIN_WIDTH * i / WIDTH;
+            if ( width2 >= 0 ){
+                src_rect.x = dst_rect.x = i * EFFECT_STRIPE_CURTAIN_WIDTH;
                 src_rect.y = dst_rect.y = 0;
-                src_rect.w = dst_rect.w = width2 - width3;
+                src_rect.w = dst_rect.w = width2;
                 src_rect.h = dst_rect.h = HEIGHT;
                 SDL_BlitSurface( effect_dst_surface, &src_rect, text_surface, &dst_rect );
             }
@@ -1068,15 +1074,14 @@ int ONScripterLabel::doEffect( int effect_no, struct TaggedInfo *tag, int effect
         break;
 
       case 7: // Right curtain
-        width     = EFFECT_STRIPE_CURTAIN_WIDTH * effect_counter * 2 / effect.duration;
-        width_old = EFFECT_STRIPE_CURTAIN_WIDTH * (effect_counter - EFFECT_TIMER_RESOLUTION) * 2 / effect.duration;
-        for ( i=1 ; i<=WIDTH/EFFECT_STRIPE_CURTAIN_WIDTH ; i++ ){
-            width2 = width     - EFFECT_STRIPE_CURTAIN_WIDTH * EFFECT_STRIPE_CURTAIN_WIDTH * (WIDTH/EFFECT_STRIPE_CURTAIN_WIDTH - i) / WIDTH;
-            width3 = width_old - EFFECT_STRIPE_CURTAIN_WIDTH * EFFECT_STRIPE_CURTAIN_WIDTH * (WIDTH/EFFECT_STRIPE_CURTAIN_WIDTH - i) / WIDTH;
-            if ( width3 >= 0 && width2 - width3 <= EFFECT_STRIPE_CURTAIN_WIDTH ){
-                src_rect.x = dst_rect.x = i * EFFECT_STRIPE_CURTAIN_WIDTH - width3 - 1;
+        width = EFFECT_STRIPE_CURTAIN_WIDTH * effect_counter * 2 / effect.duration;
+        for ( i=0 ; i<=WIDTH/EFFECT_STRIPE_CURTAIN_WIDTH ; i++ ){
+            width2 = width - EFFECT_STRIPE_CURTAIN_WIDTH * EFFECT_STRIPE_CURTAIN_WIDTH * i / WIDTH;
+            if ( width2 >= 0 ){
+                if ( width2 > EFFECT_STRIPE_CURTAIN_WIDTH ) width2 = EFFECT_STRIPE_CURTAIN_WIDTH;
+                src_rect.x = dst_rect.x = WIDTH - i * EFFECT_STRIPE_CURTAIN_WIDTH - width2;
                 src_rect.y = dst_rect.y = 0;
-                src_rect.w = dst_rect.w = width2 - width3;
+                src_rect.w = dst_rect.w = width2;
                 src_rect.h = dst_rect.h = HEIGHT;
                 SDL_BlitSurface( effect_dst_surface, &src_rect, text_surface, &dst_rect );
             }
@@ -1084,32 +1089,28 @@ int ONScripterLabel::doEffect( int effect_no, struct TaggedInfo *tag, int effect
         break;
 
       case 8: // Top curtain
-        height     = EFFECT_STRIPE_CURTAIN_WIDTH * effect_counter * 2 / effect.duration;
-        height_old = EFFECT_STRIPE_CURTAIN_WIDTH * (effect_counter - EFFECT_TIMER_RESOLUTION) * 2 / effect.duration;
-        for ( i=0 ; i<HEIGHT/EFFECT_STRIPE_CURTAIN_WIDTH ; i++ ){
-            height2 = height     - EFFECT_STRIPE_CURTAIN_WIDTH * EFFECT_STRIPE_CURTAIN_WIDTH * i / HEIGHT;
-            height3 = height_old - EFFECT_STRIPE_CURTAIN_WIDTH * EFFECT_STRIPE_CURTAIN_WIDTH * i / HEIGHT;
-            if ( height3>= 0 && height2 - height3 <= EFFECT_STRIPE_CURTAIN_WIDTH ){
+        height = EFFECT_STRIPE_CURTAIN_WIDTH * effect_counter * 2 / effect.duration;
+        for ( i=0 ; i<=HEIGHT/EFFECT_STRIPE_CURTAIN_WIDTH ; i++ ){
+            height2 = height - EFFECT_STRIPE_CURTAIN_WIDTH * EFFECT_STRIPE_CURTAIN_WIDTH * i / HEIGHT;
+            if ( height2 >= 0 ){
                 src_rect.x = dst_rect.x = 0;
-                src_rect.y = dst_rect.y = i * EFFECT_STRIPE_CURTAIN_WIDTH + height3;
+                src_rect.y = dst_rect.y = i * EFFECT_STRIPE_CURTAIN_WIDTH;
                 src_rect.w = dst_rect.w = WIDTH;
-                src_rect.h = dst_rect.h = height2 - height3;
+                src_rect.h = dst_rect.h = height2;
                 SDL_BlitSurface( effect_dst_surface, &src_rect, text_surface, &dst_rect );
             }
         }
         break;
 
       case 9: // Bottom curtain
-        height     = EFFECT_STRIPE_CURTAIN_WIDTH * effect_counter * 2 / effect.duration;
-        height_old = EFFECT_STRIPE_CURTAIN_WIDTH * (effect_counter - EFFECT_TIMER_RESOLUTION) * 2 / effect.duration;
-        for ( i=1 ; i<=HEIGHT/EFFECT_STRIPE_CURTAIN_WIDTH ; i++ ){
-            height2 = height     - EFFECT_STRIPE_CURTAIN_WIDTH * EFFECT_STRIPE_CURTAIN_WIDTH * (WIDTH/EFFECT_STRIPE_CURTAIN_WIDTH - i) / HEIGHT;
-            height3 = height_old - EFFECT_STRIPE_CURTAIN_WIDTH * EFFECT_STRIPE_CURTAIN_WIDTH * (WIDTH/EFFECT_STRIPE_CURTAIN_WIDTH - i) / HEIGHT;
-            if ( height3>= 0 && height2 - height3 <= EFFECT_STRIPE_CURTAIN_WIDTH ){
+        height = EFFECT_STRIPE_CURTAIN_WIDTH * effect_counter * 2 / effect.duration;
+        for ( i=0 ; i<=HEIGHT/EFFECT_STRIPE_CURTAIN_WIDTH ; i++ ){
+            height2 = height - EFFECT_STRIPE_CURTAIN_WIDTH * EFFECT_STRIPE_CURTAIN_WIDTH * i / HEIGHT;
+            if ( height2 >= 0 ){
                 src_rect.x = dst_rect.x = 0;
-                src_rect.y = dst_rect.y = i * EFFECT_STRIPE_CURTAIN_WIDTH - height3 - 1;
+                src_rect.y = dst_rect.y = HEIGHT - i * EFFECT_STRIPE_CURTAIN_WIDTH - height2;
                 src_rect.w = dst_rect.w = WIDTH;
-                src_rect.h = dst_rect.h = height2 - height3;
+                src_rect.h = dst_rect.h = height2;
                 SDL_BlitSurface( effect_dst_surface, &src_rect, text_surface, &dst_rect );
             }
         }
@@ -1199,7 +1200,7 @@ int ONScripterLabel::doEffect( int effect_no, struct TaggedInfo *tag, int effect
 
     //printf("%d / %d\n", effect_counter, effect.duration);
         
-    effect_counter += EFFECT_TIMER_RESOLUTION;
+    effect_counter += effect_timer_resolution;
     if ( effect_counter < effect.duration ) return RET_WAIT;
     else{
         if ( effect_image == COLOR_EFFECT_IMAGE || effect_image == BG_EFFECT_IMAGE ){
@@ -1507,7 +1508,7 @@ void ONScripterLabel::parseTaggedString( char *buffer, struct TaggedInfo *tag )
     tag->remove();
     
     int i, tmp;
-    tag->trans_mode = TRANS_TOPLEFT;
+    tag->trans_mode = trans_mode;
 
     if ( buffer[0] == ':' ){
         buffer++;
@@ -1994,10 +1995,11 @@ void ONScripterLabel::startCursor( int click )
 
     src_rect.x = sentence_font.xy[0] * sentence_font.pitch_xy[0] + sentence_font.top_xy[0] + cursor_info[ no ].xy[0];
     src_rect.y = sentence_font.xy[1] * sentence_font.pitch_xy[1] + sentence_font.top_xy[1] + cursor_info[ no ].xy[1];
-    src_rect.w = cursor_info[ no ].image_surface->w / cursor_info[ no ].tag.num_of_cells;
-    src_rect.h = cursor_info[ no ].image_surface->h;
-    SDL_BlitSurface( text_surface, &src_rect, cursor_info[ no ].preserve_surface, NULL );
-
+    if ( cursor_info[ no ].image_surface ){
+        src_rect.w = cursor_info[ no ].image_surface->w / cursor_info[ no ].tag.num_of_cells;
+        src_rect.h = cursor_info[ no ].image_surface->h;
+        SDL_BlitSurface( text_surface, &src_rect, cursor_info[ no ].preserve_surface, NULL );
+    }
     event_mode |= WAIT_CURSOR_MODE;
 }
 
@@ -2012,9 +2014,10 @@ void ONScripterLabel::endCursor( int click )
     
     dst_rect.x = sentence_font.xy[0] * sentence_font.pitch_xy[0] + sentence_font.top_xy[0] + cursor_info[ no ].xy[0];
     dst_rect.y = sentence_font.xy[1] * sentence_font.pitch_xy[1] + sentence_font.top_xy[1] + cursor_info[ no ].xy[1];
-    SDL_BlitSurface( cursor_info[ no ].preserve_surface, NULL, text_surface, &dst_rect );
-    flush( dst_rect.x, dst_rect.y, cursor_info[ no ].preserve_surface->w, cursor_info[ no ].preserve_surface->h );
-
+    if ( cursor_info[ no ].preserve_surface ){
+        SDL_BlitSurface( cursor_info[ no ].preserve_surface, NULL, text_surface, &dst_rect );
+        flush( dst_rect.x, dst_rect.y, cursor_info[ no ].preserve_surface->w, cursor_info[ no ].preserve_surface->h );
+    }
     event_mode &= ~WAIT_CURSOR_MODE;
 }
 
@@ -2177,7 +2180,6 @@ int ONScripterLabel::textCommand( char *text )
                 event_mode = WAIT_SLEEP_MODE;
                 if ( flag ) event_mode |= WAIT_MOUSE_MODE | WAIT_KEY_MODE;
                 key_pressed_flag = false;
-                printf("!w sleep %d flag %d\n",t, event_mode);
                 startTimer( t );
                 string_buffer_offset -= 2;
                 return RET_WAIT;
@@ -2243,7 +2245,6 @@ int ONScripterLabel::waveCommand()
 {
     char *p_string_buffer;
 
-    printf("waveCommand %s\n", string_buffer + string_buffer_offset );
     if ( !strncmp( string_buffer + string_buffer_offset, "waveloop", 8 ) ){
         wave_play_once_flag = true;
         p_string_buffer = string_buffer + string_buffer_offset + 8; // strlen("waveloop") = 8
@@ -2444,7 +2445,7 @@ int ONScripterLabel::selectCommand()
     int xy[2];
     if ( ret != RET_NOMATCH ) return ret;
 
-    printf("selectCommand %d\n", event_mode);
+    //printf("selectCommand %d\n", event_mode);
     char *p_script_buffer = current_link_label_info->current_script;
     readLine( &p_script_buffer );
     int select_mode;
@@ -2475,7 +2476,7 @@ int ONScripterLabel::selectCommand()
         last_select_link = root_select_link.next;
         while ( last_select_link ){
             if ( current_button_state.button == counter++ ){
-                printf("button %d label %s is selected \n",current_button_state.button, last_select_link->label);
+                //printf("button %d label %s is selected \n",current_button_state.button, last_select_link->label);
                 break;
             }
             last_select_link = last_select_link->next;
@@ -2536,7 +2537,10 @@ int ONScripterLabel::selectCommand()
                     comma_flag = true;
                     first_token_flag = false;
                 }
-                readLine( &p_script_buffer );
+                do{
+                    readLine( &p_script_buffer );
+                }
+                while ( string_buffer[ string_buffer_offset ] == ';' || string_buffer[ string_buffer_offset ] == '\0' );
                 select_label_info.current_line++;
                 //printf("after readline %s\n",string_buffer);
                 
@@ -2563,7 +2567,7 @@ int ONScripterLabel::selectCommand()
             last_button_link = last_button_link->next;
             last_button_link->no = counter++;
 
-            printf(" link text %s label %s\n", tmp_select_link->text, tmp_select_link->label );
+            //printf(" link text %s label %s\n", tmp_select_link->text, tmp_select_link->label );
             tmp_select_link = tmp_select_link->next;
         }
         SDL_BlitSurface( text_surface, NULL, select_surface, NULL );
@@ -2669,8 +2673,6 @@ int ONScripterLabel::resetCommand()
 
 int ONScripterLabel::playstopCommand()
 {
-    printf("playstopCommand()\n");
-
     if ( mp3_sample ){
         Mix_FadeOutMusic( 1000 );
         Mix_HookMusic( NULL, NULL );
@@ -2757,7 +2759,6 @@ int ONScripterLabel::playCommand()
 {
     char *p_string_buffer;
 
-    printf("playCommand %s\n", string_buffer );
     if ( !strncmp( string_buffer + string_buffer_offset, "playonce", 8 ) ){
         mp3_play_once_flag = true;
         p_string_buffer = string_buffer + string_buffer_offset + 8; // strlen("playonce") = 8
@@ -2790,7 +2791,6 @@ int ONScripterLabel::mp3Command()
 {
     char *p_string_buffer;
     
-    printf("mp3Command %s\n", string_buffer + string_buffer_offset );
     if ( !strncmp( string_buffer + string_buffer_offset, "mp3save", 7 ) ){
         mp3_play_once_flag = true;
         p_string_buffer = string_buffer + string_buffer_offset + 7; // strlen("mp3save") = 7
@@ -2818,7 +2818,7 @@ int ONScripterLabel::mp3Command()
 
 int ONScripterLabel::mspCommand()
 {
-    printf("mspCommand %d\n", event_mode);
+    //printf("mspCommand %d\n", event_mode);
     int no;
     char *p_string_buffer;
 
@@ -2909,8 +2909,6 @@ int ONScripterLabel::ldCommand()
     int no, effect_no, i, ret;
     TaggedInfo tagged_info;
     
-    //printf("ldcommand %d %s\n",string_buffer_offset, p_string_buffer );
-    
     readStr( &p_string_buffer, tmp_string_buffer );
     sprintf( buf, "ld %s",tmp_string_buffer );
     if ( tmp_string_buffer[0] == 'l' )      no = 0;
@@ -2919,7 +2917,6 @@ int ONScripterLabel::ldCommand()
 
     readStr( &p_string_buffer, tmp_string_buffer );
     sprintf( buf+strlen(buf), ", \"%s\",", tmp_string_buffer );
-    //printf("%s\n",tmp_string_buffer );
     
     if ( event_mode & EFFECT_EVENT_MODE ){
         effect_no = readInt( &p_string_buffer, tmp_string_buffer );
@@ -3025,6 +3022,25 @@ int ONScripterLabel::dwaveCommand()
     return RET_CONTINUE;
 }
 
+int ONScripterLabel::delayCommand()
+{
+    char *p_string_buffer = string_buffer + string_buffer_offset + 5; // strlen("delay") = 5
+
+    int t = readInt( &p_string_buffer, tmp_string_buffer );
+
+    if ( event_mode & (WAIT_SLEEP_MODE | WAIT_MOUSE_MODE | WAIT_KEY_MODE) ){
+        event_mode = IDLE_EVENT_MODE;
+    }
+    else{
+        event_mode = WAIT_SLEEP_MODE | WAIT_MOUSE_MODE | WAIT_KEY_MODE;
+        key_pressed_flag = false;
+        startTimer( t );
+        return RET_WAIT;
+    }
+
+    return RET_CONTINUE;
+}
+
 int ONScripterLabel::cspCommand()
 {
     char *p_string_buffer = string_buffer + string_buffer_offset + 3; // strlen("csp") = 3
@@ -3098,7 +3114,6 @@ int ONScripterLabel::clCommand()
             if ( tmp_effect.image ) delete[] tmp_effect.image;
             tmp_effect.image = new char[ strlen(tmp_string_buffer ) + 1 ];
             memcpy( tmp_effect.image, tmp_string_buffer, strlen( tmp_string_buffer ) + 1 );
-            //printf("clCommand tmp %d %d %s\n",tmp_effect.effect,tmp_effect.duration, tmp_effect.image );
             ret = doEffect( TMP_EFFECT, NULL, TACHI_EFFECT_IMAGE );
         }
         else{

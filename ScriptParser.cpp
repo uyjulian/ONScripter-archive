@@ -39,6 +39,7 @@ static struct FuncLUT{
     {"windoweffect",      &ScriptParser::effectCommand},
     {"versionstr",      &ScriptParser::versionstrCommand},
     {"underline", &ScriptParser::underlineCommand},
+    {"transmode", &ScriptParser::transmodeCommand},
     {"time", &ScriptParser::timeCommand},
     {"sub", &ScriptParser::subCommand},
     {"stralias", &ScriptParser::straliasCommand},
@@ -111,6 +112,10 @@ ScriptParser::ScriptParser()
     jumpf_flag = false;
     srand( time(NULL) );
     z_order = 25;
+    
+    /* ---------------------------------------- */
+    /* Transmode related variables */
+    trans_mode = TRANS_TOPLEFT;
     
     /* ---------------------------------------- */
     /* Save/Load related variables */
@@ -432,7 +437,6 @@ int ScriptParser::readLine( char **buf, bool raw_flag )
     int string_counter=0;
     char *end_point = script_buffer + script_buffer_length;
     bool head_flag = true;
-    string_buffer_offset = 0;
     text_line_flag = true;
     char num_buf[10], num_sjis_buf[3];
     bool quat_flag = false, comment_flag = false;
@@ -442,7 +446,7 @@ int ScriptParser::readLine( char **buf, bool raw_flag )
         if ( *buf == end_point ) return -1;
         ch = *(*buf)++;
         
-        if ( head_flag && (ch == ' ' || ch == '\t') ){
+        if ( head_flag && (ch == ' ' || ch == '\t' || ch == ':' ) ){
             continue;
         }
 
@@ -521,6 +525,10 @@ int ScriptParser::readLine( char **buf, bool raw_flag )
     }
 
     addStringBuffer( '\0', string_counter++ );
+
+    string_buffer_offset = 0;
+    while ( string_buffer[ string_counter ] == ' ' || string_buffer[ string_counter ] == '\t' )
+        string_counter++;
     //if ( !raw_flag )
     //printf("end of readLine %s\n",string_buffer );
 

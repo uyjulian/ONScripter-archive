@@ -95,6 +95,7 @@ public:
     int endCommand();
     int dwavestopCommand();
     int dwaveCommand();
+    int delayCommand();
     int cspCommand();
     int clickCommand();
     int clCommand();
@@ -130,15 +131,7 @@ private:
             BG_EFFECT_IMAGE           = 2,
             TACHI_EFFECT_IMAGE        = 3
             } EFFECT_IMAGE;
-    typedef enum{
-        TRANS_CLEAR = 0,
-        TRANS_ALPHA = 1,
-            TRANS_TOPLEFT = 2,
-            TRANS_COPY = 3,
-            TRANS_STRING = 4,
-            TRANS_DIRECT = 5,
-            TRANS_PALLET = 6
-            } TRANS_MODE;
+
     struct ButtonState{
         int x, y, button;
     } current_button_state, volatile_button_state, last_mouse_state, shelter_mouse_state;
@@ -229,6 +222,12 @@ private:
     SDL_Surface *shelter_select_surface; // Intermediate buffer to store accumulation_surface when entering system menu
     SDL_Surface *shelter_text_surface; // Intermediate buffer to store text_surface when entering system menu
 
+    /* ---------------------------------------- */
+    /* Effect related variables */
+    int effect_timer_resolution;
+    int effect_start_time;
+    int effect_start_time_old;
+    
     /* ---------------------------------------- */
     /* Select related variables */
     struct SelectLink root_select_link, *last_select_link;

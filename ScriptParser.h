@@ -36,7 +36,6 @@
 #define ONSCRITER_VERSION 192
 
 #define MINIMUM_TIMER_RESOLUTION 10
-#define EFFECT_TIMER_RESOLUTION 100
 
 #define VARIABLE_RANGE 4096
 #define MAX_SAVE_FILE 20
@@ -143,6 +142,7 @@ public:
     /* Command */
     int versionstrCommand();
     int underlineCommand();
+    int transmodeCommand();
     int timeCommand();
     int subCommand();
     int straliasCommand();
@@ -216,6 +216,19 @@ protected:
     typedef enum{ WINDOW_EFFECT = -1, PRINT_EFFECT = -2, TMP_EFFECT = -3  } EFFECT_MODE;
     struct EffectLink window_effect, print_effect, tmp_effect;
 
+    /* ---------------------------------------- */
+    /* Transmode related variables */
+    typedef enum{
+        TRANS_CLEAR = 0,
+        TRANS_ALPHA = 1,
+            TRANS_TOPLEFT = 2,
+            TRANS_COPY = 3,
+            TRANS_STRING = 4,
+            TRANS_DIRECT = 5,
+            TRANS_PALLET = 6
+            } TRANS_MODE;
+    int trans_mode;
+    
     /* ---------------------------------------- */
     /* Save/Load related variables */
     struct SaveFileInfo{

@@ -10,7 +10,7 @@ EXESUFFIX =
 OBJSUFFIX = .o
 
 .SUFFIXES:
-.SUFFIXES: $(OBJSUFFIX) .cpp .idl .h .moc .ui
+.SUFFIXES: $(OBJSUFFIX) .cpp .h
 
 CC = g++ 
 LD = g++ -o 

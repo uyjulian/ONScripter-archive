@@ -164,14 +164,16 @@ void ONScripterLabel::mousePressEvent( SDL_MouseButtonEvent *event )
     else return;
     
     if ( skip_flag ) skip_flag = false;
-    
-    if ( event_mode & WAIT_INPUT_MODE && 
+
+    if ( ( event_mode & WAIT_INPUT_MODE ) &&
+         ( autoclick_timer == 0 || (event_mode & WAIT_BUTTON_MODE) ) &&
          volatile_button_state.button == -1 && 
          root_menu_link.next ){
         system_menu_mode = SYSTEM_MENU;
     }
     
-    if ( event_mode & (WAIT_INPUT_MODE | WAIT_BUTTON_MODE) ){
+    if ( event_mode & (WAIT_INPUT_MODE | WAIT_BUTTON_MODE) &&
+         ( autoclick_timer == 0 || (event_mode & WAIT_BUTTON_MODE)) ){
         playClickVoice();
         stopAnimation( clickstr_state );
         advancePhase();
@@ -402,7 +404,8 @@ void ONScripterLabel::keyPressEvent( SDL_KeyboardEvent *event )
 
     if ( event->type == SDL_KEYDOWN ) return;
     
-    if ( event_mode & (WAIT_INPUT_MODE | WAIT_BUTTON_MODE) ){
+    if ( ( event_mode & (WAIT_INPUT_MODE | WAIT_BUTTON_MODE) ) &&
+         ( autoclick_timer == 0 || (event_mode & WAIT_BUTTON_MODE)) ){
         if ( event->keysym.sym == SDLK_ESCAPE && rmode_flag ){
             current_button_state.button  = -1;
             volatile_button_state.button = -1;
@@ -416,7 +419,8 @@ void ONScripterLabel::keyPressEvent( SDL_KeyboardEvent *event )
         }
     }
     
-    if ( event_mode & WAIT_INPUT_MODE && !key_pressed_flag ){
+    if ( event_mode & WAIT_INPUT_MODE && !key_pressed_flag &&
+         ( autoclick_timer == 0 || (event_mode & WAIT_BUTTON_MODE)) ){
         if (event->keysym.sym == SDLK_RETURN || 
             event->keysym.sym == SDLK_SPACE ){
             skip_flag = false;
@@ -485,6 +489,13 @@ void ONScripterLabel::timerEvent( void )
                 remaining_time = 0;
                 advancePhase();
             }
+
+            if ( event_mode & (WAIT_INPUT_MODE | WAIT_BUTTON_MODE) && 
+                 ( clickstr_state == CLICK_WAIT || 
+                   clickstr_state == CLICK_NEWPAGE ) ){ 
+                playClickVoice(); 
+                stopAnimation( clickstr_state ); 
+            } 
 
             event_mode &= ~WAIT_ANIMATION_MODE;
         }

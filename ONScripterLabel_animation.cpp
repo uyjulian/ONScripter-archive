@@ -358,7 +358,7 @@ void ONScripterLabel::stopAnimation( int click )
     if ( !(event_mode & WAIT_ANIMATION_MODE) ) return;
     
     event_mode &= ~WAIT_ANIMATION_MODE;
-    if ( textgosub_label || autoclick_timer > 0 ) return;
+    if ( textgosub_label ) return;
 
     if      ( click == CLICK_WAIT )    no = CURSOR_WAIT_NO;
     else if ( click == CLICK_NEWPAGE ) no = CURSOR_NEWPAGE_NO;

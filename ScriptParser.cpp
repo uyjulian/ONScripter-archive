@@ -370,7 +370,7 @@ void ScriptParser::readColor( uchar3 *color, const char *buf ){
 
 int ScriptParser::parseLine()
 {
-    int ret, lut_counter = 0;
+    int lut_counter = 0;
 
     if ( debug_level > 0 ) printf("ScriptParser::Parseline %s\n", script_h.getStringBuffer() );
 
@@ -384,9 +384,7 @@ int ScriptParser::parseLine()
         lut_counter++;
     }
 
-    if ( func_lut[ lut_counter ].method == 0 ) return RET_NOMATCH;
-
-    return ret;
+    return RET_NOMATCH;
 }
 
 void ScriptParser::skipToken() // skip phrase

@@ -38,7 +38,7 @@ extern size_t rescaleBMP( unsigned char *original_buffer, size_t length, unsigne
 int main( int argc, char **argv )
 {
     SarReader cSR;
-    unsigned long length, offset, buffer_length = 0;
+    unsigned long length, offset = 0, buffer_length = 0;
     unsigned char *buffer = NULL, *rescaled_buffer = NULL;
     unsigned int i, count;
     FILE *fp;

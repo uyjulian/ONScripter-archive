@@ -46,8 +46,8 @@ public:
     void reset();
     void *openFont( char *font_file, int ratio1, int ratio2 );
     void closeFont();
-    int x(); // return current x position
-    int y(); // return current y position
+    int x( int tatoyoko_mode ); // return current x position
+    int y( int tatoyoko_mode ); // return current y position
 };
 
 #endif // __FONT_INFO_H__

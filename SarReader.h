@@ -26,7 +26,7 @@
 
 #include "DirectReader.h"
 
-class SarReader : virtual public DirectReader
+class SarReader : public DirectReader
 {
 public:
     SarReader( char *path=NULL );

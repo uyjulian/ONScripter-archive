@@ -27,7 +27,7 @@
 #include "SarReader.h"
 #define MAX_EXTRA_ARCHIVE 9
 
-class NsaReader : virtual public SarReader
+class NsaReader : public SarReader
 {
 public:
     NsaReader( char *path=NULL );

@@ -54,8 +54,8 @@ int ONScripterLabel::proceedAnimation()
         if ( anim->valid && anim->is_animatable ){
             SDL_Rect dst_rect = anim->pos;
             if ( !anim->abs_flag ){
-                dst_rect.x += sentence_font.x() * screen_ratio1 / screen_ratio2;
-                dst_rect.y += sentence_font.y() * screen_ratio1 / screen_ratio2;
+                dst_rect.x += sentence_font.x( tateyoko_mode ) * screen_ratio1 / screen_ratio2;
+                dst_rect.y += sentence_font.y( tateyoko_mode ) * screen_ratio1 / screen_ratio2;
             }
 
             minimum_duration = estimateNextDuration( anim, &dst_rect, minimum_duration );
@@ -338,8 +338,8 @@ void ONScripterLabel::drawTaggedSurface( SDL_Surface *dst_surface, AnimationInfo
 
     SDL_Rect dst_rect = anim->pos;
     if ( !anim->abs_flag ){
-        dst_rect.x += sentence_font.x() * screen_ratio1 / screen_ratio2;
-        dst_rect.y += sentence_font.y() * screen_ratio1 / screen_ratio2;
+        dst_rect.x += sentence_font.x( tateyoko_mode ) * screen_ratio1 / screen_ratio2;
+        dst_rect.y += sentence_font.y( tateyoko_mode ) * screen_ratio1 / screen_ratio2;
     }
 
     alphaBlend( dst_surface, dst_rect,
@@ -366,8 +366,8 @@ void ONScripterLabel::stopAnimation( int click )
     dst_rect = cursor_info[ no ].pos;
 
     if ( !cursor_info[ no ].abs_flag ){
-        dst_rect.x += sentence_font.x() * screen_ratio1 / screen_ratio2;
-        dst_rect.y += sentence_font.y() * screen_ratio1 / screen_ratio2;
+        dst_rect.x += sentence_font.x( tateyoko_mode ) * screen_ratio1 / screen_ratio2;
+        dst_rect.y += sentence_font.y( tateyoko_mode ) * screen_ratio1 / screen_ratio2;
     }
 
     refreshSurface( text_surface, &dst_rect, REFRESH_SHADOW_MODE );

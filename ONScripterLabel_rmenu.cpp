@@ -35,7 +35,7 @@
 
 #define SAVEFILE_MAGIC_NUMBER "ONS"
 #define SAVEFILE_VERSION_MAJOR 1
-#define SAVEFILE_VERSION_MINOR 6
+#define SAVEFILE_VERSION_MINOR 7
 
 #define READ_LENGTH 4096
 
@@ -147,6 +147,10 @@ int ONScripterLabel::loadSaveFile( int no )
 
     /* ---------------------------------------- */
     /* Load text history */
+    if ( file_version >= 107 )
+        loadInt( fp, &tateyoko_mode );
+    else
+        tateyoko_mode = 0;
     loadInt( fp, &text_history_num );
     struct TextBuffer *tb = &text_buffer[0];
     for ( i=0 ; i<text_history_num ; i++ ){
@@ -460,6 +464,7 @@ int ONScripterLabel::saveSaveFile( int no )
     
     /* ---------------------------------------- */
     /* Save text history */
+    saveInt( fp, tateyoko_mode );
     saveInt( fp, text_history_num );
     struct TextBuffer *tb = current_text_buffer;
     for ( i=0 ; i<text_history_num ; i++ ){

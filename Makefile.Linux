@@ -13,14 +13,22 @@ OBJSUFFIX = .o
 .SUFFIXES:
 .SUFFIXES: $(OBJSUFFIX) .cpp .h
 
+# for GNU g++
 CC = g++ 
 LD = g++ -o 
 
-CFLAGS = -g -Wall -Wpointer-arith -fcheck-new -pipe -c $(INCS) $(DEFS)
-#CFLAGS = -O3 -Wall -Wpointer-arith -fcheck-new -pipe -c $(INCS) $(DEFS)
+CFLAGS = -g -Wall -Wpointer-arith -pipe -c $(INCS) $(DEFS)
+#CFLAGS = -O3 -Wall -Wpointer-arith -pipe -c $(INCS) $(DEFS)
+
+# for Intel compiler
+#CC = icc
+#LD = icc -o
+
+#CFLAGS = -O3 -tpp6 -xK -c $(INCS) $(DEFS)
+
 RM = rm -f
 
-TARGET = onscripter$(EXESUFFIX) sardec$(EXESUFFIX) sarconv$(EXESUFFIX) nsadec$(EXESUFFIX) nsaconv$(EXESUFFIX)
+TARGET = onscripter$(EXESUFFIX) sardec$(EXESUFFIX) nsadec$(EXESUFFIX) sarconv$(EXESUFFIX) nsaconv$(EXESUFFIX)
 CONV_LIBS = /usr/lib/libjpeg.a
 
 include Makefile.onscripter

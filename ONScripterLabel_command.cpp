@@ -23,7 +23,7 @@
 
 #include "ONScripterLabel.h"
 
-#define ONSCRIPTER_VERSION 198
+#define ONSCRIPTER_VERSION 200
 
 #define DEFAULT_CURSOR_WAIT    ":l/3,160,2;cursor0.bmp"
 #define DEFAULT_CURSOR_NEWPAGE ":l/3,160,2;cursor1.bmp"
@@ -159,6 +159,16 @@ int ONScripterLabel::texecCommand()
     return RET_CONTINUE;
 }
 
+int ONScripterLabel::tateyokoCommand()
+{
+    int mode = script_h.readInt();
+
+    if ( tateyoko_mode == 0 )
+        tateyoko_mode = mode;
+    
+    return RET_CONTINUE;
+}
+
 int ONScripterLabel::talCommand()
 {
     const char *buf = script_h.readStr();
@@ -171,7 +181,7 @@ int ONScripterLabel::talCommand()
         else           return doEffect( tmp_effect.effect, NULL, TACHI_EFFECT_IMAGE );
     }
     else{
-        int no;
+        int no = 0;
         if      ( loc == 'l' ) no = 0;
         else if ( loc == 'c' ) no = 1;
         else if ( loc == 'r' ) no = 2;
@@ -293,6 +303,7 @@ int ONScripterLabel::setwindow2Command()
 
 int ONScripterLabel::setwindowCommand()
 {
+    tateyoko_mode = 0;
     sentence_font.closeFont();
     sentence_font.top_xy[0] = script_h.readInt();
     sentence_font.top_xy[1] = script_h.readInt();
@@ -359,9 +370,9 @@ int ONScripterLabel::selectCommand()
     if ( ret != RET_NOMATCH ) return ret;
 
     int xy[2];
-    int select_mode;
+    int select_mode = SELECT_GOTO_MODE;
     SelectLink *last_select_link;
-    char *p_buf, *save_buf;
+    char *p_buf, *save_buf = NULL;
 
     if ( script_h.isName( "selnum" ) ){
         select_mode = SELECT_NUM_MODE;
@@ -428,7 +439,7 @@ int ONScripterLabel::selectCommand()
             shelter_soveon_flag = saveon_flag;
             saveoffCommand();
         }
-        SelectLink *link;
+        SelectLink *link = NULL;
         shortcut_mouse_line = -1;
         flush();
         skip_flag = false;
@@ -649,6 +660,7 @@ int ONScripterLabel::resetCommand()
         script_h.str_variables[i] = NULL;
     }
 
+    tateyoko_mode = 0;
     sentence_font.xy[0] = 0;
     sentence_font.xy[1] = 0;
     resetSentenceFont();
@@ -1037,8 +1049,7 @@ int ONScripterLabel::ldCommand()
         else           return doEffect( tmp_effect.effect, NULL, TACHI_EFFECT_IMAGE );
     }
     else{
-        int no;
-
+        int no = 0;
         if      ( loc == 'l' ) no = 0;
         else if ( loc == 'c' ) no = 1;
         else if ( loc == 'r' ) no = 2;
@@ -1110,13 +1121,12 @@ int ONScripterLabel::getversionCommand()
 
 int ONScripterLabel::gettimerCommand()
 {
-    bool gettimer_flag;
+    bool gettimer_flag=false;
     
     if      ( script_h.isName( "gettimer" ) ){
         gettimer_flag = true;
     }
     else if ( script_h.isName( "getbtntimer" ) ){
-        gettimer_flag = false;
     }
 
     script_h.readToken();
@@ -1253,10 +1263,10 @@ int ONScripterLabel::getenterCommand()
 int ONScripterLabel::getcursorposCommand()
 {
     script_h.readToken();
-    script_h.setInt( script_h.getStringBuffer(), sentence_font.x() );
+    script_h.setInt( script_h.getStringBuffer(), sentence_font.x( tateyoko_mode ) );
     
     script_h.readToken();
-    script_h.setInt( script_h.getStringBuffer(), sentence_font.y() );
+    script_h.setInt( script_h.getStringBuffer(), sentence_font.y( tateyoko_mode ) );
     
     return RET_CONTINUE;
 }
@@ -1326,7 +1336,7 @@ int ONScripterLabel::gameCommand()
 
 int ONScripterLabel::exbtnCommand()
 {
-    int sprite_no = -1, no;
+    int sprite_no=-1, no=0;
     ButtonLink *button;
     
     if ( script_h.isName( "exbtn_d" ) ){
@@ -1384,6 +1394,7 @@ int ONScripterLabel::endCommand()
     }
     SDL_Quit();
     exit(0);
+    return RET_CONTINUE; // dummy
 }
 
 int ONScripterLabel::dwavestopCommand()
@@ -1487,6 +1498,7 @@ int ONScripterLabel::cselbtnCommand()
     csel_info.top_xy[0] = script_h.readInt();
     csel_info.top_xy[1] = script_h.readInt();
     csel_info.xy[0] = csel_info.xy[1] = 0;
+    csel_info.num_xy[1] = 1;
 
     int counter = 0;
     SelectLink *link = root_select_link.next;
@@ -1605,20 +1617,19 @@ int ONScripterLabel::captionCommand()
 
 int ONScripterLabel::btnwaitCommand()
 {
-    bool del_flag, textbtn_flag = false, selectbtn_flag = false;
+    bool del_flag=false, textbtn_flag=false, selectbtn_flag=false;
 
     if ( script_h.isName( "btnwait2" ) ){
-        del_flag = false;
+        display_mode = NORMAL_DISPLAY_MODE;
     }
     else if ( script_h.isName( "btnwait" ) ){
         del_flag = true;
+        display_mode = NORMAL_DISPLAY_MODE;
     }
     else if ( script_h.isName( "textbtnwait" ) ){
-        del_flag = false;
         textbtn_flag = true;
     }
     else if ( script_h.isName( "selectbtnwait" ) ){
-        del_flag = false;
         selectbtn_flag = true;
     }
 
@@ -1666,15 +1677,12 @@ int ONScripterLabel::btnwaitCommand()
 
         refreshSurface( accumulation_surface,
                         NULL,
-                        ( erase_text_window_mode == 0 && text_on_flag)?REFRESH_SHADOW_MODE:REFRESH_NORMAL_MODE );
+                        ( display_mode == TEXT_DISPLAY_MODE || erase_text_window_mode == 0 && text_on_flag)?REFRESH_SHADOW_MODE:REFRESH_NORMAL_MODE );
         SDL_BlitSurface( accumulation_surface, NULL, text_surface, NULL );
 
-        if ( erase_text_window_mode == 0 && text_on_flag ){
+        if ( display_mode == TEXT_DISPLAY_MODE || erase_text_window_mode == 0 && text_on_flag ){
             restoreTextBuffer();
             display_mode = TEXT_DISPLAY_MODE;
-        }
-        else{
-            display_mode = NORMAL_DISPLAY_MODE;
         }
         
         /* ---------------------------------------- */
@@ -1688,6 +1696,7 @@ int ONScripterLabel::btnwaitCommand()
             if ( p_button_link->button_type == CUSTOM_SELECT_BUTTON ){
             
                 f_info.xy[0] = f_info.xy[1] = 0;
+                f_info.num_xy[1] = 1;
                 f_info.top_xy[0] = p_button_link->image_rect.x * screen_ratio2 / screen_ratio1;
                 f_info.top_xy[1] = p_button_link->image_rect.y * screen_ratio2 / screen_ratio1;
 
@@ -1697,7 +1706,7 @@ int ONScripterLabel::btnwaitCommand()
                     if ( p_button_link->sprite_no == counter++ ) break;
                     s_link = s_link->next;
                 }
-            
+                
                 drawString( s_link->text, f_info.off_color, &f_info, false, text_surface );
             }
 

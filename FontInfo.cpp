@@ -70,12 +70,18 @@ void FontInfo::closeFont()
     }
 }
 
-int FontInfo::x()
+int FontInfo::x( int tateyoko_mode )
 {
+    if ( tateyoko_mode == 1 )
+        return (num_xy[1] - xy[1] - 1) * pitch_xy[0] + top_xy[0];
+    
     return xy[0] * pitch_xy[0] + top_xy[0];
 }
 
-int FontInfo::y()
+int FontInfo::y( int tateyoko_mode )
 {
+    if ( tateyoko_mode == 1 )
+        return xy[0] * pitch_xy[1] + top_xy[1];
+    
     return xy[1] * pitch_xy[1] + top_xy[1];
 }

@@ -614,7 +614,7 @@ int ScriptParser::incCommand()
 int ScriptParser::ifCommand()
 {
     int left_value, right_value;
-    bool if_flag, condition_flag = true, f;
+    bool if_flag, condition_flag = true, f = false;
     char *tmp_buffer;
 
     if ( script_h.isName( "notif" ) )

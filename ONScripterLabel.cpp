@@ -50,6 +50,7 @@ static struct FuncLUT{
     {"textclear",   &ONScripterLabel::textclearCommand},
     {"textbtnwait",   &ONScripterLabel::btnwaitCommand},
     {"texec",   &ONScripterLabel::texecCommand},
+    {"tateyoko",   &ONScripterLabel::tateyokoCommand},
     {"tal", &ONScripterLabel::talCommand},
     {"tablegoto",   &ONScripterLabel::tablegotoCommand},
     {"systemcall",   &ONScripterLabel::systemcallCommand},
@@ -277,6 +278,7 @@ ONScripterLabel::ONScripterLabel( bool cdaudio_flag, char *default_font, char *d
     
     monocro_flag = monocro_flag_new = false;
     nega_mode = 0;
+    tateyoko_mode = 0;
     trap_flag = false;
     trap_dist = NULL;
     
@@ -1428,8 +1430,8 @@ int ONScripterLabel::refreshSprite( SDL_Surface *surface, int sprite_no, bool ac
 
 int ONScripterLabel::decodeExbtnControl( SDL_Surface *surface, const char *ctl_str, bool draw_flag, bool change_flag )
 {
-    int num, sprite_no, area = 0;
-    bool active_flag;
+    int num = 0, sprite_no = -1, area = 0;
+    bool active_flag = false;
     bool first_flag = true;
 
     while( *ctl_str ){

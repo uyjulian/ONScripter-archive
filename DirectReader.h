@@ -29,7 +29,7 @@
 
 #define MAX_FILE_NAME_LENGTH 512
 
-class DirectReader : virtual public BaseReader
+class DirectReader : public BaseReader
 {
 public:
     DirectReader( char *path=NULL );

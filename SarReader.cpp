@@ -225,7 +225,8 @@ int SarReader::getNumFiles(){
     return num;
 }
 
-int SarReader::getNumAccessed(){
+int SarReader::getNumAccessed()
+{
     ArchiveInfo *info = archive_info.next;
     int num = 0;
     
@@ -240,7 +241,7 @@ int SarReader::getNumAccessed(){
 bool SarReader::getAccessFlag( const char *file_name )
 {
     ArchiveInfo *info = archive_info.next;
-    int j;
+    int j = 0;
     
     for ( int i=0 ; i<num_of_sar_archives ; i++ ){
         j = getIndexFromFile( info, file_name );
@@ -279,7 +280,7 @@ size_t SarReader::getFileLength( const char *file_name )
     if ( ( ret = DirectReader::getFileLength( file_name ) ) ) return ret;
 
     ArchiveInfo *info = archive_info.next;
-    int j;
+    int j = 0;
     for ( int i=0 ; i<num_of_sar_archives ; i++ ){
         j = getIndexFromFile( info, file_name );
         if ( j != info->num_of_files ) break;
@@ -317,7 +318,7 @@ size_t SarReader::getFile( const char *file_name, unsigned char *buf )
     if ( ( ret = DirectReader::getFile( file_name, buf ) ) ) return ret;
 
     ArchiveInfo *info = archive_info.next;
-    size_t j;
+    size_t j = 0;
     for ( int i=0 ; i<num_of_sar_archives ; i++ ){
         if ( (j = getFileSub( info, file_name, buf )) > 0 ) break;
         info = info->next;

@@ -191,7 +191,7 @@ void ONScripterLabel::mousePressEvent( SDL_MouseButtonEvent *event )
 
 void ONScripterLabel::variableEditMode( SDL_KeyboardEvent *event )
 {
-    int  i, p;
+    int  i;
     char *var_name, var_index[12];
 
     switch ( event->keysym.sym ) {
@@ -303,6 +303,8 @@ void ONScripterLabel::variableEditMode( SDL_KeyboardEvent *event )
         sprintf( wm_edit_string, "%s%s%d", EDIT_MODE_PREFIX, "Variable Index?  %", variable_edit_sign * variable_edit_num );
     }
     else if ( variable_edit_mode >= EDIT_VARIABLE_NUM_MODE ){
+        int p=0;
+        
         switch( variable_edit_mode ){
 
           case EDIT_VARIABLE_NUM_MODE:

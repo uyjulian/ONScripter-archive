@@ -22,6 +22,8 @@
  */
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <jpeglib.h>
 
 float scale_ratio;

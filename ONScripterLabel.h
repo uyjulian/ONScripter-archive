@@ -79,6 +79,7 @@ public:
     int textoffCommand();
     int textclearCommand();
     int texecCommand();
+    int tateyokoCommand();
     int talCommand();
     int tablegotoCommand();
     int systemcallCommand();
@@ -364,7 +365,8 @@ private:
     char *font_file;
     int erase_text_window_mode;
     bool text_on_flag;
-
+    int  tateyoko_mode;
+    
     void drawChar( char* text, FontInfo *info, bool flush_flag, SDL_Surface *surface, bool buffering_flag = true, SDL_Rect *clip=NULL );
     void drawString( const char *str, uchar3 color, FontInfo *info, bool flush_flag, SDL_Surface *surface, SDL_Rect *rect = NULL, bool buffering_flag = false, SDL_Rect *clip=NULL );
     void restoreTextBuffer( SDL_Surface *surface = NULL );

@@ -158,6 +158,7 @@ public:
 protected:
     typedef enum{ NORMAL_MODE, DEFINE_MODE } MODE;
     MODE current_mode;
+    int  debug_level;
 
     bool globalon_flag;
     bool filelog_flag;

@@ -229,7 +229,6 @@ ONScripterLabel::ONScripterLabel( bool cdaudio_flag, char *default_font, char *d
     shelter_text_surface = SDL_CreateRGBSurface( DEFAULT_SURFACE_FLAG, screen_width, screen_height, 32, rmask, gmask, bmask, amask );
     SDL_SetAlpha( shelter_text_surface, DEFAULT_BLIT_FLAG, SDL_ALPHA_OPAQUE );
 
-    debug_flag = false;
     internal_timer = SDL_GetTicks();
     autoclick_timer = 0;
 
@@ -487,12 +486,12 @@ void ONScripterLabel::mouseOverCheck( int x, int y )
 void ONScripterLabel::executeLabel()
 {
   executeLabelTop:    
-#if 0
-    printf("*****  executeLabel %s:%d:%d *****\n",
-           current_link_label_info->label_info.name,
-           current_link_label_info->current_line,
-           current_link_label_info->offset );
-#endif
+
+    if ( debug_level > 0 )
+        printf("*****  executeLabel %s:%d:%d *****\n",
+               current_link_label_info->label_info.name,
+               current_link_label_info->current_line,
+               current_link_label_info->offset );
 
     int i, ret1, ret2;
     int line_cache = -1;
@@ -500,8 +499,6 @@ void ONScripterLabel::executeLabel()
 
     char *p_script_buffer = current_link_label_info->label_info.start_address;
     for ( i=0 ; i<current_link_label_info->current_line  ; i++ ) readLine( &p_script_buffer );
-
-    //printf("from %d to %d\n", current_link_label_info->current_line, current_link_label_info->label_info.num_of_lines );
 
     i = current_link_label_info->current_line;
     while ( i<current_link_label_info->label_info.num_of_lines ){
@@ -658,13 +655,18 @@ SDL_Surface *ONScripterLabel::loadImage( char *file_name )
 
     length = cBR->getFileLength( file_name );
     if ( length == 0 ){
-        printf( " *** can't load file [%s] ***\n",file_name );
+        fprintf( stderr, " *** can't find file [%s] ***\n", file_name );
         return NULL;
     }
     //printf(" ... loading %s length %ld\n", file_name, length );
     buffer = new unsigned char[length];
     cBR->getFile( file_name, buffer );
     tmp = IMG_Load_RW(SDL_RWFromMem( buffer, length ),1);
+    if ( !tmp ){
+        fprintf( stderr, " *** can't load file [%s] ***\n", file_name );
+        delete[] buffer;
+        return NULL;
+    }
     ret = SDL_ConvertSurface( tmp, text_surface->format, DEFAULT_SURFACE_FLAG );
     SDL_FreeSurface( tmp );
     delete[] buffer;

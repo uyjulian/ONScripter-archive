@@ -222,7 +222,6 @@ private:
 
     /* ---------------------------------------- */
     /* Global definitions */
-    bool debug_flag;
     bool edit_flag;
     
     long internal_timer;

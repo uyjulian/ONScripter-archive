@@ -120,6 +120,8 @@ ScriptParser::ScriptParser()
     cBR->open();
     script_buffer = NULL;
 
+    debug_level = 0;
+    
     globalon_flag = false;
     filelog_flag = false;
     labellog_flag = false;
@@ -678,7 +680,7 @@ int ScriptParser::parseLine()
     else if ( string_buffer[ string_buffer_offset ] & 0x80 ) return RET_NOMATCH;
 
     char *p_string_buffer = string_buffer + string_buffer_offset;
-    //printf("ScriptParser::Parseline %d %s\n",string_buffer_offset,p_string_buffer );
+    if ( debug_level > 0 ) printf("ScriptParser::Parseline %d %s\n",string_buffer_offset,p_string_buffer );
     readToken( &p_string_buffer, tmp_string_buffer );
 
     while( func_lut[ lut_counter ].method ){

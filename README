@@ -7,9 +7,10 @@ ONScripter
 
 1. 動作環境
 
-	bzip2-1.0.2, SDL-1.2.3, SDL_image-1.2.1, SDL_mixer-1.2.1, SDL_ttf-2.0.4, 及び SMPEG-0.4.4 が動作する環境です。
+	libjpeg 6b, bzip2-1.0.2, SDL-1.2.3, SDL_image-1.2.1, SDL_mixer-1.2.1, SDL_ttf-2.0.4, 及び SMPEG-0.4.4 が動作する環境です。
 	Linux 2.4.17 + XFree86 4.1.0 + g++ (gcc 2.95.4) で開発しています。
 	Linux と Windows 2000 (Visual C++ 6.0)上で動作確認をしています。
+	MacOSX 上での動作確認報告をいただいています。
 
 
 2. コンパイル・起動方法
@@ -23,9 +24,13 @@ ONScripter
 	$ onscripter
 
 	Windows の場合 (DOS プロンプトで)
-	$ bzip2 と SDL と SMPEG のインストール場所に合わせて Makefile.Win を修正
+	$ libjpeg 6b, bzip2, SDL と SMPEG のインストール場所に合わせて Makefile.Win を修正
 	$ nmake -f Makefile.Win
 	$ onscripter.exe
+
+	MacOS X の場合
+	$ make -f Makefile.MacOSX
+	$ onscripter
 
 	それ以外のプラットフォームでは、Makefile.Linux を雛形にして Makefile.### を作ってください。
 

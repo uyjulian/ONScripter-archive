@@ -5,7 +5,7 @@
 
 INCS = `sdl-config --cflags` `smpeg-config --cflags`
 LIBS = `sdl-config --libs` `smpeg-config --libs` -lSDL_ttf -lSDL_image -lSDL_mixer -lbz2 -lm
-DEFS = -DONSCRIPTER_CDAUDIO_SUPPORT
+DEFS = -DLINUX -DONSCRIPTER_CDAUDIO_SUPPORT
 
 EXESUFFIX =
 OBJSUFFIX = .o
@@ -16,7 +16,7 @@ OBJSUFFIX = .o
 CC = g++ 
 LD = g++ -o 
 
-CFLAGS = -g -DLINUX -Wall -Wpointer-arith -fcheck-new -pipe -c $(INCS) $(DEFS)
+CFLAGS = -g -Wall -Wpointer-arith -fcheck-new -pipe -c $(INCS) $(DEFS)
 #CFLAGS = -O3 -DLINUX -Wall -Wpointer-arith -fcheck-new -pipe -c $(INCS) $(DEFS)
 RM = rm -f
 

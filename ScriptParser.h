@@ -134,6 +134,7 @@ public:
     int nextCommand();
     int mulCommand();
     int movCommand();
+    int mode_sayaCommand();
     int modCommand();
     int midCommand();
     int menusetwindowCommand();
@@ -187,6 +188,7 @@ protected:
     bool rmode_flag;
     bool windowback_flag;
     bool usewheel_flag;
+    bool mode_saya_flag;
     
     BaseReader *cBR;
 

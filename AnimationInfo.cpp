@@ -63,6 +63,8 @@ void AnimationInfo::deleteSurface(){
     image_surface = NULL;
     if ( preserve_surface ) SDL_FreeSurface( preserve_surface );
     preserve_surface = NULL;
+    if ( mask_surface ) SDL_FreeSurface( mask_surface );
+    mask_surface = NULL;
 }
 
 void AnimationInfo::remove(){

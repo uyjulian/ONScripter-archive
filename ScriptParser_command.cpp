@@ -386,6 +386,14 @@ int ScriptParser::movCommand()
     return RET_CONTINUE;
 }
 
+int ScriptParser::mode_sayaCommand()
+{
+    if ( current_mode != DEFINE_MODE ) errorAndExit( string_buffer + string_buffer_offset, "not in the define section" );
+    mode_saya_flag = true;
+
+    return RET_CONTINUE;
+}
+
 int ScriptParser::modCommand()
 {
     char *p_string_buffer = string_buffer + string_buffer_offset + 3; // strlen("mod") = 3

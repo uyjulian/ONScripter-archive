@@ -212,7 +212,7 @@ private:
     /* ---------------------------------------- */
     /* Script related variables */
     typedef enum{ REFRESH_NORMAL_MODE = 0,
-                      REFRESH_WINDOW_ERASE_MODE = 1,
+                      REFRESH_SAYA_MODE = 1,
                       REFRESH_SHADOW_MODE = 2
                       } REFRESH_MODE;
     
@@ -404,7 +404,8 @@ private:
     void alphaBlend( SDL_Surface *dst_surface, int x, int y,
                      SDL_Surface *src1_surface, int x1, int y1, int wx, int wy,
                      SDL_Surface *src2_surface, int x2, int y2,
-                     int x3, int trans_mode, unsigned char mask_value = 255, unsigned int effect_value=0, SDL_Rect *clip=NULL );
+                     SDL_Surface *mask_surface, int x3,
+                     int trans_mode, unsigned char mask_value = 255, unsigned int effect_value=0, SDL_Rect *clip=NULL );
     int enterTextDisplayMode();
     SDL_Surface *loadImage( char *file_name );
     void drawTaggedSurface( SDL_Surface *dst_surface, AnimationInfo *anim, SDL_Rect *clip );

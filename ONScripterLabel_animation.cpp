@@ -43,7 +43,7 @@ void ONScripterLabel::showAnimation( AnimationInfo *anim )
             alphaBlend( text_surface, dst_rect.x, dst_rect.y,
                         anim->preserve_surface, 0, 0, anim->pos.w, anim->pos.h,
                         anim->image_surface, src_rect.x, src_rect.y,
-                        anim->alpha_offset, anim->trans_mode, anim->trans );
+                        anim->mask_surface, anim->alpha_offset, anim->trans_mode, anim->trans );
             flush( dst_rect.x, dst_rect.y, src_rect.w, src_rect.h );
         }
 
@@ -80,9 +80,13 @@ void ONScripterLabel::setupAnimationInfo( AnimationInfo *anim )
             else{
                 anim->alpha_offset = 0;
             }
+
             if ( anim->preserve_surface ) SDL_FreeSurface( anim->preserve_surface );
             anim->preserve_surface = SDL_CreateRGBSurface( DEFAULT_SURFACE_FLAG, anim->pos.w, anim->pos.h, 32, rmask, gmask, bmask, amask );
             SDL_SetAlpha( anim->preserve_surface, DEFAULT_BLIT_FLAG, SDL_ALPHA_OPAQUE );
+
+            if ( anim->trans_mode == AnimationInfo::TRANS_MASK )
+                anim->mask_surface = loadImage( anim->mask_file_name );
         }
     }
 }
@@ -224,5 +228,6 @@ void ONScripterLabel::drawTaggedSurface( SDL_Surface *dst_surface, AnimationInfo
     alphaBlend( dst_surface, anim->pos.x, anim->pos.y,
                 dst_surface, anim->pos.x, anim->pos.y, anim->pos.w, anim->pos.h,
                 anim->image_surface, offset, 0,
-                offset + anim->alpha_offset, anim->trans_mode, anim->trans, 0, clip );
+                anim->mask_surface, offset + anim->alpha_offset,
+                anim->trans_mode, anim->trans, 0, clip );
 }

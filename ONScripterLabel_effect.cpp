@@ -200,7 +200,7 @@ int ONScripterLabel::doEffect( int effect_no, AnimationInfo *anim, int effect_im
         alphaBlend( text_surface, 0, 0,
                     effect_src_surface, 0, 0, screen_width, screen_height,
                     effect_dst_surface, 0, 0,
-                    0, AnimationInfo::TRANS_COPY, height );
+                    NULL, 0, AnimationInfo::TRANS_COPY, height );
         break;
         
       case 11: // Left scroll
@@ -271,14 +271,14 @@ int ONScripterLabel::doEffect( int effect_no, AnimationInfo *anim, int effect_im
         alphaBlend( text_surface, 0, 0,
                     effect_src_surface, 0, 0, screen_width, screen_height,
                     effect_dst_surface, 0, 0,
-                    0, AnimationInfo::TRANS_FADE_MASK, 255, 256 * effect_counter / effect.duration );
+                    NULL, 0, AnimationInfo::TRANS_FADE_MASK, 255, 256 * effect_counter / effect.duration );
         break;
         
       case 18: // Cross fade with mask
         alphaBlend( text_surface, 0, 0,
                     effect_src_surface, 0, 0, screen_width, screen_height,
                     effect_dst_surface, 0, 0,
-                    0, AnimationInfo::TRANS_CROSSFADE_MASK, 255, 256 * effect_counter * 2 / effect.duration );
+                    NULL, 0, AnimationInfo::TRANS_CROSSFADE_MASK, 255, 256 * effect_counter * 2 / effect.duration );
         break;
 
       case (CUSTOM_EFFECT_NO + 0 ): // quakey

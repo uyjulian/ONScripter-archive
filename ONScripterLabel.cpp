@@ -715,7 +715,8 @@ int ONScripterLabel::enterTextDisplayMode()
 void ONScripterLabel::alphaBlend( SDL_Surface *dst_surface, int x, int y,
                                   SDL_Surface *src1_surface, int x1, int y1, int w, int h,
                                   SDL_Surface *src2_surface, int x2, int y2,
-                                  int x3, int trans_mode, unsigned char mask_value, unsigned int effect_value, SDL_Rect *clip )
+                                  SDL_Surface *mask_surface, int x3,
+                                  int trans_mode, unsigned char mask_value, unsigned int effect_value, SDL_Rect *clip )
 {
     int i, j;
     SDL_Rect src1_rect, src2_rect, dst_rect;
@@ -788,7 +789,14 @@ void ONScripterLabel::alphaBlend( SDL_Surface *dst_surface, int x, int y,
     SDL_LockSurface( src2_surface );
     src2_buffer = src2_buffer2 = (Uint32 *)src2_surface->pixels;
 
-    if ( trans_mode == AnimationInfo::TRANS_ALPHA ){
+    if ( trans_mode == AnimationInfo::TRANS_ALPHA ||
+         trans_mode == AnimationInfo::TRANS_MASK ){
+
+        if ( mask_surface && src2_surface != mask_surface ){
+            SDL_LockSurface( mask_surface );
+            src2_buffer2 = (Uint32 *)mask_surface->pixels;
+        }
+
         src2_buffer  += src2_surface->w * y2 + x2;
         src2_buffer2 += src2_surface->w * y2 + x3;
         for ( i=0; i<h ; i++ ) {
@@ -802,8 +810,11 @@ void ONScripterLabel::alphaBlend( SDL_Surface *dst_surface, int x, int y,
             src2_buffer  += src2_surface->w - w;
             src2_buffer2 += src2_surface->w - w;
         }
+
+        if ( mask_surface && src2_surface != mask_surface ) SDL_UnlockSurface( mask_surface );
     }
-    else if ( trans_mode == AnimationInfo::TRANS_TOPLEFT || trans_mode == AnimationInfo::TRANS_TOPRIGHT ){
+    else if ( trans_mode == AnimationInfo::TRANS_TOPLEFT ||
+              trans_mode == AnimationInfo::TRANS_TOPRIGHT ){
         *src2_buffer &= ~amask;
         Uint32 ref;
         if ( trans_mode == AnimationInfo::TRANS_TOPLEFT ) ref = *src2_buffer;
@@ -958,7 +969,8 @@ void ONScripterLabel::shadowTextDisplay( SDL_Surface *dst_surface, SDL_Surface *
                     src_surface, sentence_font_info.pos.x, sentence_font_info.pos.y,
                     sentence_font_info.pos.w, sentence_font_info.pos.h,
                     sentence_font_info.image_surface, 0, 0,
-                    sentence_font_info.alpha_offset, sentence_font_info.trans_mode, 255, 0, clip );
+                    sentence_font_info.mask_surface, sentence_font_info.alpha_offset,
+                    sentence_font_info.trans_mode, 255, 0, clip );
     }
 }
 
@@ -1239,12 +1251,16 @@ void ONScripterLabel::makeMonochromeSurface( SDL_Surface *surface, SDL_Rect *dst
 
 void ONScripterLabel::refreshAccumulationSurface( SDL_Surface *surface, SDL_Rect *clip, int refresh_mode )
 {
-    int i;
+    int i, top;
         
     SDL_BlitSurface( background_surface, clip, surface, clip );
     
     if ( !all_sprite_hide_flag ){
-        for ( i=MAX_SPRITE_NUM-1 ; i>z_order ; i-- ){
+        if ( z_order < 10 && refresh_mode & REFRESH_SAYA_MODE )
+            top = 9;
+        else
+            top = z_order;
+        for ( i=MAX_SPRITE_NUM-1 ; i>top ; i-- ){
             if ( sprite_info[i].valid ){
                 drawTaggedSurface( surface, &sprite_info[i], clip );
             }
@@ -1259,8 +1275,12 @@ void ONScripterLabel::refreshAccumulationSurface( SDL_Surface *surface, SDL_Rect
 
     if ( refresh_mode & REFRESH_SHADOW_MODE && windowback_flag ) shadowTextDisplay( surface, surface, clip );
 
-    if ( !all_sprite_hide_flag && !(refresh_mode & REFRESH_WINDOW_ERASE_MODE) ){
-        for ( i=z_order ; i>=0 ; i-- ){
+    if ( !all_sprite_hide_flag ){
+        if ( refresh_mode & REFRESH_SAYA_MODE )
+            top = 10;
+        else
+            top = 0;
+        for ( i=z_order ; i>=top ; i-- ){
             if ( sprite_info[i].valid ){
                 drawTaggedSurface( surface, &sprite_info[i], clip );
             }
@@ -1366,7 +1386,7 @@ void ONScripterLabel::startCursor( int click )
     else if ( click == CLICK_NEWPAGE ) no = CURSOR_NEWPAGE_NO;
     else return;
 
-    if ( cursor_info[ no ].valid ) {
+    if ( cursor_info[ no ].abs_flag ) {
         src_rect.x = cursor_info[ no ].pos.x;
         src_rect.y = cursor_info[ no ].pos.y;
     }
@@ -1393,7 +1413,7 @@ void ONScripterLabel::endCursor( int click )
     else if ( click == CLICK_NEWPAGE ) no = CURSOR_NEWPAGE_NO;
     else return;
     
-    if ( cursor_info[ no ].valid ) {
+    if ( cursor_info[ no ].abs_flag ) {
         dst_rect.x = cursor_info[ no ].pos.x;
         dst_rect.y = cursor_info[ no ].pos.y;
     }

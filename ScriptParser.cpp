@@ -81,6 +81,7 @@ static struct FuncLUT{
     {"mov4",      &ScriptParser::movCommand},
     {"mov3",      &ScriptParser::movCommand},
     {"mov",      &ScriptParser::movCommand},
+    {"mode_saya", &ScriptParser::mode_sayaCommand},
     {"mod",      &ScriptParser::modCommand},
     {"mid",      &ScriptParser::midCommand},
     {"menusetwindow",      &ScriptParser::menusetwindowCommand},
@@ -138,6 +139,7 @@ ScriptParser::ScriptParser()
     windowback_flag = false;
     usewheel_flag = false;
     text_line_flag = false;
+    mode_saya_flag = false;
     
     num_of_labels = 0;
     label_info = NULL;

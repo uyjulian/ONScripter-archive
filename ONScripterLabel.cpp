@@ -283,7 +283,6 @@ ONScripterLabel::ONScripterLabel()
     draw_one_page_flag = false;
     //draw_one_page_flag = true;
     key_pressed_flag = false;
-    new_page_flag = false;
     display_mode = NORMAL_DISPLAY_MODE;
     event_mode = IDLE_EVENT_MODE;
     rmode_flag = true;
@@ -1985,35 +1984,15 @@ int ONScripterLabel::clickWait( char *out_text )
 
 int ONScripterLabel::clickNewPage( char *out_text )
 {
+    clickstr_state = CLICK_NEWPAGE;
+    if ( out_text ) drawChar( out_text, &sentence_font, false );
+    if ( skip_flag || draw_one_page_flag ) flush();
+    
     if ( skip_flag ){
-        clickstr_state = CLICK_NONE;
-        if ( out_text ){
-            drawChar( out_text, &sentence_font, false );
-        }
-        if ( !new_page_flag ){
-            flush();
-            new_page_flag = true;
-            event_mode = WAIT_SLEEP_MODE;
-            startTimer( MINIMUM_TIMER_RESOLUTION );
-            return RET_WAIT;
-        }
-
-        new_page_flag = false;
-        event_mode = IDLE_EVENT_MODE;
-
-        string_buffer_offset++;
-        if ( out_text ) string_buffer_offset++;
-        enterNewPage();
-        new_line_skip_flag = true;
-
-        return RET_CONTINUE;
+        event_mode = WAIT_SLEEP_MODE;
+        startTimer( MINIMUM_TIMER_RESOLUTION );
     }
     else{
-        clickstr_state = CLICK_NEWPAGE;
-        if ( out_text ){
-            drawChar( out_text, &sentence_font );
-        }
-        if ( draw_one_page_flag ) flush();
         event_mode = WAIT_MOUSE_MODE | WAIT_KEY_MODE;
         key_pressed_flag = false;
         if ( autoclick_timer > 0 ){
@@ -2024,8 +2003,8 @@ int ONScripterLabel::clickNewPage( char *out_text )
             startCursor( CLICK_NEWPAGE );
             startTimer( MINIMUM_TIMER_RESOLUTION );
         }
-        return RET_WAIT;
     }
+    return RET_WAIT;
 }
 
 void ONScripterLabel::makeEffectStr( char *buf, int no, int duration, char *image )

@@ -49,7 +49,6 @@ public:
 
     bool skip_flag;
     bool draw_one_page_flag;
-    bool new_page_flag;
     bool key_pressed_flag;
     
     int  eventLoop();

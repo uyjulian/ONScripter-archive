@@ -58,7 +58,7 @@ int ONScripterLabel::doEffect( int effect_no, AnimationInfo *anim, int effect_im
 
     if ( effect_counter == 0 ){
         if ( effect_image != DIRECT_EFFECT_IMAGE )
-            SDL_BlitSurface( accumulation_surface, NULL, effect_src_surface, NULL );
+            SDL_BlitSurface( text_surface, NULL, effect_src_surface, NULL );
 
         switch( effect_image ){
           case DIRECT_EFFECT_IMAGE:
@@ -281,7 +281,9 @@ int ONScripterLabel::doEffect( int effect_no, AnimationInfo *anim, int effect_im
                     0, 0, -AnimationInfo::TRANS_CROSSFADE_MASK, 256 * effect_counter * 2 / effect.duration );
         break;
 
-      case (CUSTOM_EFFECT_NO + 0 ):
+      case (CUSTOM_EFFECT_NO + 0 ): // quakey
+        if ( effect_timer_resolution > effect.duration / 4 / effect.num )
+            effect_timer_resolution = effect.duration / 4 / effect.num;
         dst_rect.x = 0;
         dst_rect.y = (Sint16)(sin(M_PI * 2.0 * effect.num * effect_counter / effect.duration) *
                               EFFECT_QUAKE_AMP * effect.num * (effect.duration -  effect_counter) / effect.duration);
@@ -289,7 +291,9 @@ int ONScripterLabel::doEffect( int effect_no, AnimationInfo *anim, int effect_im
         SDL_BlitSurface( effect_dst_surface, NULL, text_surface, &dst_rect );
         break;
         
-      case (CUSTOM_EFFECT_NO + 1 ):
+      case (CUSTOM_EFFECT_NO + 1 ): // quakex
+        if ( effect_timer_resolution > effect.duration / 4 / effect.num )
+            effect_timer_resolution = effect.duration / 4 / effect.num;
         dst_rect.x = (Sint16)(sin(M_PI * 2.0 * effect.num * effect_counter / effect.duration) *
                               EFFECT_QUAKE_AMP * effect.num * (effect.duration -  effect_counter) / effect.duration);
         dst_rect.y = 0;
@@ -297,7 +301,7 @@ int ONScripterLabel::doEffect( int effect_no, AnimationInfo *anim, int effect_im
         SDL_BlitSurface( effect_dst_surface, NULL, text_surface, &dst_rect );
         break;
         
-      case (CUSTOM_EFFECT_NO + 2 ):
+      case (CUSTOM_EFFECT_NO + 2 ): // quake
         dst_rect.x = effect.num*((int)(3.0*rand()/(RAND_MAX+1.0)) - 1) * 2;
         dst_rect.y = effect.num*((int)(3.0*rand()/(RAND_MAX+1.0)) - 1) * 2;
         SDL_FillRect( text_surface, NULL, SDL_MapRGBA( background_surface->format, 0, 0, 0, 0 ) );
@@ -310,8 +314,7 @@ int ONScripterLabel::doEffect( int effect_no, AnimationInfo *anim, int effect_im
     effect_counter += effect_timer_resolution;
     if ( effect_counter < effect.duration ){
         if ( effect.effect != 0 ){
-            if ( !erase_text_window_flag && text_on_flag ){
-                //shadowTextDisplay( NULL, text_surface );
+            if ( !erase_text_window_flag && text_on_flag && effect.effect < CUSTOM_EFFECT_NO ){
                 restoreTextBuffer();
             }
             flush();

@@ -426,7 +426,7 @@ void ONScripterLabel::timerEvent( void )
         }
     }
     else if ( event_mode & EFFECT_EVENT_MODE ){
-        if ( display_mode & TEXT_DISPLAY_MODE && erase_text_window_flag ){
+        if ( display_mode & TEXT_DISPLAY_MODE && erase_text_window_flag && strncmp( effect_command, "quake", 5 ) ){
             if ( effect_counter == 0 ){
                 flush();
                 SDL_BlitSurface( accumulation_surface, NULL, effect_dst_surface, NULL );

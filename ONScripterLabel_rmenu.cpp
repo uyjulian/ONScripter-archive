@@ -517,7 +517,7 @@ void ONScripterLabel::leaveSystemCall( bool restore_flag )
     key_pressed_flag = false;
     //text_line_flag = false;
 
-    printf("leaveSystemCall %d %d\n",event_mode, clickstr_state);
+    //printf("leaveSystemCall %d %d\n",event_mode, clickstr_state);
 
     if ( event_mode & WAIT_SLEEP_MODE ){
         event_mode &= ~WAIT_SLEEP_MODE;

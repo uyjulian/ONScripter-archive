@@ -676,7 +676,6 @@ void ONScripterLabel::deleteSelectLink()
 int ONScripterLabel::enterTextDisplayMode()
 {
     if ( !(display_mode & TEXT_DISPLAY_MODE) ){
-        //printf("enterTextDisplayMode2 %d %d\n",display_mode,event_mode);
         if ( event_mode & EFFECT_EVENT_MODE ){
             if ( doEffect( WINDOW_EFFECT, NULL, DIRECT_EFFECT_IMAGE ) == RET_CONTINUE ){
                 display_mode |= TEXT_DISPLAY_MODE;

@@ -51,6 +51,7 @@ static struct FuncLUT{
     {"return",   &ScriptParser::returnCommand},
     {"numalias", &ScriptParser::numaliasCommand},
     {"notif",    &ScriptParser::ifCommand},
+    {"next",    &ScriptParser::nextCommand},
     {"nsa",    &ScriptParser::arcCommand},
     {"mul",      &ScriptParser::mulCommand},
     {"mov",      &ScriptParser::movCommand},
@@ -58,6 +59,7 @@ static struct FuncLUT{
     {"menusetwindow",      &ScriptParser::menusetwindowCommand},
     {"labellog",      &ScriptParser::labellogCommand},
     {"itoa", &ScriptParser::itoaCommand},
+    {"intlimit", &ScriptParser::intlimitCommand},
     {"inc",      &ScriptParser::incCommand},
     {"if",       &ScriptParser::ifCommand},
     {"humanz",       &ScriptParser::humanzCommand},
@@ -65,6 +67,7 @@ static struct FuncLUT{
     {"gosub",    &ScriptParser::gosubCommand},
     {"globalon",    &ScriptParser::globalonCommand},
     {"game",    &ScriptParser::gameCommand},
+    {"for",   &ScriptParser::forCommand},
     {"filelog",   &ScriptParser::filelogCommand},
     {"effectblank",   &ScriptParser::effectblankCommand},
     {"effect",   &ScriptParser::effectCommand},
@@ -73,6 +76,7 @@ static struct FuncLUT{
     {"date",   &ScriptParser::dateCommand},
     {"cmp",      &ScriptParser::cmpCommand},
     {"clickstr",   &ScriptParser::clickstrCommand},
+    {"break",   &ScriptParser::breakCommand},
     {"atoi",      &ScriptParser::atoiCommand},
     {"arc",      &ScriptParser::arcCommand},
     {"add",      &ScriptParser::addCommand},
@@ -112,6 +116,17 @@ ScriptParser::ScriptParser()
     jumpf_flag = false;
     srand( time(NULL) );
     z_order = 25;
+    
+    /* ---------------------------------------- */
+    /* For loop related variables */
+    root_for_link.previous = NULL;
+    root_for_link.next = NULL;
+    root_for_link.current_line = 0;
+    root_for_link.offset = 0;
+    root_for_link.label_info = lookupLabel("start");
+    current_for_link = &root_for_link;
+    for_stack_depth = 0;
+    break_flag = false;
     
     /* ---------------------------------------- */
     /* Transmode related variables */
@@ -176,6 +191,7 @@ ScriptParser::ScriptParser()
     /* ---------------------------------------- */
     for ( i=0 ; i<VARIABLE_RANGE ; i++ ){
         num_variables[i] = 0;
+        num_limit_flag[i] = false;
         str_variables[i] = new char[1];
         str_variables[i][0] = '\0';
     }
@@ -225,7 +241,7 @@ int ScriptParser::open()
     if ( readScript() ) return -1;
     if ( labelScript() ) return -1;
     
-    stack_depth = 0;
+    label_stack_depth = 0;
 
     root_link_label_info.previous = NULL;
     root_link_label_info.next = NULL;
@@ -493,7 +509,14 @@ int ScriptParser::readLine( char **buf, bool raw_flag )
         else if ( ch == '%' ){
             no = parseNumAlias( buf );
             if ( text_line_flag ){
-                sprintf( num_buf, "%d", num_variables[no] );
+                if ( num_variables[no]<0 ){
+                    addStringBuffer( "|"[0], string_counter++ );
+                    addStringBuffer( "|"[1], string_counter++ );
+                    sprintf( num_buf, "%d", -num_variables[no] );
+                }
+                else{
+                    sprintf( num_buf, "%d", num_variables[no] );
+                }
                 for ( i=0 ; i<strlen( num_buf ) ; i++ ){
                     getSJISFromInteger( num_sjis_buf, num_buf[i] - '0', false );
                     addStringBuffer( num_sjis_buf[0], string_counter++ );
@@ -819,7 +842,10 @@ void ScriptParser::skipToken( void )
             quat_flag = !quat_flag;
         string_buffer_offset++;
     }
-    if ( string_buffer[ string_buffer_offset ] == ':' ) string_buffer_offset++;
+    if ( string_buffer[ string_buffer_offset ] == ':' ){
+        string_buffer_offset++;
+        while( string_buffer[ string_buffer_offset ] == ' ' || string_buffer[ string_buffer_offset ] == '\t' ) string_buffer_offset++;
+    }
 }
 
 struct ScriptParser::EffectLink ScriptParser::getEffect( int effect_no )

@@ -48,6 +48,16 @@
 #define WIDTH  640
 #define HEIGHT 480
 
+#define setNumVariable(no,val) {\
+    int _no = (no);\
+    int _i = (val);\
+    if ( num_limit_flag[_no] ){\
+        if ( _i < num_limit_lower[_no] ) _i = num_limit_lower[_no];\
+        else if ( _i > num_limit_upper[_no] ) _i = num_limit_upper[_no];\
+    }\
+    num_variables[_no] = _i;\
+}
+
 class ScriptParser
 {
 public:
@@ -152,12 +162,14 @@ public:
     int rmenuCommand();
     int returnCommand();
     int numaliasCommand();
+    int nextCommand();
     int mulCommand();
     int movCommand();
     int modCommand();
     int menusetwindowCommand();
     int labellogCommand();
     int itoaCommand();
+    int intlimitCommand();
     int incCommand();
     int ifCommand();
     int humanzCommand();
@@ -165,6 +177,7 @@ public:
     int gosubCommand();
     int globalonCommand();
     int gameCommand();
+    int forCommand();
     int filelogCommand();
     int effectblankCommand();
     int effectCommand();
@@ -173,6 +186,7 @@ public:
     int dateCommand();
     int cmpCommand();
     int clickstrCommand();
+    int breakCommand();
     int atoiCommand();
     int arcCommand();
     int addCommand();
@@ -185,7 +199,7 @@ protected:
     bool filelog_flag;
     bool labellog_flag;
     int num_of_label_accessed;
-    int stack_depth;
+    int label_stack_depth;
 
     bool jumpf_flag;
     LinkLabelInfo last_tilde;
@@ -207,6 +221,9 @@ protected:
     /* ---------------------------------------- */
     /* Number variables and string variables */
     int num_variables[ VARIABLE_RANGE ];
+    int num_limit_upper[ VARIABLE_RANGE ];
+    int num_limit_lower[ VARIABLE_RANGE ];
+    bool num_limit_flag[ VARIABLE_RANGE ];
     char *str_variables[ VARIABLE_RANGE ];
 
     int effect_blank;
@@ -216,6 +233,21 @@ protected:
     typedef enum{ WINDOW_EFFECT = -1, PRINT_EFFECT = -2, TMP_EFFECT = -3  } EFFECT_MODE;
     struct EffectLink window_effect, print_effect, tmp_effect;
 
+    /* ---------------------------------------- */
+    /* For loop related variables */
+    struct ForInfo{
+        struct ForInfo *previous, *next;
+        struct LabelInfo label_info;
+        int current_line;
+        int offset;
+        char *current_script;
+        int variable_no;
+        int to;
+        int step;
+    } root_for_link, *current_for_link;
+    int for_stack_depth;
+    bool break_flag;
+    
     /* ---------------------------------------- */
     /* Transmode related variables */
     typedef enum{

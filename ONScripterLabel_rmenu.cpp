@@ -164,7 +164,7 @@ int ONScripterLabel::loadSaveFile( int no )
     
     /* ---------------------------------------- */
     /* Load link label info */
-    stack_depth = 0;
+    label_stack_depth = 0;
 
     while( 1 ){
         loadStr( fp, &str );
@@ -182,7 +182,7 @@ int ONScripterLabel::loadSaveFile( int no )
         current_link_label_info->next->previous = current_link_label_info;
         current_link_label_info = current_link_label_info->next;
         current_link_label_info->next = NULL;
-        stack_depth++;
+        label_stack_depth++;
     }
 
     event_mode = fgetc( fp );

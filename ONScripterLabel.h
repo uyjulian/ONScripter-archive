@@ -106,7 +106,8 @@ public:
     int bgCommand();
     int bltCommand();
     int autoclickCommand();
-
+    int amspCommand();
+    
 protected:
     void keyPressEvent( SDL_KeyboardEvent *event );
     void mousePressEvent( SDL_MouseButtonEvent *event );

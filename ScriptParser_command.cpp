@@ -86,17 +86,15 @@ int ScriptParser::timeCommand()
 
     readToken( &p_string_buffer, tmp_string_buffer );
     if ( tmp_string_buffer[0] != '%' ) errorAndExit( string_buffer + string_buffer_offset );
-    num_variables[ atoi( tmp_string_buffer + 1 ) ] = tm->tm_hour;
+    setNumVariable( atoi( tmp_string_buffer + 1 ), tm->tm_hour );
 
     readToken( &p_string_buffer, tmp_string_buffer );
     if ( tmp_string_buffer[0] != '%' ) errorAndExit( string_buffer + string_buffer_offset );
-    num_variables[ atoi( tmp_string_buffer + 1 ) ] = tm->tm_min;
+    setNumVariable( atoi( tmp_string_buffer + 1 ), tm->tm_min );
 
     readToken( &p_string_buffer, tmp_string_buffer );
     if ( tmp_string_buffer[0] != '%' ) errorAndExit( string_buffer + string_buffer_offset );
-    num_variables[ atoi( tmp_string_buffer + 1 ) ] = tm->tm_sec;
-
-    //printf("timeCommand %d, %d %d\n", tm->tm_hour, tm->tm_min, tm->tm_sec );
+    setNumVariable( atoi( tmp_string_buffer + 1 ), tm->tm_sec );
 
     return RET_CONTINUE;
 }
@@ -112,7 +110,8 @@ int ScriptParser::subCommand()
     no = atoi( tmp_string_buffer + 1 );
     if ( no >= VARIABLE_RANGE ) errorAndExit( string_buffer + string_buffer_offset );
 
-    num_variables[ no ] -= readInt( &p_string_buffer, tmp_string_buffer );
+    setNumVariable( no, num_variables[ no ] - readInt( &p_string_buffer, tmp_string_buffer ) );
+    
 
     return RET_CONTINUE;
 }
@@ -234,7 +233,7 @@ int ScriptParser::rmenuCommand()
 int ScriptParser::returnCommand()
 {
     //printf(" returnCommand (%d>%d)\n", stack_depth, stack_depth-1);
-    stack_depth--;
+    label_stack_depth--;
     
     current_link_label_info = current_link_label_info->previous;
     delete current_link_label_info->next;
@@ -266,6 +265,29 @@ int ScriptParser::numaliasCommand()
     return RET_CONTINUE;
 }
 
+int ScriptParser::nextCommand()
+{
+    printf("nextCommand %d( %d -> %d)\n", for_stack_depth, num_variables[ current_for_link->variable_no ], num_variables[ current_for_link->variable_no ] + current_for_link->step );
+
+    setNumVariable( current_for_link->variable_no, num_variables[ current_for_link->variable_no ] + current_for_link->step );
+    if ( current_for_link->step >= 0 && num_variables[ current_for_link->variable_no ] > current_for_link->to ||
+         current_for_link->step < 0 && num_variables[ current_for_link->variable_no ] < current_for_link->to ){
+        for_stack_depth--;
+        current_for_link = current_for_link->previous;
+        delete current_for_link->next;
+        current_for_link->next = NULL;
+
+        return RET_CONTINUE;
+    }
+    else{
+        current_link_label_info->label_info = current_for_link->label_info;
+        current_link_label_info->current_line = current_for_link->current_line;
+        current_link_label_info->offset = current_for_link->offset;
+        
+        return RET_JUMP;
+    }
+}
+
 int ScriptParser::mulCommand()
 {
     int no;
@@ -277,7 +299,7 @@ int ScriptParser::mulCommand()
     no = atoi( tmp_string_buffer + 1 );
     if ( no >= VARIABLE_RANGE ) errorAndExit( string_buffer + string_buffer_offset );
 
-    num_variables[ no ] *= readInt( &p_string_buffer, tmp_string_buffer );
+    setNumVariable( no, num_variables[ no ] * readInt( &p_string_buffer, tmp_string_buffer ) );
 
     return RET_CONTINUE;
 }
@@ -298,7 +320,7 @@ int ScriptParser::movCommand()
     if ( no >= VARIABLE_RANGE ) errorAndExit( string_buffer + string_buffer_offset );
     
     if ( num_flag ){
-        num_variables[ no ] = readInt( &p_string_buffer, tmp_string_buffer );
+        setNumVariable( no, readInt( &p_string_buffer, tmp_string_buffer ) );
     }
     else{
         readStr( &p_string_buffer, tmp_string_buffer );
@@ -321,7 +343,7 @@ int ScriptParser::modCommand()
     no = atoi( tmp_string_buffer + 1 );
     if ( no >= VARIABLE_RANGE ) errorAndExit( string_buffer + string_buffer_offset );
 
-    num_variables[ no ] %= readInt( &p_string_buffer, tmp_string_buffer );
+    setNumVariable( no, num_variables[ no ] % readInt( &p_string_buffer, tmp_string_buffer ) );
 
     return RET_CONTINUE;
 }
@@ -342,7 +364,7 @@ int ScriptParser::menusetwindowCommand()
 
     //menu_font.font.setPixelSize( menu_font.font_size );
     //menu_font.top_xy[1] += menu_font.font_size;
-#if 0    
+#if 1
     printf("ONScripterLabel::menusetwindowCommand font=%d (%d,%d) bold=%d, shadow=%d\n",
            menu_font.font_size, menu_font.pitch_xy[0], menu_font.pitch_xy[1],
            menu_font.display_bold, menu_font.display_shadow );
@@ -358,7 +380,7 @@ int ScriptParser::menusetwindowCommand()
     sscanf( mask, "%i", &menu_font.window_color_mask[1] );
     mask[2] = menu_font.window_color[5]; mask[3] = menu_font.window_color[6];
     sscanf( mask, "%i", &menu_font.window_color_mask[2] );
-#if 0
+#if 1
     printf("    trans %s\n",
            menu_font.window_color );
 #endif
@@ -502,6 +524,18 @@ int ScriptParser::itoaCommand()
     return RET_CONTINUE;
 }
 
+int ScriptParser::intlimitCommand()
+{
+    char *p_string_buffer = string_buffer + string_buffer_offset + 8; // strlen("intlimit") = 8
+    int no = readInt( &p_string_buffer, tmp_string_buffer );
+
+    num_limit_flag[ no ] = true;
+    num_limit_lower[ no ] = readInt( &p_string_buffer, tmp_string_buffer );
+    num_limit_upper[ no ] = readInt( &p_string_buffer, tmp_string_buffer );
+
+    return RET_CONTINUE;
+}
+
 int ScriptParser::incCommand()
 {
     char *p_string_buffer = string_buffer + string_buffer_offset + 3; // strlen("inc") = 3
@@ -513,7 +547,7 @@ int ScriptParser::incCommand()
     no = atoi( tmp_string_buffer + 1 );
     if ( no >= VARIABLE_RANGE ) errorAndExit( string_buffer + string_buffer_offset );
 
-    num_variables[ no ]++;
+    setNumVariable( no, num_variables[ no ] + 1 );
 
     return RET_CONTINUE;
 }
@@ -535,14 +569,13 @@ int ScriptParser::gotoCommand()
     current_link_label_info->label_info = lookupLabel( tmp_string_buffer + 1 );
     current_link_label_info->current_line = 0;
     current_link_label_info->offset = 0;
-    current_mode = NORMAL_MODE;
     
     return RET_JUMP;
 }
 
 void ScriptParser::gosubReal( char *label )
 {
-    stack_depth++;
+    label_stack_depth++;
     
     LinkLabelInfo *info = new LinkLabelInfo();
     info->previous = current_link_label_info;
@@ -569,7 +602,7 @@ int ScriptParser::gosubCommand()
 {
     char *p_string_buffer = string_buffer + string_buffer_offset + 5; // strlen("gosub") = 5
     readStr( &p_string_buffer, tmp_string_buffer );
-    //printf(" gosubCommand (%d > %d) %s\n", stack_depth, stack_depth+1, tmp_string_buffer );
+    //printf(" gosubCommand (%d > %d) %s\n", label_stack_depth, label_stack_depth+1, tmp_string_buffer );
     skipToken();
     gosubReal( tmp_string_buffer + 1 );
 
@@ -595,8 +628,61 @@ int ScriptParser::gameCommand()
     current_link_label_info->label_info = lookupLabel( "start" );
     current_link_label_info->current_line = 0;
     current_link_label_info->offset = 0;
+    current_mode = NORMAL_MODE;
 
     return RET_JUMP;
+}
+
+int ScriptParser::forCommand()
+{
+    for_stack_depth++;
+    char *p_string_buffer = string_buffer + string_buffer_offset + 3; // strlen("for") = 3
+    ForInfo *info = new ForInfo();
+    info->next = NULL;
+    
+    readToken( &p_string_buffer, tmp_string_buffer );
+    info->variable_no = atoi( tmp_string_buffer + 1 );
+    
+    if ( *p_string_buffer != '=' ) errorAndExit( string_buffer + string_buffer_offset );
+    p_string_buffer++;
+
+    setNumVariable( info->variable_no, readInt( &p_string_buffer, tmp_string_buffer ) );
+    
+    readStr( &p_string_buffer, tmp_string_buffer );
+    if ( strcmp( tmp_string_buffer, "to" ) ) errorAndExit( string_buffer + string_buffer_offset );
+    
+    info->to = readInt( &p_string_buffer, tmp_string_buffer );
+
+    while ( *p_string_buffer == ' ' || *p_string_buffer == '\t' ) p_string_buffer++;
+    if ( !strncmp( p_string_buffer, "step", 4 ) ){
+        readStr( &p_string_buffer, tmp_string_buffer );
+        info->step = readInt( &p_string_buffer, tmp_string_buffer );
+    }
+    else{
+        info->step = 1;
+    }
+    
+    /* ---------------------------------------- */
+    /* Step forward callee's label info */
+    while ( *p_string_buffer == ' ' || *p_string_buffer == '\t' ) p_string_buffer++;
+    info->label_info = current_link_label_info->label_info;
+    if ( *p_string_buffer == ':' ){
+        info->current_line = current_link_label_info->current_line;
+        info->offset = p_string_buffer + 1 - string_buffer;
+    }
+    else{
+        info->current_line = current_link_label_info->current_line + 1;
+        info->offset = 0;
+    }
+
+    info->previous = current_for_link;
+    current_for_link->next = info;
+    current_for_link = current_for_link->next;
+
+    printf("stack %d forCommand %d = %d to %d step %d\n", for_stack_depth,
+           info->variable_no, num_variables[info->variable_no], info->to, info->step );
+
+    return RET_CONTINUE;
 }
 
 int ScriptParser::filelogCommand()
@@ -689,7 +775,7 @@ int ScriptParser::divCommand()
     no = atoi( tmp_string_buffer + 1 );
     if ( no >= VARIABLE_RANGE ) errorAndExit( string_buffer + string_buffer_offset );
 
-    num_variables[ no ] /= readInt( &p_string_buffer, tmp_string_buffer );
+    setNumVariable( no, num_variables[ no ] / readInt( &p_string_buffer, tmp_string_buffer ) );
 
     return RET_CONTINUE;
 }
@@ -705,7 +791,7 @@ int ScriptParser::decCommand()
     no = atoi( tmp_string_buffer + 1 );
     if ( no >= VARIABLE_RANGE ) errorAndExit( string_buffer + string_buffer_offset );
 
-    num_variables[ no ]--;
+    setNumVariable( no, num_variables[ no ] - 1 );
 
     return RET_CONTINUE;
 }
@@ -718,15 +804,15 @@ int ScriptParser::dateCommand()
 
     readToken( &p_string_buffer, tmp_string_buffer );
     if ( tmp_string_buffer[0] != '%' ) errorAndExit( string_buffer + string_buffer_offset );
-    num_variables[ atoi( tmp_string_buffer + 1 ) ] = tm->tm_year + 1900;
+    setNumVariable( atoi( tmp_string_buffer + 1 ), tm->tm_year + 1900 );
 
     readToken( &p_string_buffer, tmp_string_buffer );
     if ( tmp_string_buffer[0] != '%' ) errorAndExit( string_buffer + string_buffer_offset );
-    num_variables[ atoi( tmp_string_buffer + 1 ) ] = tm->tm_mon + 1;
+    setNumVariable( atoi( tmp_string_buffer + 1 ), tm->tm_mon + 1 );
 
     readToken( &p_string_buffer, tmp_string_buffer );
     if ( tmp_string_buffer[0] != '%' ) errorAndExit( string_buffer + string_buffer_offset );
-    num_variables[ atoi( tmp_string_buffer + 1 ) ] = tm->tm_mday;
+    setNumVariable( atoi( tmp_string_buffer + 1 ), tm->tm_mday );
 
     //printf("dateCommand %d, %d %d\n", tm->tm_year + 1900, tm->tm_mon + 1, tm->tm_mday );
 
@@ -750,7 +836,8 @@ int ScriptParser::cmpCommand()
     tmp_buffer = new char[ strlen( tmp_string_buffer ) + 1 ];
     memcpy( tmp_buffer, tmp_string_buffer, strlen( tmp_string_buffer ) + 1 );
     readStr( &p_string_buffer, tmp_string_buffer );
-    num_variables[ no ] = strcmp( tmp_buffer, tmp_string_buffer );
+
+    setNumVariable( no, strcmp( tmp_buffer, tmp_string_buffer ) );
     delete[] tmp_buffer;
     
     return RET_CONTINUE;
@@ -773,6 +860,24 @@ int ScriptParser::clickstrCommand()
     return RET_CONTINUE;
 }
 
+int ScriptParser::breakCommand()
+{
+    char *p_string_buffer = string_buffer + string_buffer_offset + 5; // strlen("break") = 5
+
+    readStr( &p_string_buffer, tmp_string_buffer );
+    if ( tmp_string_buffer[0] == '*' ){
+        current_link_label_info->label_info = lookupLabel( tmp_string_buffer + 1 );
+        current_link_label_info->current_line = 0;
+        current_link_label_info->offset = 0;
+        
+        return RET_JUMP;
+    }
+    else{
+        break_flag = true;
+        return RET_CONTINUE;
+    }
+}
+
 int ScriptParser::atoiCommand()
 {
     int no;
@@ -785,7 +890,8 @@ int ScriptParser::atoiCommand()
     if ( no >= VARIABLE_RANGE ) errorAndExit( string_buffer + string_buffer_offset );
 
     readStr( &p_string_buffer, tmp_string_buffer );
-    num_variables[ no ] = atoi( tmp_string_buffer );
+
+    setNumVariable( no, atoi( tmp_string_buffer ) );
     
     return RET_CONTINUE;
 }
@@ -816,7 +922,8 @@ int ScriptParser::addCommand()
 
     if ( tmp_string_buffer[0] == '%' ){
         a = readInt( &p_string_buffer, tmp_string_buffer );
-        num_variables[ no ] += a;
+        setNumVariable( no, num_variables[ no ] + a );
+        
         //printf("addCommand %d = %d + %d\n", num_variables[ no ], num_variables[ no ]-a, a );
     }
     else{

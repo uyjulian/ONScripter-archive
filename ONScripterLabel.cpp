@@ -105,6 +105,7 @@ static struct FuncLUT{
     {"blt",      &ONScripterLabel::bltCommand},
     {"bg",      &ONScripterLabel::bgCommand},
     {"autoclick",      &ONScripterLabel::autoclickCommand},
+    {"amsp",      &ONScripterLabel::amspCommand},
     {"", NULL}
 };
 
@@ -573,17 +574,20 @@ void ONScripterLabel::mousePressEvent( SDL_MouseButtonEvent *event )
     }
     
     if ( event_mode & WAIT_BUTTON_MODE || event_mode & WAIT_MOUSE_MODE ){
-        endCursor( clickstr_state );
+        if ( !(event_mode & WAIT_BUTTON_MODE) ) endCursor( clickstr_state );
         startTimer( MINIMUM_TIMER_RESOLUTION );
     }
 }
 
 void ONScripterLabel::timerEvent( void )
 {
+    
     if ( sentence_font.wait_time == 0 )
         printf("timer wait_time = 0\n");
 
     //printf("timerEvent %d\n", event_mode);
+
+  timerEventTop:
     
     int ret;
     unsigned int i;
@@ -669,6 +673,7 @@ void ONScripterLabel::timerEvent( void )
                 if ( !start_delayed_effect_info ){
                     event_mode = IDLE_EVENT_MODE;
                     //printf("stopped\n");
+                    if ( effect_blank == 0 ) goto timerEventTop;
                     startTimer( effect_blank );
                     return;
                 }
@@ -742,6 +747,7 @@ void ONScripterLabel::mouseMoveEvent( SDL_MouseMotionEvent *event )
 
 void ONScripterLabel::executeLabel()
 {
+  executeLabelTop:    
 #if 0
     printf("*****  executeLabel %s:%d:%d *****\n",
            current_link_label_info->label_info.name,
@@ -768,20 +774,6 @@ void ONScripterLabel::executeLabel()
             line_cache = i;
             current_link_label_info->current_script = p_script_buffer;
             ret1 = readLine( &p_script_buffer );
-            if ( string_buffer[0] == '~' ){
-                last_tilde.label_info = current_link_label_info->label_info;
-                last_tilde.current_line = current_link_label_info->current_line;
-                last_tilde.offset = current_link_label_info->offset;
-                if ( jumpf_flag ) jumpf_flag = false;
-                i++;
-                continue;
-            }
-            if ( jumpf_flag ){
-                //if ( string_buffer[0] == '~' ) jumpf_flag = false;
-                //if ( !jumpf_flag ) printf("jumpf_flag cleared\n");
-                i++;
-                continue;
-            }
             if ( first_read_flag ){
                 first_read_flag = false;
                 string_buffer_offset = current_link_label_info->offset;
@@ -795,14 +787,36 @@ void ONScripterLabel::executeLabel()
         current_link_label_info->current_line = i;
         current_link_label_info->offset = string_buffer_offset;
 
+        if ( string_buffer[string_buffer_offset] == '~' ){
+            last_tilde.label_info = current_link_label_info->label_info;
+            last_tilde.current_line = current_link_label_info->current_line;
+            last_tilde.offset = current_link_label_info->offset;
+            if ( jumpf_flag ) jumpf_flag = false;
+            skipToken();
+            if ( string_buffer[string_buffer_offset] == '\0' ) i++;
+            continue;
+        }
+        if ( jumpf_flag ){
+            skipToken();
+            if ( string_buffer[string_buffer_offset] == '\0' ) i++;
+            continue;
+        }
+        if ( break_flag ){
+            if ( !strncmp( string_buffer + string_buffer_offset, "next", 4 ) ) break_flag = false;
+            skipToken();
+            if ( string_buffer[string_buffer_offset] == '\0' ) i++;
+            continue;
+        }
+        
         ret1 = ScriptParser::parseLine();
         if ( ret1 == RET_COMMENT ){
             i++;
             continue;
         }
         else if ( ret1 == RET_JUMP ){
-            startTimer( MINIMUM_TIMER_RESOLUTION );
-            return;
+            goto executeLabelTop;
+            //startTimer( MINIMUM_TIMER_RESOLUTION );
+            //return;
         }
         else if ( ret1 == RET_CONTINUE ){
             if ( string_buffer[ string_buffer_offset ] == '\0' ){
@@ -827,8 +841,9 @@ void ONScripterLabel::executeLabel()
         else if ( ret1 == RET_NOMATCH ){
             ret2 = this->parseLine();
             if ( ret2 == RET_JUMP ){
-                startTimer( MINIMUM_TIMER_RESOLUTION );
-                return;
+                goto executeLabelTop;
+                //startTimer( MINIMUM_TIMER_RESOLUTION );
+                //return;
             }
             else if ( ret2 == RET_CONTINUE ){
                 if ( string_buffer[ string_buffer_offset ] == '\0' ){
@@ -838,7 +853,6 @@ void ONScripterLabel::executeLabel()
                 }
             }
             else if ( ret2 == RET_WAIT ){
-                //printf("current offset %d\n",current_link_label_info->offset);
                 return;
             }
             else if ( ret2 == RET_WAIT_NEXT ){
@@ -852,13 +866,14 @@ void ONScripterLabel::executeLabel()
                 return;
             }
         }
-        //printf("end of while\n");
     }
 
     current_link_label_info->label_info = lookupLabelNext( current_link_label_info->label_info.name );
     current_link_label_info->current_line = 0;
     current_link_label_info->offset = 0;
-    if ( current_link_label_info->label_info.start_address != NULL ) startTimer( MINIMUM_TIMER_RESOLUTION );
+
+    //if ( current_link_label_info->label_info.start_address != NULL ) startTimer( MINIMUM_TIMER_RESOLUTION );
+    if ( current_link_label_info->label_info.start_address != NULL ) goto executeLabelTop;
     else fprintf( stderr, " ***** End *****\n");
 }
 
@@ -876,13 +891,10 @@ int ONScripterLabel::parseLine( )
     while( func_lut[ lut_counter ].command[0] ){
         if ( !strcmp( func_lut[ lut_counter ].command, tmp_string_buffer ) ){
             ret = (this->*func_lut[ lut_counter ].method)();
-
             if ( ret == RET_CONTINUE || ret == RET_WAIT_NEXT ){
                 skipToken();
             }
-            
             return ret;
-
         }
         lut_counter++;
     }
@@ -2193,6 +2205,10 @@ int ONScripterLabel::textCommand( char *text )
         int j = readInt( &p_string_buffer, tmp_string_buffer );
         printf("read Int %d\n",j);
         sprintf( num_buf, "%d", j);
+        if ( j < 0 ){
+            drawChar( "„Ÿ", &sentence_font, false );
+            j = -j;
+        }
         for ( unsigned int i=0 ; i<strlen(num_buf) ; i++ ){
             getSJISFromInteger( out_text, num_buf[i] - '0', false );
             drawChar( out_text, &sentence_font, false );
@@ -2275,7 +2291,6 @@ int ONScripterLabel::wavestopCommand()
 
 int ONScripterLabel::waittimerCommand()
 {
-    //printf("ONScripterLabel::waittimerCommand %d\n", event_mode);
     char *p_string_buffer = string_buffer + string_buffer_offset + 9; // strlen("waittimer") = 9
 
     int count = readInt( &p_string_buffer, tmp_string_buffer ) + internal_timer - SDL_GetTicks();
@@ -2291,10 +2306,7 @@ int ONScripterLabel::waitCommand()
 {
     char *p_string_buffer = string_buffer + string_buffer_offset + 4; // strlen("wait") = 4
 
-    int no = readInt( &p_string_buffer, tmp_string_buffer );
-    //printf(" waitCommand %d\n", no );
-    
-    startTimer( no );
+    startTimer( readInt( &p_string_buffer, tmp_string_buffer ) );
 
     return RET_WAIT_NEXT;
 }
@@ -2367,6 +2379,7 @@ int ONScripterLabel::setwindowCommand()
     sentence_font.pitch_xy[0] = readInt( &p_string_buffer, tmp_string_buffer ) + sentence_font.font_size;
     sentence_font.pitch_xy[1] = readInt( &p_string_buffer, tmp_string_buffer ) + sentence_font.font_size;
     sentence_font.wait_time = readInt( &p_string_buffer, tmp_string_buffer );
+    if ( sentence_font.wait_time == 0 ) sentence_font.wait_time = 10;
     sentence_font.display_bold = readInt( &p_string_buffer, tmp_string_buffer )?true:false;
     sentence_font.display_shadow = readInt( &p_string_buffer, tmp_string_buffer )?true:false;
 
@@ -2613,9 +2626,8 @@ int ONScripterLabel::rndCommand()
         lower = 0;
         upper = readInt( &p_string_buffer, tmp_string_buffer ) - 1;
     }
-    
-    num_variables[ no ] = lower + (int)( (double)(upper-lower+1)*rand()/(RAND_MAX+1.0));
-    //printf("rndCommand %d\n", num_variables[ no ] );
+
+    setNumVariable( no, lower + (int)( (double)(upper-lower+1)*rand()/(RAND_MAX+1.0)) );
 
     return RET_CONTINUE;
 }
@@ -2959,7 +2971,7 @@ int ONScripterLabel::ldCommand()
 
 int ONScripterLabel::jumpfCommand()
 {
-    //printf("jumpfCommand\n");
+    printf("jumpfCommand\n");
     jumpf_flag = true;
     return RET_CONTINUE;
 }
@@ -2981,7 +2993,7 @@ int ONScripterLabel::getversionCommand()
     
     assert ( tmp_string_buffer[0] == '%' );
     int no = atoi( tmp_string_buffer + 1 );
-    num_variables[ no ] = ONSCRITER_VERSION;
+    setNumVariable( no, ONSCRITER_VERSION );
     printf("getversionCommand %d\n", num_variables[ no ] );
     return RET_CONTINUE;
 }
@@ -3192,7 +3204,6 @@ int ONScripterLabel::btnCommand()
 
 int ONScripterLabel::btnwaitCommand()
 {
-    //printf("ONScripterLabel::btnwaitCommand %d\n", event_mode);
     SDL_Rect src_rect;
 
     char *p_string_buffer = string_buffer + string_buffer_offset + 7; // strlen("btnwait") = 7
@@ -3201,8 +3212,7 @@ int ONScripterLabel::btnwaitCommand()
         readToken( &p_string_buffer, tmp_string_buffer );
         if ( tmp_string_buffer[0] != '%' ) errorAndExit( string_buffer + string_buffer_offset );
 
-        num_variables[ atoi( tmp_string_buffer+1 ) ] = current_button_state.button;
-        //printf("btwait button num_variables[ %d ] %d\n",atoi( tmp_string_buffer+1 ),current_button_state.button);
+        setNumVariable( atoi( tmp_string_buffer+1 ), current_button_state.button );
 
         if ( current_button_state.button > 0 ) deleteButtonLink();
 
@@ -3222,11 +3232,9 @@ int ONScripterLabel::btnwaitCommand()
         }
             
         event_mode &= ~WAIT_BUTTON_MODE;
-        //startTimer( MINIMUM_TIMER_RESOLUTION );
         return RET_CONTINUE;
     }
     else{
-        //current_link_label_info->offset = string_buffer_offset;
         event_mode |= WAIT_BUTTON_MODE;
         return RET_WAIT;
     }
@@ -3348,3 +3356,21 @@ int ONScripterLabel::autoclickCommand()
     
     return RET_CONTINUE;
 }
+
+int ONScripterLabel::amspCommand()
+{
+    int no;
+    char *p_string_buffer;
+
+    p_string_buffer = string_buffer + string_buffer_offset + 4; // strlen("amsp") = 4;
+
+    no = readInt( &p_string_buffer, tmp_string_buffer );
+    sprite_info[ no ].x = readInt( &p_string_buffer, tmp_string_buffer );
+    sprite_info[ no ].y = readInt( &p_string_buffer, tmp_string_buffer );
+    sprite_info[ no ].trans = readInt( &p_string_buffer, tmp_string_buffer );
+    if ( sprite_info[ no ].trans > 255 ) sprite_info[ no ].trans = 255;
+    else if ( sprite_info[ no ].trans < 0 ) sprite_info[ no ].trans = 0;
+
+    return RET_CONTINUE;
+}
+

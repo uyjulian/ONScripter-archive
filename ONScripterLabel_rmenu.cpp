@@ -239,18 +239,10 @@ int ONScripterLabel::loadSaveFile( int no )
 
         if ( file_version <= 104 )
         {
-            if ( file_version >= 102 ){
+            if ( file_version >= 102 )
                 loadInt( fp, &j );
-                //current_link_label_info->end_of_line_flag = (j==1)?true:false;
-            }
-            else{
-                //current_link_label_info->end_of_line_flag = false;
-            }
-            //current_link_label_info->new_line_flag = false;
 
             loadInt( fp, &address );
-            //current_link_label_info->current_script =
-            //  current_link_label_info->label_info.start_address + address;
         }
         else{
             loadInt( fp, &string_buffer_offset );
@@ -265,7 +257,11 @@ int ONScripterLabel::loadSaveFile( int no )
         label_stack_depth++;
     }
     script_h.setCurrent( current_link_label_info->current_script );
-
+    if ( script_h.isQuat() ){ // for puttext
+        script_h.text_line_flag = true;
+        script_h.next_text_line_flag = true;
+    }
+    
     int tmp_event_mode = fgetc( fp );
     
     /* ---------------------------------------- */
@@ -505,7 +501,11 @@ int ONScripterLabel::saveSaveFile( int no )
     
     /* ---------------------------------------- */
     /* Save link label info */
-    current_link_label_info->current_script = script_h.next_script;
+    if ( script_h.isQuat() ) // for puttext
+        current_link_label_info->current_script = script_h.getCurrent();
+    else
+        current_link_label_info->current_script = script_h.next_script;
+
     LinkLabelInfo *info = &root_link_label_info;
 
     while( info ){

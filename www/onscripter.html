@@ -12,7 +12,7 @@
 </CENTER>
 
 Created: Feb. 6, 2002<br>
-Last updated: Feb. 26, 2002
+Last updated: Feb. 27, 2002
 
 <HR>
 
@@ -20,15 +20,14 @@ Last updated: Feb. 26, 2002
 <tr><th>はじめに</th></tr>
 <tr><td>
 
-<p>ONScripterとは、NScripter 用に作られたスクリプトを解釈して実行するプログラムです。</p>
+<p>ONScripterとは、NScripter 用に作られたスクリプトを独自に解釈して実行するプログラムです。</p>
 
 <p>NScripterとは<a
 href="http://www2.osk.3web.ne.jp/~naokikun/index.htm">高橋直樹</a>氏が開発したゲーム実行エンジンであり、高橋氏のホームページから<a href="http://www2.osk.3web.ne.jp/~naokikun/index.htm">ダウンロード</a>できます。</p>
 
-<p>現在はベータ版<A HREF="onscripter-beta-20020226.tar.gz">onscripter-beta-20020226.tar.gz</A>を配布しております。<br>
+<p>現在はベータ版<A HREF="onscripter-beta-20020227.tar.gz">onscripter-beta-20020227.tar.gz</A>を配布しております。<br>
 ベータ版ゆえデバッグ出力・assert 等が有効になっていますが、正式版になったら取り除きます。<br>
-(一つ前のベータ版<A HREF="onscripter-beta-20020224a.tar.gz">onscripter-beta-20020224a.tar.gz</A>)</p>
-(もう一つ前のベータ版<A HREF="onscripter-beta-20020223.tar.gz">onscripter-beta-20020223.tar.gz</A>)</p>
+(一つ前のベータ版<A HREF="onscripter-beta-20020226.tar.gz">onscripter-beta-20020226.tar.gz</A>)</p>
 
 <p>バグ報告・機能追加は随時受け付けますので、一番下のメールアドレスまでお願いします。</p>
 
@@ -45,7 +44,7 @@ href="http://www2.osk.3web.ne.jp/~naokikun/index.htm">高橋直樹</a>氏が開発したゲ
 <OL>
   <LI> 全ての操作をキーボードから行えます。もちろんマウスも使えますが、使う必要はありません。
   <LI> CD AUDIO の演奏には対応していませんが、代わりに MP3 ファイルの演奏に振り替える機能があります。
-  <LI> マルチプラットフォームに対応しています。当方では Windows と Linux で動作確認をしていますが、下記の SDL が動く環境ならどこでも同じソースをコンパイルするだけで動くはずです。<BR>
+  <LI> マルチプラットフォームに対応しています。当方では Windows と Linux で動作確認をしていますが、下記の bzip2 及び SDL が動く環境ならどこでも同じソースをコンパイルするだけで動くはずです。<BR>
   <LI> 全てのコマンド・仕様を実装していないため、ゲームによって挙動がおかしくなります。その場合は下記メールアドレスまで御報告下さい。
 </OL>
 
@@ -56,7 +55,7 @@ href="http://www2.osk.3web.ne.jp/~naokikun/index.htm">高橋直樹</a>氏が開発したゲ
 
 <OL>
   <LI> セーブ・ロード機能があります(ただし、save?.dat は独自形式)。<BR>
-  <LI> Nsa のデコードを実装しています。<BR>
+  <LI> Nsa 及び Nbz のデコードを実装しています。<BR>
   <LI> よく使われる画面効果（効果番号 1 - 14）を実装しています。<BR>
   <LI> wave 演奏と MP3 演奏を実装しています。<BR>
   <LI> 右クリックメニューを実装しています。<BR>
@@ -73,6 +72,8 @@ href="http://www2.osk.3web.ne.jp/~naokikun/index.htm">高橋直樹</a>氏が開発したゲ
 <p> 下記のライブラリと処理系が必要です。バージョンは最新である必要はないかもしれませんが、他のバージョンでは確認していません。</p>
 
 <DL>
+  <DT> ・<A HREF="http://sources.redhat.com/bzip2/"> The bzip2 and libbzip2 official home page </A>
+  <DD> bzip2-1.0.2
   <DT> ・<A HREF="http://www.libsdl.org">SDL (Simple Direct Layer)</A>
   <DD> SDL-1.2.3, SDL_image-1.2.1, SDL_mixer-1.2.1, SDL_sound-0.1.4, SDL_ttf-2.0.4
   <DT> ・<A HREF="http://www.lokigames.com/development/smpeg.php3">SMPEG (SDL Mpeg Player Library)</A>
@@ -87,10 +88,10 @@ href="http://www2.osk.3web.ne.jp/~naokikun/index.htm">高橋直樹</a>氏が開発したゲ
 
 <p> Windows と Linux で動作確認をしています。<BR>
 
-その他の多くの Unix 系 OS, BeOS, MacOS については SDL と SMPEG が対応しているため適切な Makefile を書けばコンパイル・実行できると思いますが、当方では確認できないので誰かやって下さい。</p>
+その他の多くの Unix 系 OS, BeOS, MacOS については bzip2 と SDL と SMPEG が対応しているため適切な Makefile を書けばコンパイル・実行できると思いますが、当方では確認できないので誰かやって下さい。</p>
 
 <h3> コンパイル </h3>
-<p>適当な場所に ONScripter を展開し、Linux の場合は make -f Makefile.Linux, Windows の場合は、nmake -f Makefile.Win とやって下さい。Windows の場合は、SDL と SMPEG のヘッダファイルとライブラリのある場所を Makefile.Win で指定しているので、自身の環境に合わせて適宜修正してください。</p>
+<p>適当な場所に ONScripter を展開し、Linux の場合は make -f Makefile.Linux, Windows の場合は、nmake -f Makefile.Win とやって下さい。Windows の場合は、bzip2 と SDL と SMPEG のヘッダファイルとライブラリのある場所を Makefile.Win で指定しているので、自身の環境に合わせて適宜修正してください。</p>
 
 <h3> 実行 </h3>
 <p><FONT color="#ff0000">[必須]</FONT>まずゲームのアーカイブを一カ所にまとめます。通常は、スクリプト(0.txt もしくは nscript.dat)とアーカイブ(arc.sar もしくは arc.nsa)の２つのファイルがあれば十分なはずです。arc1.nsa 〜 arc9.nsa がある場合は、それも置いてください。またゲームによっては、アーカイブの外に一部の画像ファイルを置いていたりします。その場合は、それらのファイルも元と同じように置いてください。一番確実なのは、ディレクトリ毎全てのファイルをコピーしてくることです。</p>
@@ -111,7 +112,6 @@ href="http://www2.osk.3web.ne.jp/~naokikun/index.htm">高橋直樹</a>氏が開発したゲ
 <p>現在把握しており直す予定のバグ・未実装機能。</p>
 
 <OL>
-  <LI> nbz decode (bz2 base?)
   <LI> save/load 時に確認画面を表示する
   <LI> btndef "" クリック待ちの実装
   <LI> sprite の透明度サポート
@@ -124,7 +124,8 @@ href="http://www2.osk.3web.ne.jp/~naokikun/index.htm">高橋直樹</a>氏が開発したゲ
   <LI> blt の拡大縮小に対応。
   <LI> alpha blend が遅いのをなんとかしたい
   <LI> 雪をスムーズに降らせる
-  <LI> 800x600 ゲームに対応させる。
+  <LI> sprite の現在の表示 cell を保存する？
+  <LI> 回想モードの表示がおかしい場合がある？
 </OL>       
 
 </td></tr>

@@ -45,11 +45,8 @@ public:
 protected:
     struct ArchiveInfo archive_info;
 
-    unsigned char readChar( FILE *fp );
-    unsigned short readShort( FILE *fp );
-    unsigned long readLong( FILE *fp );
-    int readArchive( struct ArchiveInfo *ai, bool nsa_flag = false );
-    int getIndexFromFile( struct ArchiveInfo *ai, char *file_name );
+    int readArchive( ArchiveInfo *ai, bool nsa_flag = false );
+    int getIndexFromFile( ArchiveInfo *ai, char *file_name );
     size_t getFileSub( ArchiveInfo *ai, char *file_name, unsigned char *buf );
 };
 

@@ -37,38 +37,6 @@ SarReader::~SarReader()
     close();
 }
 
-unsigned char SarReader::readChar( FILE *fp )
-{
-    unsigned char ret;
-    
-    fread( &ret, 1, 1, fp );
-    return ret;
-}
-
-unsigned short SarReader::readShort( FILE *fp )
-{
-    unsigned short ret;
-    unsigned char buf[2];
-    
-    fread( &buf, 1, 2, fp );
-    ret = buf[0] << 8 | buf[1];
-    return ret;
-}
-
-unsigned long SarReader::readLong( FILE *fp )
-{
-    unsigned long ret;
-    unsigned char buf[4];
-    
-    fread( &buf, 1, 4, fp );
-    ret = buf[0];
-    ret = ret << 8 | buf[1];
-    ret = ret << 8 | buf[2];
-    ret = ret << 8 | buf[3];
-    return ret;
-}
-
-
 int SarReader::open()
 {
     if ( (archive_info.file_handle = fopen( SAR_ARCHIVE_NAME, "rb" ) ) == NULL ){
@@ -106,9 +74,23 @@ int SarReader::readArchive( struct ArchiveInfo *ai, bool nsa_flag )
             ai->fi_list[i].compressed_no = readChar( ai->file_handle );
         ai->fi_list[i].offset = readLong( ai->file_handle ) + base_offset;
         ai->fi_list[i].length = readLong( ai->file_handle );
-        if ( nsa_flag )
+
+        /* NBZ check */
+        ai->fi_list[i].nbz_flag = false;
+        if ( count >= 3 && !strncmp( &ai->fi_list[i].name[count-3], "NBZ", 3 ) ){
+            fpos_t pos;
+            fgetpos( ai->file_handle, &pos );
+            fseek( ai->file_handle, ai->fi_list[i].offset, SEEK_SET );
             ai->fi_list[i].original_length = readLong( ai->file_handle );
-        else
+            if ( readChar( ai->file_handle ) == 'B' && readChar( ai->file_handle ) == 'Z' ) ai->fi_list[i].nbz_flag = true;
+            fsetpos( ai->file_handle, &pos );
+        }
+        
+        if ( nsa_flag ){
+            if ( ai->fi_list[i].nbz_flag ) readLong( ai->file_handle );
+            else                           ai->fi_list[i].original_length = readLong( ai->file_handle );
+        }
+        else if ( !ai->fi_list[i].nbz_flag )
             ai->fi_list[i].original_length = ai->fi_list[i].length;
         ai->fi_list[i].access_flag = false;
     }
@@ -184,6 +166,10 @@ size_t SarReader::getFileSub( ArchiveInfo *ai, char *file_name, unsigned char *b
     int i = getIndexFromFile( ai, file_name );
     if ( i == ai->num_of_files ) return 0;
 
+    if ( ai->fi_list[i].nbz_flag ){
+        return decodeNBZ( ai->file_handle, ai->fi_list[i].offset, buf );
+    }
+    
     fseek( ai->file_handle, ai->fi_list[i].offset, SEEK_SET );
     return fread( buf, 1, ai->fi_list[i].length, ai->file_handle );
 }

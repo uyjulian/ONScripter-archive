@@ -47,6 +47,7 @@ struct BaseReader
         size_t offset;
         size_t length;
         size_t original_length;
+        bool nbz_flag;
         bool access_flag;
     };
 

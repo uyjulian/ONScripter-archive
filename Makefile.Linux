@@ -4,7 +4,7 @@
 #
 
 INCS = `sdl-config --cflags`
-LIBS = `sdl-config --libs` -lSDL_ttf -lSDL_image -lSDL_sound -lSDL_mixer
+LIBS = `sdl-config --libs` -lSDL_ttf -lSDL_image -lSDL_sound -lSDL_mixer -lbz2
 
 EXESUFFIX =
 OBJSUFFIX = .o

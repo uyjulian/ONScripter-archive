@@ -46,9 +46,6 @@
 
 #define MAX_TEXT_BUFFER 10
 
-#define WIDTH  640
-#define HEIGHT 480
-
 typedef unsigned char uchar3[3];
 
 class ScriptParser
@@ -188,6 +185,7 @@ protected:
 
     /* ---------------------------------------- */
     /* Global definitions */
+    int screen_width, screen_height;
     char *version_str;
     int underline_value;
     

@@ -117,7 +117,9 @@ ScriptParser::ScriptParser()
     tmp_string_buffer  = new char[ string_buffer_length ];
 
     /* ---------------------------------------- */
-    /* Global definitions */    
+    /* Global definitions */
+    screen_width = 640;
+    screen_height = 480;
     version_str = new char[strlen(VERSION_STR1)+
                           strlen("\n")+
                           strlen(VERSION_STR2)+
@@ -392,7 +394,14 @@ int ScriptParser::readScript()
             *p_script_buffer++ = 0x0a;
         }
     }
-    
+
+    /* ---------------------------------------- */
+    /* 800 x 600 check */
+    if ( !strncmp( script_buffer, ";mode800", 8 ) ){
+        screen_width = 800;
+        screen_height = 600;
+    }
+         
     return 0;
 }
 
@@ -765,6 +774,7 @@ int ScriptParser::parseLine()
 bool ScriptParser::readToken( char **src_buf, char *dst_buf, bool skip_space_flag )
 {
     //char *dst_buf_org = dst_buf;
+    bool first_flag = true;
     bool quat_flag = false;
     bool end_with_comma_flag = false;
     
@@ -795,7 +805,9 @@ bool ScriptParser::readToken( char **src_buf, char *dst_buf, bool skip_space_fla
                             **src_buf != '&' &&
                             !(**src_buf & 0x80) ) ) &&
             ( quat_flag || skip_space_flag || ( **src_buf != ' ' &&
-                                                **src_buf != '\t' ) ) ){
+                                                **src_buf != '\t' ) ) &&
+            ( quat_flag || first_flag || **src_buf != '#' )
+            ){
         if ( **src_buf & 0x80 ) {
             *dst_buf++ = *(*src_buf)++;
             *dst_buf++ = *(*src_buf)++;
@@ -803,6 +815,7 @@ bool ScriptParser::readToken( char **src_buf, char *dst_buf, bool skip_space_fla
         else{
             *dst_buf++ = *(*src_buf)++;
         }
+        first_flag = false;
     }
 
     if ( quat_flag && **src_buf == '"' ) (*src_buf)++;
@@ -1092,7 +1105,7 @@ int ScriptParser::readInt( char **buf )
     int no;
     while ( **buf == ' ' || **buf == '\t' ) (*buf)++;
 
-    if ( (*buf)[0] == '\0' || (*buf)[0] == ':' ){
+    if ( (*buf)[0] == '\0' || (*buf)[0] == ':' || (*buf)[0] == ';' ){
         no = 0;
     }
     else if ( (*buf)[0] == '%' ){

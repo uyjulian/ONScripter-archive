@@ -266,7 +266,7 @@ int ONScripterLabel::loadSaveFile( int no )
 
     SDL_FillRect( effect_dst_surface, NULL, SDL_MapRGBA( effect_dst_surface->format, 0, 0, 0, 0 ) );
     alphaBlend( text_surface, 0, 0,
-                select_surface, 0, 0, WIDTH, HEIGHT,
+                select_surface, 0, 0, screen_width, screen_height,
                 effect_dst_surface, 0, 0,
                 0, 0, sentence_font.window_color_mask[0] );
     
@@ -524,15 +524,15 @@ void ONScripterLabel::executeSystemMenu()
         SDL_BlitSurface( shelter_select_surface, NULL, select_surface, NULL );
         SDL_FillRect( effect_dst_surface, NULL, SDL_MapRGB( effect_dst_surface->format, 0, 0, 0 ) );
         alphaBlend( text_surface, 0, 0,
-                    accumulation_surface, 0, 0, WIDTH, HEIGHT,
+                    accumulation_surface, 0, 0, screen_width, screen_height,
                     effect_dst_surface, 0, 0,
                     0, 0, menu_font.window_color_mask[0] );
 
         //text_font.setPixelSize( menu_font.font_size );
         menu_font.num_xy[0] = menu_link_width;
         menu_font.num_xy[1] = menu_link_num;
-        menu_font.top_xy[0] = (WIDTH - menu_font.num_xy[0] * menu_font.pitch_xy[0]) / 2;
-        menu_font.top_xy[1] = (HEIGHT - menu_font.num_xy[1] * menu_font.pitch_xy[1]) / 2;
+        menu_font.top_xy[0] = (screen_width - menu_font.num_xy[0] * menu_font.pitch_xy[0]) / 2;
+        menu_font.top_xy[1] = (screen_height - menu_font.num_xy[1] * menu_font.pitch_xy[1]) / 2;
 
         menu_font.xy[0] = (menu_font.num_xy[0] - menu_link_width) / 2;
         menu_font.xy[1] = (menu_font.num_xy[1] - menu_link_num) / 2;
@@ -619,7 +619,7 @@ void ONScripterLabel::executeSystemLoad()
         SDL_BlitSurface( shelter_select_surface, NULL, select_surface, NULL );
         SDL_FillRect( effect_src_surface, NULL, SDL_MapRGB( effect_src_surface->format, 0, 0, 0 ) );
         alphaBlend( text_surface, 0, 0,
-                    accumulation_surface, 0, 0, WIDTH, HEIGHT,
+                    accumulation_surface, 0, 0, screen_width, screen_height,
                     effect_src_surface, 0, 0,
                     0, 0, menu_font.window_color_mask[0] );
 
@@ -696,7 +696,7 @@ void ONScripterLabel::executeSystemSave()
         SDL_BlitSurface( shelter_select_surface, NULL, select_surface, NULL );
         SDL_FillRect( effect_dst_surface, NULL, SDL_MapRGB( effect_dst_surface->format, 0, 0, 0 ) );
         alphaBlend( text_surface, 0, 0,
-                    accumulation_surface, 0, 0, WIDTH, HEIGHT,
+                    accumulation_surface, 0, 0, screen_width, screen_height,
                     effect_dst_surface, 0, 0,
                     0, 0, system_font.window_color_mask[0] );
 
@@ -760,11 +760,11 @@ void ONScripterLabel::setupLookbackButton()
         last_button_link->no = 1;
         last_button_link->select_rect.x = 0;
         last_button_link->select_rect.y = 0;
-        last_button_link->select_rect.w = WIDTH;
-        last_button_link->select_rect.h = HEIGHT/3;
+        last_button_link->select_rect.w = screen_width;
+        last_button_link->select_rect.h = screen_height/3;
 
         if ( lookback_image_surface[0] ){
-            last_button_link->image_rect.x = WIDTH - lookback_image_surface[0]->w;
+            last_button_link->image_rect.x = screen_width - lookback_image_surface[0]->w;
             last_button_link->image_rect.y = 0;
             last_button_link->image_rect.w = lookback_image_surface[0]->w;
             last_button_link->image_rect.h = lookback_image_surface[0]->h;
@@ -797,13 +797,13 @@ void ONScripterLabel::setupLookbackButton()
     
         last_button_link->no = 2;
         last_button_link->select_rect.x = 0;
-        last_button_link->select_rect.y = HEIGHT*2/3;
-        last_button_link->select_rect.w = WIDTH;
-        last_button_link->select_rect.h = HEIGHT/3;
+        last_button_link->select_rect.y = screen_height*2/3;
+        last_button_link->select_rect.w = screen_width;
+        last_button_link->select_rect.h = screen_height/3;
 
         if ( lookback_image_surface[2] ){
-            last_button_link->image_rect.x = WIDTH - lookback_image_surface[2]->w;
-            last_button_link->image_rect.y = HEIGHT - lookback_image_surface[2]->h;
+            last_button_link->image_rect.x = screen_width - lookback_image_surface[2]->w;
+            last_button_link->image_rect.y = screen_height - lookback_image_surface[2]->h;
             last_button_link->image_rect.w = lookback_image_surface[2]->w;
             last_button_link->image_rect.h = lookback_image_surface[2]->h;
             
@@ -835,7 +835,7 @@ void ONScripterLabel::executeSystemLookback()
     SDL_BlitSurface( shelter_select_surface, NULL, select_surface, NULL );
     SDL_FillRect( effect_src_surface, NULL, SDL_MapRGB( effect_src_surface->format, 0, 0, 0 ) );
     alphaBlend( text_surface, 0, 0,
-                accumulation_surface, 0, 0, WIDTH, HEIGHT,
+                accumulation_surface, 0, 0, screen_width, screen_height,
                 effect_src_surface, 0, 0,
                 0, 0, sentence_font.window_color_mask[0] );
     

@@ -14,10 +14,10 @@ ONSCRIPTER_HEADER = ONScripterLabel.h $(PARSER_HEADER)
 ALL: $(TARGET)
 
 sardec$(EXESUFFIX): $(SAR_OBJS)
-	$(LD)$@ $(SAR_OBJS) $(LIB)
+	$(LD)$@ $(SAR_OBJS) $(LIBS)
 
 nsadec$(EXESUFFIX): $(NSA_OBJS)
-	$(LD)$@ $(NSA_OBJS) $(LIB)
+	$(LD)$@ $(NSA_OBJS) $(LIBS)
 
 onscripter$(EXESUFFIX): $(ONSCRIPTER_OBJS)
 	$(LD)$@ $(ONSCRIPTER_OBJS) $(LIBS)

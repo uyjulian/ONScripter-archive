@@ -117,7 +117,7 @@ protected:
     void mouseMoveEvent( SDL_MouseMotionEvent *event );
     void timerEvent();
     void startTimer( Uint32 count );
-    int SetVideoMode(int w, int h);
+    int SetVideoMode();
     
 private:
     typedef enum{ NORMAL_DISPLAY_MODE=0, TEXT_DISPLAY_MODE=1 } DISPLAY_MODE;
@@ -276,6 +276,7 @@ private:
     /* Cursor related variables */
     struct CursorInfo{
         int xy[2];
+        bool abs_flag;
         int w, h;
         int count;
         int direction;
@@ -285,7 +286,7 @@ private:
         SDL_Surface *preserve_surface;
     } cursor_info[2];
 
-    void loadCursor( int no, char *str, int x, int y );
+    void loadCursor( int no, char *str, int x, int y, bool abs_flag = false );
     void startCursor( int click );
     void endCursor( int click );
     

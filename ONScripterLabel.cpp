@@ -111,10 +111,11 @@ static struct FuncLUT{
     {"bg",      &ONScripterLabel::bgCommand},
     {"autoclick",      &ONScripterLabel::autoclickCommand},
     {"amsp",      &ONScripterLabel::amspCommand},
+    {"abssetcursor", &ONScripterLabel::setcursorCommand},
     {"", NULL}
 };
 
-int ONScripterLabel::SetVideoMode(int w, int h)
+int ONScripterLabel::SetVideoMode()
 {
     /* ---------------------------------------- */
     /* Initialize SDL */
@@ -130,10 +131,10 @@ int ONScripterLabel::SetVideoMode(int w, int h)
         exit(-1);
     }
 
-	screen_surface = SDL_SetVideoMode(w, h, 32, DEFAULT_SURFACE_FLAG );
+	screen_surface = SDL_SetVideoMode( screen_width, screen_height, 32, DEFAULT_SURFACE_FLAG );
 	if ( screen_surface == NULL ) {
 		fprintf(stderr, "Couldn't set %dx%dx%d video mode: %s\n",
-					w, h, 32, SDL_GetError());
+					screen_width, screen_height, 32, SDL_GetError());
 		return(-1);
 	}
 
@@ -213,7 +214,7 @@ ONScripterLabel::ONScripterLabel()
 
     printf("ONScripterLabel::ONScripterLabel\n");
     
-    SetVideoMode( WIDTH, HEIGHT );
+    SetVideoMode();
 
     int audio_rate;
     Uint16 audio_format;
@@ -248,21 +249,21 @@ ONScripterLabel::ONScripterLabel()
     amask = 0xff000000;
 #endif
 
-    background_surface   = SDL_CreateRGBSurface( DEFAULT_SURFACE_FLAG, WIDTH, HEIGHT, 32, rmask, gmask, bmask, amask );
+    background_surface   = SDL_CreateRGBSurface( DEFAULT_SURFACE_FLAG, screen_width, screen_height, 32, rmask, gmask, bmask, amask );
     SDL_SetAlpha( background_surface, DEFAULT_BLIT_FLAG, SDL_ALPHA_OPAQUE );
-    accumulation_surface = SDL_CreateRGBSurface( DEFAULT_SURFACE_FLAG, WIDTH, HEIGHT, 32, rmask, gmask, bmask, amask );
+    accumulation_surface = SDL_CreateRGBSurface( DEFAULT_SURFACE_FLAG, screen_width, screen_height, 32, rmask, gmask, bmask, amask );
     SDL_SetAlpha( accumulation_surface, DEFAULT_BLIT_FLAG, SDL_ALPHA_OPAQUE );
-    select_surface = SDL_CreateRGBSurface( DEFAULT_SURFACE_FLAG, WIDTH, HEIGHT, 32, rmask, gmask, bmask, amask );
+    select_surface = SDL_CreateRGBSurface( DEFAULT_SURFACE_FLAG, screen_width, screen_height, 32, rmask, gmask, bmask, amask );
     SDL_SetAlpha( select_surface, DEFAULT_BLIT_FLAG, SDL_ALPHA_OPAQUE );
-    text_surface = SDL_CreateRGBSurface( DEFAULT_SURFACE_FLAG, WIDTH, HEIGHT, 32, rmask, gmask, bmask, amask );
+    text_surface = SDL_CreateRGBSurface( DEFAULT_SURFACE_FLAG, screen_width, screen_height, 32, rmask, gmask, bmask, amask );
     SDL_SetAlpha( text_surface, DEFAULT_BLIT_FLAG, SDL_ALPHA_OPAQUE );
-    effect_src_surface   = SDL_CreateRGBSurface( DEFAULT_SURFACE_FLAG, WIDTH, HEIGHT, 32, rmask, gmask, bmask, amask );
+    effect_src_surface   = SDL_CreateRGBSurface( DEFAULT_SURFACE_FLAG, screen_width, screen_height, 32, rmask, gmask, bmask, amask );
     SDL_SetAlpha( effect_src_surface, DEFAULT_BLIT_FLAG, SDL_ALPHA_OPAQUE );
-    effect_dst_surface   = SDL_CreateRGBSurface( DEFAULT_SURFACE_FLAG, WIDTH, HEIGHT, 32, rmask, gmask, bmask, amask );
+    effect_dst_surface   = SDL_CreateRGBSurface( DEFAULT_SURFACE_FLAG, screen_width, screen_height, 32, rmask, gmask, bmask, amask );
     SDL_SetAlpha( effect_dst_surface, DEFAULT_BLIT_FLAG, SDL_ALPHA_OPAQUE );
-    shelter_select_surface = SDL_CreateRGBSurface( DEFAULT_SURFACE_FLAG, WIDTH, HEIGHT, 32, rmask, gmask, bmask, amask );
+    shelter_select_surface = SDL_CreateRGBSurface( DEFAULT_SURFACE_FLAG, screen_width, screen_height, 32, rmask, gmask, bmask, amask );
     SDL_SetAlpha( shelter_select_surface, DEFAULT_BLIT_FLAG, SDL_ALPHA_OPAQUE );
-    shelter_text_surface = SDL_CreateRGBSurface( DEFAULT_SURFACE_FLAG, WIDTH, HEIGHT, 32, rmask, gmask, bmask, amask );
+    shelter_text_surface = SDL_CreateRGBSurface( DEFAULT_SURFACE_FLAG, screen_width, screen_height, 32, rmask, gmask, bmask, amask );
     SDL_SetAlpha( shelter_text_surface, DEFAULT_BLIT_FLAG, SDL_ALPHA_OPAQUE );
 
     SDL_BlitSurface( background_surface, NULL, accumulation_surface, NULL );
@@ -607,8 +608,14 @@ void ONScripterLabel::timerEvent( void )
                 src_rect.y = 0;
                 src_rect.w = cursor_info[ no ].w;
                 src_rect.h = cursor_info[ no ].h;
-                dst_rect.x = sentence_font.xy[0] * sentence_font.pitch_xy[0] + sentence_font.top_xy[0] + cursor_info[ no ].xy[0];
-                dst_rect.y = sentence_font.xy[1] * sentence_font.pitch_xy[1] + sentence_font.top_xy[1] + cursor_info[ no ].xy[1];
+                if ( cursor_info[ no ].abs_flag ) {
+                    dst_rect.x = cursor_info[ no ].xy[0];
+                    dst_rect.y = cursor_info[ no ].xy[1];
+                }
+                else{
+                    dst_rect.x = sentence_font.xy[0] * sentence_font.pitch_xy[0] + sentence_font.top_xy[0] + cursor_info[ no ].xy[0];
+                    dst_rect.y = sentence_font.xy[1] * sentence_font.pitch_xy[1] + sentence_font.top_xy[1] + cursor_info[ no ].xy[1];
+                }
                 alphaBlend( text_surface, dst_rect.x, dst_rect.y,
                             cursor_info[ no ].preserve_surface, 0, 0, cursor_info[ no ].preserve_surface->w, cursor_info[ no ].preserve_surface->h,
                             cursor_info[ no ].image_surface, src_rect.x, src_rect.y,
@@ -996,14 +1003,16 @@ int ONScripterLabel::doEffect( int effect_no, struct TaggedInfo *tag, int effect
 
           case BG_EFFECT_IMAGE:
             tmp_surface = loadPixmap( tag );
-            src_rect.x = 0;
-            src_rect.y = 0;
-            src_rect.w = tmp_surface->w;
-            src_rect.h = tmp_surface->h;
-            dst_rect.x = (WIDTH - tmp_surface->w) / 2;
-            dst_rect.y = (HEIGHT - tmp_surface->h) / 2;
+            if ( tmp_surface ){
+                src_rect.x = 0;
+                src_rect.y = 0;
+                src_rect.w = tmp_surface->w;
+                src_rect.h = tmp_surface->h;
+                dst_rect.x = (screen_width - tmp_surface->w) / 2;
+                dst_rect.y = (screen_height - tmp_surface->h) / 2;
 
-            SDL_BlitSurface( tmp_surface, &src_rect, background_surface, &dst_rect );
+                SDL_BlitSurface( tmp_surface, &src_rect, background_surface, &dst_rect );
+            }
             refreshAccumulationSruface( effect_dst_surface );
             break;
             
@@ -1027,32 +1036,32 @@ int ONScripterLabel::doEffect( int effect_no, struct TaggedInfo *tag, int effect
 
       case 2: // Left shutter
         width = EFFECT_STRIPE_WIDTH * effect_counter / effect.duration;
-        for ( i=0 ; i<WIDTH/EFFECT_STRIPE_WIDTH ; i++ ){
+        for ( i=0 ; i<screen_width/EFFECT_STRIPE_WIDTH ; i++ ){
             src_rect.x = dst_rect.x = i * EFFECT_STRIPE_WIDTH;
             src_rect.y = dst_rect.y = 0;
             src_rect.w = dst_rect.w = width;
-            src_rect.h = dst_rect.h = HEIGHT;
+            src_rect.h = dst_rect.h = screen_height;
             SDL_BlitSurface( effect_dst_surface, &src_rect, text_surface, &dst_rect );
         }
         break;
 
       case 3: // Right shutter
         width = EFFECT_STRIPE_WIDTH * effect_counter / effect.duration;
-        for ( i=1 ; i<=WIDTH/EFFECT_STRIPE_WIDTH ; i++ ){
+        for ( i=1 ; i<=screen_width/EFFECT_STRIPE_WIDTH ; i++ ){
             src_rect.x = dst_rect.x = i * EFFECT_STRIPE_WIDTH - width - 1;
             src_rect.y = dst_rect.y = 0;
             src_rect.w = dst_rect.w = width;
-            src_rect.h = dst_rect.h = HEIGHT;
+            src_rect.h = dst_rect.h = screen_height;
             SDL_BlitSurface( effect_dst_surface, &src_rect, text_surface, &dst_rect );
         }
         break;
 
       case 4: // Top shutter
         height = EFFECT_STRIPE_WIDTH * effect_counter / effect.duration;
-        for ( i=0 ; i<HEIGHT/EFFECT_STRIPE_WIDTH ; i++ ){
+        for ( i=0 ; i<screen_height/EFFECT_STRIPE_WIDTH ; i++ ){
             src_rect.x = dst_rect.x = 0;
             src_rect.y = dst_rect.y = i * EFFECT_STRIPE_WIDTH;
-            src_rect.w = dst_rect.w = WIDTH;
+            src_rect.w = dst_rect.w = screen_width;
             src_rect.h = dst_rect.h = height;
             SDL_BlitSurface( effect_dst_surface, &src_rect, text_surface, &dst_rect );
         }
@@ -1060,10 +1069,10 @@ int ONScripterLabel::doEffect( int effect_no, struct TaggedInfo *tag, int effect
 
       case 5: // Bottom shutter
         height = EFFECT_STRIPE_WIDTH * effect_counter / effect.duration;
-        for ( i=1 ; i<=HEIGHT/EFFECT_STRIPE_WIDTH ; i++ ){
+        for ( i=1 ; i<=screen_height/EFFECT_STRIPE_WIDTH ; i++ ){
             src_rect.x = dst_rect.x = 0;
             src_rect.y = dst_rect.y = i * EFFECT_STRIPE_WIDTH - height - 1;
-            src_rect.w = dst_rect.w = WIDTH;
+            src_rect.w = dst_rect.w = screen_width;
             src_rect.h = dst_rect.h = height;
             SDL_BlitSurface( effect_dst_surface, &src_rect, text_surface, &dst_rect );
         }
@@ -1071,13 +1080,13 @@ int ONScripterLabel::doEffect( int effect_no, struct TaggedInfo *tag, int effect
 
       case 6: // Left curtain
         width = EFFECT_STRIPE_CURTAIN_WIDTH * effect_counter * 2 / effect.duration;
-        for ( i=0 ; i<=WIDTH/EFFECT_STRIPE_CURTAIN_WIDTH ; i++ ){
-            width2 = width - EFFECT_STRIPE_CURTAIN_WIDTH * EFFECT_STRIPE_CURTAIN_WIDTH * i / WIDTH;
+        for ( i=0 ; i<=screen_width/EFFECT_STRIPE_CURTAIN_WIDTH ; i++ ){
+            width2 = width - EFFECT_STRIPE_CURTAIN_WIDTH * EFFECT_STRIPE_CURTAIN_WIDTH * i / screen_width;
             if ( width2 >= 0 ){
                 src_rect.x = dst_rect.x = i * EFFECT_STRIPE_CURTAIN_WIDTH;
                 src_rect.y = dst_rect.y = 0;
                 src_rect.w = dst_rect.w = width2;
-                src_rect.h = dst_rect.h = HEIGHT;
+                src_rect.h = dst_rect.h = screen_height;
                 SDL_BlitSurface( effect_dst_surface, &src_rect, text_surface, &dst_rect );
             }
         }
@@ -1085,14 +1094,14 @@ int ONScripterLabel::doEffect( int effect_no, struct TaggedInfo *tag, int effect
 
       case 7: // Right curtain
         width = EFFECT_STRIPE_CURTAIN_WIDTH * effect_counter * 2 / effect.duration;
-        for ( i=0 ; i<=WIDTH/EFFECT_STRIPE_CURTAIN_WIDTH ; i++ ){
-            width2 = width - EFFECT_STRIPE_CURTAIN_WIDTH * EFFECT_STRIPE_CURTAIN_WIDTH * i / WIDTH;
+        for ( i=0 ; i<=screen_width/EFFECT_STRIPE_CURTAIN_WIDTH ; i++ ){
+            width2 = width - EFFECT_STRIPE_CURTAIN_WIDTH * EFFECT_STRIPE_CURTAIN_WIDTH * i / screen_width;
             if ( width2 >= 0 ){
                 if ( width2 > EFFECT_STRIPE_CURTAIN_WIDTH ) width2 = EFFECT_STRIPE_CURTAIN_WIDTH;
-                src_rect.x = dst_rect.x = WIDTH - i * EFFECT_STRIPE_CURTAIN_WIDTH - width2;
+                src_rect.x = dst_rect.x = screen_width - i * EFFECT_STRIPE_CURTAIN_WIDTH - width2;
                 src_rect.y = dst_rect.y = 0;
                 src_rect.w = dst_rect.w = width2;
-                src_rect.h = dst_rect.h = HEIGHT;
+                src_rect.h = dst_rect.h = screen_height;
                 SDL_BlitSurface( effect_dst_surface, &src_rect, text_surface, &dst_rect );
             }
         }
@@ -1100,12 +1109,12 @@ int ONScripterLabel::doEffect( int effect_no, struct TaggedInfo *tag, int effect
 
       case 8: // Top curtain
         height = EFFECT_STRIPE_CURTAIN_WIDTH * effect_counter * 2 / effect.duration;
-        for ( i=0 ; i<=HEIGHT/EFFECT_STRIPE_CURTAIN_WIDTH ; i++ ){
-            height2 = height - EFFECT_STRIPE_CURTAIN_WIDTH * EFFECT_STRIPE_CURTAIN_WIDTH * i / HEIGHT;
+        for ( i=0 ; i<=screen_height/EFFECT_STRIPE_CURTAIN_WIDTH ; i++ ){
+            height2 = height - EFFECT_STRIPE_CURTAIN_WIDTH * EFFECT_STRIPE_CURTAIN_WIDTH * i / screen_height;
             if ( height2 >= 0 ){
                 src_rect.x = dst_rect.x = 0;
                 src_rect.y = dst_rect.y = i * EFFECT_STRIPE_CURTAIN_WIDTH;
-                src_rect.w = dst_rect.w = WIDTH;
+                src_rect.w = dst_rect.w = screen_width;
                 src_rect.h = dst_rect.h = height2;
                 SDL_BlitSurface( effect_dst_surface, &src_rect, text_surface, &dst_rect );
             }
@@ -1114,12 +1123,12 @@ int ONScripterLabel::doEffect( int effect_no, struct TaggedInfo *tag, int effect
 
       case 9: // Bottom curtain
         height = EFFECT_STRIPE_CURTAIN_WIDTH * effect_counter * 2 / effect.duration;
-        for ( i=0 ; i<=HEIGHT/EFFECT_STRIPE_CURTAIN_WIDTH ; i++ ){
-            height2 = height - EFFECT_STRIPE_CURTAIN_WIDTH * EFFECT_STRIPE_CURTAIN_WIDTH * i / HEIGHT;
+        for ( i=0 ; i<=screen_height/EFFECT_STRIPE_CURTAIN_WIDTH ; i++ ){
+            height2 = height - EFFECT_STRIPE_CURTAIN_WIDTH * EFFECT_STRIPE_CURTAIN_WIDTH * i / screen_height;
             if ( height2 >= 0 ){
                 src_rect.x = dst_rect.x = 0;
-                src_rect.y = dst_rect.y = HEIGHT - i * EFFECT_STRIPE_CURTAIN_WIDTH - height2;
-                src_rect.w = dst_rect.w = WIDTH;
+                src_rect.y = dst_rect.y = screen_height - i * EFFECT_STRIPE_CURTAIN_WIDTH - height2;
+                src_rect.w = dst_rect.w = screen_width;
                 src_rect.h = dst_rect.h = height2;
                 SDL_BlitSurface( effect_dst_surface, &src_rect, text_surface, &dst_rect );
             }
@@ -1132,71 +1141,71 @@ int ONScripterLabel::doEffect( int effect_no, struct TaggedInfo *tag, int effect
       case 10: // Cross fade
         height = 255 - 256 * effect_counter / effect.duration;
         alphaBlend( text_surface, 0, 0,
-                    effect_src_surface, 0, 0, WIDTH, HEIGHT,
+                    effect_src_surface, 0, 0, screen_width, screen_height,
                     effect_dst_surface, 0, 0,
                     0, 0, height );
         break;
         
       case 11: // Left scroll
-        width = WIDTH * effect_counter / effect.duration;
+        width = screen_width * effect_counter / effect.duration;
         src_rect.x = 0;
         dst_rect.x = width;
         src_rect.y = dst_rect.y = 0;
-        src_rect.w = dst_rect.w = WIDTH - width;
-        src_rect.h = dst_rect.h = HEIGHT;
+        src_rect.w = dst_rect.w = screen_width - width;
+        src_rect.h = dst_rect.h = screen_height;
         SDL_BlitSurface( effect_src_surface, &src_rect, text_surface, &dst_rect );
-        src_rect.x = WIDTH - width - 1;
+        src_rect.x = screen_width - width - 1;
         dst_rect.x = 0;
         src_rect.y = dst_rect.y = 0;
         src_rect.w = dst_rect.w = width;
-        src_rect.h = dst_rect.h = HEIGHT;
+        src_rect.h = dst_rect.h = screen_height;
         SDL_BlitSurface( effect_dst_surface, &src_rect, text_surface, &dst_rect );
         break;
 
       case 12: // Right scroll
-        width = WIDTH * effect_counter / effect.duration;
+        width = screen_width * effect_counter / effect.duration;
         src_rect.x = width;
         dst_rect.x = 0;
         src_rect.y = dst_rect.y = 0;
-        src_rect.w = dst_rect.w = WIDTH - width;
-        src_rect.h = dst_rect.h = HEIGHT;
+        src_rect.w = dst_rect.w = screen_width - width;
+        src_rect.h = dst_rect.h = screen_height;
         SDL_BlitSurface( effect_src_surface, &src_rect, text_surface, &dst_rect );
         src_rect.x = 0;
-        dst_rect.x = WIDTH - width - 1;
+        dst_rect.x = screen_width - width - 1;
         src_rect.y = dst_rect.y = 0;
         src_rect.w = dst_rect.w = width;
-        src_rect.h = dst_rect.h = HEIGHT;
+        src_rect.h = dst_rect.h = screen_height;
         SDL_BlitSurface( effect_dst_surface, &src_rect, text_surface, &dst_rect );
         break;
 
       case 13: // Top scroll
-        width = HEIGHT * effect_counter / effect.duration;
+        width = screen_height * effect_counter / effect.duration;
         src_rect.x = dst_rect.x = 0;
         src_rect.y = 0;
         dst_rect.y = width;
-        src_rect.w = dst_rect.w = WIDTH;
-        src_rect.h = dst_rect.h = HEIGHT - width;
+        src_rect.w = dst_rect.w = screen_width;
+        src_rect.h = dst_rect.h = screen_height - width;
         SDL_BlitSurface( effect_src_surface, &src_rect, text_surface, &dst_rect );
         src_rect.x = dst_rect.x = 0;
-        src_rect.y = HEIGHT - width - 1;
+        src_rect.y = screen_height - width - 1;
         dst_rect.y = 0;
-        src_rect.w = dst_rect.w = WIDTH;
+        src_rect.w = dst_rect.w = screen_width;
         src_rect.h = dst_rect.h = width;
         SDL_BlitSurface( effect_dst_surface, &src_rect, text_surface, &dst_rect );
         break;
 
       case 14: // Bottom scroll
-        width = HEIGHT * effect_counter / effect.duration;
+        width = screen_height * effect_counter / effect.duration;
         src_rect.x = dst_rect.x = 0;
         src_rect.y = width;
         dst_rect.y = 0;
-        src_rect.w = dst_rect.w = WIDTH;
-        src_rect.h = dst_rect.h = HEIGHT - width;
+        src_rect.w = dst_rect.w = screen_width;
+        src_rect.h = dst_rect.h = screen_height - width;
         SDL_BlitSurface( effect_src_surface, &src_rect, text_surface, &dst_rect );
         src_rect.x = dst_rect.x = 0;
         src_rect.y = 0;
-        dst_rect.y = HEIGHT - width - 1;
-        src_rect.w = dst_rect.w = WIDTH;
+        dst_rect.y = screen_height - width - 1;
+        src_rect.w = dst_rect.w = screen_width;
         src_rect.h = dst_rect.h = width;
         SDL_BlitSurface( effect_dst_surface, &src_rect, text_surface, &dst_rect );
         break;
@@ -1421,7 +1430,7 @@ int ONScripterLabel::enterTextDisplayMode()
             SDL_BlitSurface( text_surface, NULL, effect_src_surface, NULL );
             SDL_FillRect( effect_dst_surface, NULL, SDL_MapRGBA( effect_dst_surface->format, 0, 0, 0, 0 ) );
             alphaBlend( text_surface, 0, 0,
-                        select_surface, 0, 0, WIDTH, HEIGHT,
+                        select_surface, 0, 0, screen_width, screen_height,
                         effect_dst_surface, 0, 0,
                         0, 0, sentence_font.window_color_mask[0] );
 
@@ -1667,7 +1676,7 @@ void ONScripterLabel::enterNewPage( )
     /* Clear the screen */
     SDL_FillRect( effect_src_surface, NULL, SDL_MapRGB( effect_src_surface->format, 0, 0, 0 ) );
     alphaBlend( text_surface, 0, 0,
-                accumulation_surface, 0, 0, WIDTH, HEIGHT,
+                accumulation_surface, 0, 0, screen_width, screen_height,
                 effect_src_surface, 0, 0,
                 0, 0, sentence_font.window_color_mask[0] );
 
@@ -1918,7 +1927,7 @@ void ONScripterLabel::refreshAccumulationSruface( SDL_Surface *surface )
             parseTaggedString( tachi_image_name[i], &tag );
             if ( tag.trans_mode == TRANS_ALPHA ) w /= 2;
             drawTaggedSurface( surface,
-                               WIDTH * (i+1) / 4 - w / 2,
+                               screen_width * (i+1) / 4 - w / 2,
                                underline_value - h + 1,
                                w,
                                h,
@@ -2028,13 +2037,14 @@ void ONScripterLabel::makeEffectStr( char *buf, int no, int duration, char *imag
     }
 }
 
-void ONScripterLabel::loadCursor( int no, char *str, int x, int y )
+void ONScripterLabel::loadCursor( int no, char *str, int x, int y, bool abs_flag )
 {
     //printf("load Cursor %s\n",str);
     if ( cursor_info[ no ].image_name ) delete[] cursor_info[ no ].image_name;
     cursor_info[ no ].image_name = new char[ strlen( str ) + 1 ];
     memcpy( cursor_info[ no ].image_name, str, strlen( str ) + 1 );
 
+    cursor_info[ no ].abs_flag = abs_flag;
     cursor_info[ no ].xy[0] = x;
     cursor_info[ no ].xy[1] = y;
 
@@ -2061,8 +2071,14 @@ void ONScripterLabel::startCursor( int click )
     else if ( click == CLICK_NEWPAGE ) no = CURSOR_NEWPAGE_NO;
     else return;
 
-    src_rect.x = sentence_font.xy[0] * sentence_font.pitch_xy[0] + sentence_font.top_xy[0] + cursor_info[ no ].xy[0];
-    src_rect.y = sentence_font.xy[1] * sentence_font.pitch_xy[1] + sentence_font.top_xy[1] + cursor_info[ no ].xy[1];
+    if ( cursor_info[ no ].abs_flag ) {
+        src_rect.x = cursor_info[ no ].xy[0];
+        src_rect.y = cursor_info[ no ].xy[1];
+    }
+    else{
+        src_rect.x = sentence_font.xy[0] * sentence_font.pitch_xy[0] + sentence_font.top_xy[0] + cursor_info[ no ].xy[0];
+        src_rect.y = sentence_font.xy[1] * sentence_font.pitch_xy[1] + sentence_font.top_xy[1] + cursor_info[ no ].xy[1];
+    }
     if ( cursor_info[ no ].image_surface ){
         src_rect.w = cursor_info[ no ].image_surface->w / cursor_info[ no ].tag.num_of_cells;
         src_rect.h = cursor_info[ no ].image_surface->h;
@@ -2082,8 +2098,14 @@ void ONScripterLabel::endCursor( int click )
     else if ( click == CLICK_NEWPAGE ) no = CURSOR_NEWPAGE_NO;
     else return;
     
-    dst_rect.x = sentence_font.xy[0] * sentence_font.pitch_xy[0] + sentence_font.top_xy[0] + cursor_info[ no ].xy[0];
-    dst_rect.y = sentence_font.xy[1] * sentence_font.pitch_xy[1] + sentence_font.top_xy[1] + cursor_info[ no ].xy[1];
+    if ( cursor_info[ no ].abs_flag ) {
+        dst_rect.x = cursor_info[ no ].xy[0];
+        dst_rect.y = cursor_info[ no ].xy[1];
+    }
+    else{
+        dst_rect.x = sentence_font.xy[0] * sentence_font.pitch_xy[0] + sentence_font.top_xy[0] + cursor_info[ no ].xy[0];
+        dst_rect.y = sentence_font.xy[1] * sentence_font.pitch_xy[1] + sentence_font.top_xy[1] + cursor_info[ no ].xy[1];
+    }
     if ( cursor_info[ no ].preserve_surface ){
         SDL_BlitSurface( cursor_info[ no ].preserve_surface, NULL, text_surface, &dst_rect );
         flush( dst_rect.x, dst_rect.y, cursor_info[ no ].preserve_surface->w, cursor_info[ no ].preserve_surface->h );
@@ -2393,7 +2415,7 @@ int ONScripterLabel::textclearCommand()
     /* Clear the screen */
     SDL_FillRect( effect_src_surface, NULL, SDL_MapRGB( effect_src_surface->format, 0, 0, 0 ) );
     alphaBlend( text_surface, 0, 0,
-                accumulation_surface, 0, 0, WIDTH, HEIGHT,
+                accumulation_surface, 0, 0, screen_width, screen_height,
                 effect_src_surface, 0, 0,
                 0, 0, sentence_font.window_color_mask[0] );
     flush();
@@ -2493,9 +2515,18 @@ int ONScripterLabel::setwindowCommand()
 
 int ONScripterLabel::setcursorCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 9; // strlen("setcursor") = 9
     int x, y, no;
     char *buf;
+    bool abs_flag;
+    char *p_string_buffer;
+    if ( !strncmp( string_buffer + string_buffer_offset, "abssetcursor", 12 ) ) {
+        abs_flag = true;
+        p_string_buffer = string_buffer + string_buffer_offset + 12; // strlen("abssetcursor") = 12
+    }
+    else{
+        abs_flag = false;
+        p_string_buffer = string_buffer + string_buffer_offset + 9; // strlen("setcursor") = 9
+    }
     
     no = readInt( &p_string_buffer );
 
@@ -2506,7 +2537,7 @@ int ONScripterLabel::setcursorCommand()
     x = readInt( &p_string_buffer );
     y = readInt( &p_string_buffer );
 
-    loadCursor( no, buf, x, y );
+    loadCursor( no, buf, x, y, abs_flag );
     delete[] buf;
     
     return RET_CONTINUE;

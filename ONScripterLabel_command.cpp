@@ -645,7 +645,9 @@ int ONScripterLabel::resettimerCommand()
 
 int ONScripterLabel::resetCommand()
 {
-    for ( int i=0 ; i<199 ; i++ ){
+    int i;
+
+    for ( i=0 ; i<199 ; i++ ){
         script_h.num_variables[i] = 0;
         if ( script_h.str_variables[i] ) delete[] script_h.str_variables[i];
         script_h.str_variables[i] = NULL;
@@ -675,7 +677,7 @@ int ONScripterLabel::resetCommand()
     
     barclearCommand();
     prnumclearCommand();
-    for ( int i=0 ; i<MAX_SPRITE_NUM ; i++ ){
+    for ( i=0 ; i<MAX_SPRITE_NUM ; i++ ){
         sprite_info[i].remove();
     }
 
@@ -739,13 +741,13 @@ int ONScripterLabel::puttextCommand()
 {
     int ret = enterTextDisplayMode();
     if ( ret != RET_NOMATCH ) return ret;
-    
-    const char *buf = script_h.readStr();
 
-    drawString( buf, sentence_font.color, &sentence_font, false, text_surface, NULL, true );
-    flush();
+    script_h.readToken();
+    string_buffer_offset = 0;
+    script_h.text_line_flag = true;
+    script_h.next_text_line_flag = true;
 
-    return RET_CONTINUE;
+    return RET_CONTINUE_NOREAD;
 }
 
 int ONScripterLabel::prnumclearCommand()

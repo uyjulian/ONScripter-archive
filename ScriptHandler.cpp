@@ -137,6 +137,11 @@ bool ScriptHandler::isText()
     return text_line_flag;
 }
 
+bool ScriptHandler::isQuat()
+{
+    return quat_flag;
+}
+
 void ScriptHandler::skipLine( int no )
 {
     for ( int i=0 ; i<no ; i++ ){
@@ -164,6 +169,7 @@ bool ScriptHandler::readToken( bool advance_flag )
     char *buf = current_script;
     unsigned int i;
     end_with_comma_flag = false;
+    quat_flag = false;
 
     int string_counter=0, no;
     bool op_flag = true;
@@ -209,13 +215,12 @@ bool ScriptHandler::readToken( bool advance_flag )
     }
     else if ( ch == '"' )
     {
-        addStringBuffer( ch, string_counter++ );
+        quat_flag = true;
         ch = *buf++;
         while ( ch != '"' ){
             addStringBuffer( ch, string_counter++ );
             ch = *buf++;
         }
-        addStringBuffer( ch, string_counter++ );
         buf++;
     }
     else while ( ch != 0x0a && ch != '\0' && ch != '"' )
@@ -385,7 +390,6 @@ const char *ScriptHandler::readStr( char *dst_buf, bool reread_flag )
     if ( reread_flag ) next_script = current_script;
     
     bool condition_flag = false;
-    bool ret;
     
     if ( next_script[0] == '(' ){
         condition_flag = true;
@@ -394,19 +398,13 @@ const char *ScriptHandler::readStr( char *dst_buf, bool reread_flag )
         if ( *next_script == ')' ) next_script++;
     }
     else{
-        ret = readToken();
-        if ( string_buffer[0] == '"' ){
-            strcpy( dst_buf, string_buffer+1 );
-            dst_buf[ strlen( string_buffer+1 ) - 1 ] = '\0';
-        }
-        else{
-            strcpy( dst_buf, string_buffer );
-        }
+        readToken();
+        strcpy( dst_buf, string_buffer );
     }
 
     if ( condition_flag ){ // check condition code
         if ( cBR->getAccessFlag( dst_buf ) ){
-            ret = readStr( dst_buf );
+            readStr( dst_buf );
             char *buf = new char[ strlen( dst_buf ) + 1 ];
             memcpy( buf, dst_buf, strlen( dst_buf ) + 1 );
             readStr( dst_buf );
@@ -415,7 +413,7 @@ const char *ScriptHandler::readStr( char *dst_buf, bool reread_flag )
         }
         else{
             readStr( dst_buf );
-            ret = readStr( dst_buf );
+            readStr( dst_buf );
         }
     }
     

@@ -368,6 +368,7 @@ ONScripterLabel::~ONScripterLabel()
 
 void ONScripterLabel::resetSentenceFont()
 {
+    sentence_font.reset();
     sentence_font.font_size_xy[0] = DEFAULT_FONT_SIZE;
     sentence_font.font_size_xy[1] = DEFAULT_FONT_SIZE;
     sentence_font.top_xy[0] = 8;

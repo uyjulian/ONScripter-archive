@@ -613,7 +613,7 @@ int ScriptParser::ifCommand()
             f = script_h.getLabelAccessFlag( buf+1 );
             //printf("lchk %s(%d,%d) ", tmp_string_buffer, getLabelAccessFlag( tmp_string_buffer+1 ), condition_flag );
         }
-        else if ( script_h.getStringBuffer()[0] == '$' || script_h.getStringBuffer()[0] == '"' ){
+        else if ( script_h.getStringBuffer()[0] == '$' || script_h.isQuat() ){
             const char *buf = script_h.readStr( NULL, true ); // reread
             tmp_buffer = new char[ strlen( buf ) + 1 ];
             memcpy( tmp_buffer, buf, strlen( buf ) + 1 );
@@ -625,7 +625,7 @@ int ScriptParser::ifCommand()
             buf = script_h.readStr();
 
             int val = strcmp( tmp_buffer, buf );
-            if ( !strcmp( save_buf, ">=" ) )      f = (val >= 0);
+            if      ( !strcmp( save_buf, ">=" ) ) f = (val >= 0);
             else if ( !strcmp( save_buf, "<=" ) ) f = (val <= 0);
             else if ( !strcmp( save_buf, "==" ) ) f = (val == 0);
             else if ( !strcmp( save_buf, "!=" ) ) f = (val != 0);
@@ -647,7 +647,7 @@ int ScriptParser::ifCommand()
             right_value = script_h.readInt();
             //printf("right (%d) ", right_value );
 
-            if ( !strcmp( save_buf, ">=" ) )      f = (left_value >= right_value);
+            if      ( !strcmp( save_buf, ">=" ) ) f = (left_value >= right_value);
             else if ( !strcmp( save_buf, "<=" ) ) f = (left_value <= right_value);
             else if ( !strcmp( save_buf, "==" ) ) f = (left_value == right_value);
             else if ( !strcmp( save_buf, "!=" ) ) f = (left_value != right_value);

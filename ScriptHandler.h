@@ -25,6 +25,7 @@
 #define __SCRIPT_HANDLER_H__
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include "BaseReader.h"
 
@@ -64,6 +65,7 @@ public:
 
     bool isName( const char *name );
     bool isText();
+    bool isQuat();
     void skipLine( int no=1 );
 
     bool rereadToken( bool advance_flag=true );
@@ -194,6 +196,7 @@ private:
 
     bool head_flag;
     bool text_flag;
+    bool quat_flag;
 
     StackInfo root_stack_info, *last_stack_info;
     char *current_script;

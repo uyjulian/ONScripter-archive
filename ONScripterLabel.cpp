@@ -69,6 +69,7 @@ static struct FuncLUT{
     {"setcursor",   &ONScripterLabel::setcursorCommand},
     {"selnum",   &ONScripterLabel::selectCommand},
     {"selgosub",   &ONScripterLabel::selectCommand},
+    {"selectbtnwait", &ONScripterLabel::btnwaitCommand},
     {"select",   &ONScripterLabel::selectCommand},
     {"saveon",   &ONScripterLabel::saveonCommand},
     {"saveoff",   &ONScripterLabel::saveoffCommand},
@@ -105,6 +106,7 @@ static struct FuncLUT{
     {"gettimer", &ONScripterLabel::gettimerCommand},
     {"getreg", &ONScripterLabel::getregCommand},
     {"getcursorpos", &ONScripterLabel::getcursorposCommand},
+    {"getcselnum", &ONScripterLabel::getcselnumCommand},
     {"game", &ONScripterLabel::gameCommand},
     {"exbtn_d", &ONScripterLabel::exbtnCommand},
     {"exbtn", &ONScripterLabel::exbtnCommand},
@@ -115,6 +117,9 @@ static struct FuncLUT{
     {"dwave", &ONScripterLabel::dwaveCommand},
     {"delay", &ONScripterLabel::delayCommand},
     {"csp", &ONScripterLabel::cspCommand},
+    {"cselgoto", &ONScripterLabel::cselgotoCommand},
+    {"cselbtn", &ONScripterLabel::cselbtnCommand},
+    {"csel", &ONScripterLabel::selectCommand},
     {"click", &ONScripterLabel::clickCommand},
     {"cl", &ONScripterLabel::clCommand},
     {"cell", &ONScripterLabel::cellCommand},
@@ -455,7 +460,9 @@ void ONScripterLabel::mouseOverCheck( int x, int y )
 
         if ( p_button_link ){
             if ( event_mode & WAIT_BUTTON_MODE ){
-                if ( p_button_link->button_type == NORMAL_BUTTON && p_button_link->image_surface ){
+                if ( ( p_button_link->button_type == NORMAL_BUTTON ||
+                       p_button_link->button_type == CUSTOM_SELECT_BUTTON ) &&
+                     p_button_link->image_surface ){
                     SDL_BlitSurface( p_button_link->image_surface, NULL, text_surface, &p_button_link->image_rect );
                 }
                 else if ( p_button_link->button_type == SPRITE_BUTTON || p_button_link->button_type == EX_SPRITE_BUTTON ){
@@ -525,12 +532,18 @@ void ONScripterLabel::executeLabel()
             last_tilde.offset = current_link_label_info->offset;
             if ( jumpf_flag ) jumpf_flag = false;
             skipToken();
-            if ( string_buffer[string_buffer_offset] == '\0' ) i++;
+            if ( string_buffer[string_buffer_offset] == '\0' ){
+                i++;
+                text_line_flag = false;
+            }
             continue;
         }
         if ( jumpf_flag || break_flag && strncmp( string_buffer + string_buffer_offset, "next", 4 ) ){
             skipToken();
-            if ( string_buffer[string_buffer_offset] == '\0' ) i++;
+            if ( string_buffer[string_buffer_offset] == '\0' ){
+                i++;
+                text_line_flag = false;
+            }
             continue;
         }
 
@@ -549,6 +562,7 @@ void ONScripterLabel::executeLabel()
                 current_link_label_info->current_script = p_script_buffer;
                 string_buffer_offset = 0;
                 i++;
+                text_line_flag = false;
             }
         }
         else if ( ret == RET_WAIT ){
@@ -559,6 +573,7 @@ void ONScripterLabel::executeLabel()
                 current_link_label_info->current_script = p_script_buffer;
                 current_link_label_info->current_line = i+1;
                 current_link_label_info->offset = 0;
+                text_line_flag = false;
             }
             else
                 current_link_label_info->offset = string_buffer_offset;
@@ -579,32 +594,33 @@ int ONScripterLabel::parseLine( )
     int ret, lut_counter = 0;
 
     char *p_string_buffer = string_buffer + string_buffer_offset;
-    //printf("parseline %d %s\n",string_buffer_offset,p_string_buffer );
-    
-    readToken( &p_string_buffer, tmp_string_buffer );
-    
-    while( func_lut[ lut_counter ].method ){
-        if ( !strcmp( func_lut[ lut_counter ].command, tmp_string_buffer ) ){
-            ret = (this->*func_lut[ lut_counter ].method)();
-            if ( ret == RET_CONTINUE || ret == RET_WAIT_NEXT ){
-                skipToken();
-            }
-            return ret;
-        }
-        lut_counter++;
-    }
+    //printf("parseline %d %d %s\n", text_line_flag,string_buffer_offset,p_string_buffer );
 
-    if ( !text_line_flag &&
-         string_buffer[string_buffer_offset] != '@' && string_buffer[string_buffer_offset] != '\\' &&
-         string_buffer[string_buffer_offset] != '/' && string_buffer[string_buffer_offset] != '!' &&
-         string_buffer[string_buffer_offset] != '#' && string_buffer[string_buffer_offset] != '_' &&
-         string_buffer[string_buffer_offset] != '%' && !(string_buffer[string_buffer_offset] & 0x80 ) ){
-        printf(" command [%s] is not supported yet!!\n", &string_buffer[string_buffer_offset] );
-        skipToken();
-        return RET_CONTINUE;
+    readToken( &p_string_buffer, tmp_string_buffer );
+    if ( !text_line_flag ){
+        while( func_lut[ lut_counter ].method ){
+            if ( !strcmp( func_lut[ lut_counter ].command, tmp_string_buffer ) ){
+                ret = (this->*func_lut[ lut_counter ].method)();
+                if ( ret == RET_CONTINUE || ret == RET_WAIT_NEXT ){
+                    skipToken();
+                }
+                return ret;
+            }
+            lut_counter++;
+        }
+
+        if ( string_buffer[string_buffer_offset] != '@' && string_buffer[string_buffer_offset] != '\\' &&
+             string_buffer[string_buffer_offset] != '/' && string_buffer[string_buffer_offset] != '!' &&
+             string_buffer[string_buffer_offset] != '#' && string_buffer[string_buffer_offset] != '_' &&
+             string_buffer[string_buffer_offset] != '%' && !(string_buffer[string_buffer_offset] & 0x80 ) ){
+            printf(" command [%s] is not supported yet!!\n", &string_buffer[string_buffer_offset] );
+            skipToken();
+            return RET_CONTINUE;
+        }
     }
 
     /* Text */
+    text_line_flag = true;
     ret = textCommand( &string_buffer[string_buffer_offset] );
     if ( string_buffer[ string_buffer_offset ] == '\0' ){
         if ( !new_line_skip_flag && text_char_flag ){
@@ -1276,23 +1292,13 @@ struct ONScripterLabel::ButtonLink *ONScripterLabel::getSelectableSentence( char
 void ONScripterLabel::drawTaggedSurface( SDL_Surface *dst_surface, AnimationInfo *anim, SDL_Rect *clip )
 {
     if ( anim->tag.trans_mode == TRANS_STRING ){
-        int top_xy[2], xy[2];
-        
-        xy[0] = sentence_font.xy[0];
-        xy[1] = sentence_font.xy[1];
-        top_xy[0] = sentence_font.top_xy[0];
-        top_xy[1] = sentence_font.top_xy[1];
-        sentence_font.top_xy[0] = anim->tag.pos.x;
-        sentence_font.top_xy[1] = anim->tag.pos.y;
-        sentence_font.xy[0] = 0;
-        sentence_font.xy[1] = 0;
 
-        drawString( anim->tag.file_name, anim->tag.color_list[ anim->tag.current_cell ], &sentence_font, false, dst_surface, NULL );
-        
-        sentence_font.xy[0] = xy[0];
-        sentence_font.xy[1] = xy[1];
-        sentence_font.top_xy[0] = top_xy[0];
-        sentence_font.top_xy[1] = top_xy[1];
+        FontInfo f_info = sentence_font;
+        f_info.xy[0] = f_info.xy[1] = 0;
+        f_info.top_xy[0] = anim->tag.pos.x;
+        f_info.top_xy[1] = anim->tag.pos.y;
+
+        drawString( anim->tag.file_name, anim->tag.color_list[ anim->tag.current_cell ], &f_info, false, dst_surface, NULL );
         return;
     }
     else if ( !anim->image_surface ) return;

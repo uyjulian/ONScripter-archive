@@ -353,10 +353,15 @@ int ONScripterLabel::selectCommand()
         p_string_buffer = string_buffer + string_buffer_offset + 8; // strlen("selgosub") = 8
         select_mode = SELECT_GOSUB_MODE;
     }
-    else{
+    else if ( !strncmp( string_buffer + string_buffer_offset, "select", 6 ) ){
         p_string_buffer = string_buffer + string_buffer_offset + 6; // strlen("select") = 6
         select_mode = SELECT_GOTO_MODE;
     }
+    else if ( !strncmp( string_buffer + string_buffer_offset, "csel", 4 ) ){
+        p_string_buffer = string_buffer + string_buffer_offset + 4; // strlen("csel") = 4
+        select_mode = SELECT_CSEL_MODE;
+    }
+
     bool comma_flag, first_token_flag = true;
     int count = 0;
 
@@ -430,6 +435,7 @@ int ONScripterLabel::selectCommand()
             }
 
             if ( p_string_buffer[0] == '\0' ){ // end of line
+                text_line_flag = false;
                 if ( first_token_flag ) comma_flag = true;
 
                 do{
@@ -451,22 +457,32 @@ int ONScripterLabel::selectCommand()
         }
         select_label_info.offset = p_string_buffer - string_buffer;
 
-        last_select_link = root_select_link.next;
-        int counter = 1;
-        while( last_select_link ){
-            if ( *last_select_link->text ){
-                last_button_link->next = getSelectableSentence( last_select_link->text, &sentence_font );
-                last_button_link = last_button_link->next;
-                last_button_link->no = counter;
+        if ( select_mode != SELECT_CSEL_MODE ){
+            last_select_link = root_select_link.next;
+            int counter = 1;
+            while( last_select_link ){
+                if ( *last_select_link->text ){
+                    last_button_link->next = getSelectableSentence( last_select_link->text, &sentence_font );
+                    last_button_link = last_button_link->next;
+                    last_button_link->no = counter;
+                }
+                counter++;
+                last_select_link = last_select_link->next;
             }
-            counter++;
-            last_select_link = last_select_link->next;
+            SDL_BlitSurface( text_surface, NULL, select_surface, NULL );
         }
-        SDL_BlitSurface( text_surface, NULL, select_surface, NULL );
 
-        if ( select_mode == SELECT_GOTO_MODE ){ /* Resume */
+        if ( select_mode == SELECT_GOTO_MODE || select_mode == SELECT_CSEL_MODE ){ /* Resume */
             p_script_buffer = current_link_label_info->current_script;
             readLine( &p_script_buffer );
+
+            if ( select_mode == SELECT_CSEL_MODE ){
+                current_link_label_info->label_info = lookupLabel( "customsel" );
+                current_link_label_info->current_line = 0;
+                current_link_label_info->offset = 0;
+
+                return RET_JUMP;
+            }
         }
         sentence_font.xy[0] = xy[0];
         sentence_font.xy[1] = xy[1];
@@ -1015,6 +1031,22 @@ int ONScripterLabel::getcursorposCommand()
     return RET_CONTINUE;
 }
 
+int ONScripterLabel::getcselnumCommand()
+{
+    char *p_string_buffer = string_buffer + string_buffer_offset + 10; // strlen("getcselnum") = 10
+    int count = 0;
+
+    SelectLink *link = root_select_link.next;
+    while ( link ) {
+        count++;
+        link = link->next;
+    }
+    setInt( p_string_buffer, count );
+    //printf("getcselnum num=%d\n", count);
+
+    return RET_CONTINUE;
+}
+
 int ONScripterLabel::gameCommand()
 {
     current_link_label_info->label_info = lookupLabel( "start" );
@@ -1163,6 +1195,68 @@ int ONScripterLabel::cspCommand()
     else{
         sprite_info[no].remove();
     }
+
+    return RET_CONTINUE;
+}
+
+int ONScripterLabel::cselgotoCommand()
+{
+    char *p_string_buffer = string_buffer + string_buffer_offset + 8; // strlen("cselgoto") = 8
+
+    int csel_no = readInt( &p_string_buffer );
+
+    int counter = 0;
+    SelectLink *link = root_select_link.next;
+    while( link ){
+        if ( csel_no == counter++ ) break;
+        link = link->next;
+    }
+    if ( !link ) errorAndExit( string_buffer + string_buffer_offset, "no select link" );
+
+    current_link_label_info->label_info   = lookupLabel( link->label );
+    current_link_label_info->current_line = 0;
+    current_link_label_info->offset       = 0;
+
+    deleteSelectLink();
+    
+    return RET_JUMP;
+}
+
+int ONScripterLabel::cselbtnCommand()
+{
+    char *p_string_buffer = string_buffer + string_buffer_offset + 7; // strlen("cselbtn") = 7
+
+    int csel_no   = readInt( &p_string_buffer );
+    int button_no = readInt( &p_string_buffer );
+
+    FontInfo csel_info;
+    csel_info = sentence_font;
+    csel_info.top_xy[0] = readInt( &p_string_buffer );
+    csel_info.top_xy[1] = readInt( &p_string_buffer );
+    csel_info.xy[0] = csel_info.xy[1] = 0;
+
+    int counter = 0;
+    SelectLink *link = root_select_link.next;
+    while ( link ){
+        if ( csel_no == counter++ ) break;
+        link = link->next;
+    }
+    if ( link == NULL || link->text == NULL || *link->text == '\0' )
+        errorAndExit( string_buffer + string_buffer_offset, "no select text" );
+
+    last_button_link->next = getSelectableSentence( link->text, &csel_info );
+    last_button_link = last_button_link->next;
+    last_button_link->button_type = CUSTOM_SELECT_BUTTON;
+    last_button_link->no          = button_no;
+#if 0
+    printf("ONScripterLabel::cselbtnCommand %d,%d,%d,%d \"%s\"\n",
+           csel_no,
+           last_button_link->no,
+           last_button_link->image_rect.x,
+           last_button_link->image_rect.y,
+           last_select_link->text);
+#endif
+    SDL_BlitSurface( text_surface, &last_button_link->select_rect, select_surface, NULL );
 
     return RET_CONTINUE;
 }
@@ -1332,7 +1426,7 @@ int ONScripterLabel::btnCommand()
 int ONScripterLabel::btnwaitCommand()
 {
     char *p_string_buffer;
-    bool del_flag, textbtn_flag = false;
+    bool del_flag, textbtn_flag = false, selectbtn_flag = false;
 
     if ( !strncmp( string_buffer + string_buffer_offset, "btnwait2", 8 ) ){
         p_string_buffer = string_buffer + string_buffer_offset + 8; // strlen("btnwait2") = 8
@@ -1346,6 +1440,11 @@ int ONScripterLabel::btnwaitCommand()
         p_string_buffer = string_buffer + string_buffer_offset + 11; // strlen("textbtnwait") = 11
         del_flag = false;
         textbtn_flag = true;
+    }
+    else if ( !strncmp( string_buffer + string_buffer_offset, "selectbtnwait", 13 ) ){
+        p_string_buffer = string_buffer + string_buffer_offset + 13; // strlen("selectbtnwait") = 13
+        del_flag = false;
+        selectbtn_flag = true;
     }
     
     if ( event_mode & WAIT_BUTTON_MODE ){
@@ -1369,8 +1468,20 @@ int ONScripterLabel::btnwaitCommand()
                 sprite_info[ current_button_link.sprite_no ].tag.current_cell = 0;
             p_button_link = p_button_link->next;
         }
+
+        if ( selectbtn_flag ) SDL_BlitSurface( text_surface, NULL, shelter_text_surface, NULL );
         refreshAccumulationSurface( accumulation_surface );
         SDL_BlitSurface( accumulation_surface, NULL, text_surface, NULL );
+
+        if ( selectbtn_flag ){
+            p_button_link = root_button_link.next;
+            while( p_button_link ){
+                if ( p_button_link->button_type == CUSTOM_SELECT_BUTTON )
+                    SDL_BlitSurface( shelter_text_surface, &p_button_link->select_rect, text_surface, &p_button_link->select_rect );
+                p_button_link = p_button_link->next;
+            }
+        }
+
         if ( !erase_text_window_flag && text_on_flag ){
             shadowTextDisplay( NULL, text_surface );
             restoreTextBuffer();

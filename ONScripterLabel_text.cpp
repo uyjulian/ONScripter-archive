@@ -237,6 +237,7 @@ int ONScripterLabel::clickWait( char *out_text )
         key_pressed_flag = false;
         if ( out_text ) drawChar( out_text, &sentence_font, true, text_surface );
         if ( textgosub_label ){
+            text_line_flag = false;
             saveoffCommand();
             if ( out_text ) string_buffer_offset += 2;
             else            string_buffer_offset++;
@@ -269,6 +270,7 @@ int ONScripterLabel::clickNewPage( char *out_text )
     else{
         key_pressed_flag = false;
         if ( textgosub_label ){
+            text_line_flag = false;
             saveoffCommand();
             if ( out_text ) string_buffer_offset += 2;
             else            string_buffer_offset++;

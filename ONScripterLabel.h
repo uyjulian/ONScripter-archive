@@ -108,6 +108,7 @@ public:
     int gettimerCommand();
     int getregCommand();
     int getcursorposCommand();
+    int getcselnumCommand();
     int gameCommand();
     int exbtnCommand();
     int erasetextwindowCommand();
@@ -116,6 +117,8 @@ public:
     int dwaveCommand();
     int delayCommand();
     int cspCommand();
+    int cselgotoCommand();
+    int cselbtnCommand();
     int clickCommand();
     int clCommand();
     int cellCommand();
@@ -267,7 +270,8 @@ private:
 
     typedef enum{ NORMAL_BUTTON = 0,
                       SPRITE_BUTTON = 1,
-                      EX_SPRITE_BUTTON = 2
+                      EX_SPRITE_BUTTON = 2,
+                      CUSTOM_SELECT_BUTTON = 3
                       } BUTTON_TYPE;
 
     struct ButtonLink{
@@ -408,7 +412,7 @@ private:
 
     /* ---------------------------------------- */
     /* Select related variables */
-    typedef enum{ SELECT_GOTO_MODE=0, SELECT_GOSUB_MODE=1, SELECT_NUM_MODE=2 } SELECT_MODE;
+    typedef enum{ SELECT_GOTO_MODE=0, SELECT_GOSUB_MODE=1, SELECT_NUM_MODE=2, SELECT_CSEL_MODE=3 } SELECT_MODE;
     struct SelectLink{
         struct SelectLink *next;
         char *text;

@@ -12,7 +12,7 @@
 </CENTER>
 
 Created: Feb. 6, 2002<br>
-Last updated: Mar. 31, 2002
+Last updated: Apr. 3, 2002
 
 <HR>
 
@@ -27,9 +27,9 @@ href="http://www2.osk.3web.ne.jp/~naokikun/index.htm">高橋直樹</a>氏が開発したゲ
 
 <p>ONScripter で何ができるのかについてはαβεさんの[<A HREF="http://abe.platina.sakura.ne.jp/onscripter/">ONScripter のスゝメ</A>]を参照してください。</p>
 
-<p>現在はベータ版<A HREF="onscripter-beta-20020331a.tar.gz">onscripter-beta-20020331a.tar.gz</A>を配布しております。<br>
+<p>現在はベータ版<A HREF="onscripter-beta-20020403.tar.gz">onscripter-beta-20020403.tar.gz</A>を配布しております。<br>
 ベータ版ゆえデバッグ出力・assert 等が有効になっていますが、正式版になったら取り除きます。<br>
-(一つ前のベータ版<A HREF="onscripter-beta-20020330.tar.gz">onscripter-beta-20020330.tar.gz</A>)</p>
+(一つ前のベータ版<A HREF="onscripter-beta-20020331a.tar.gz">onscripter-beta-20020331a.tar.gz</A>)</p>
 
 <p>更新内容については[<A HREF="onscripter_devel.html">開発日誌</A>]を参照して下さい。</p>
 
@@ -160,7 +160,8 @@ href="http://www2.osk.3web.ne.jp/~naokikun/index.htm">高橋直樹</a>氏が開発したゲ
 
 <OL>
   <LI> (<FONT color="#ff0000">高</FONT>)windowback の実装。
-  <LI> (<FONT color="#ff0000">高</FONT>)csel 系の実装。
+  <LI> (<FONT color="#ff0000">高</FONT>)textgosub 時に、\@ の直後の同じ行に命令文があると、テキスト文としてデコードされたものを命令文として解釈しようとして破綻する。困った。大分書き換えないといけないかも。仕様書がないものを作ろうとすると往々にしてこうなる…。
+  <LI> (<FONT color="#ff0000">中</FONT>)csel 系のセーブに関する不具合の解消。
   <LI> (<FONT color="#ff8800">中</FONT>)sprite の透明度サポート
   <LI> (<FONT color="#ff8800">中</FONT>)blt の拡大縮小に対応。
   <LI> (<FONT color="#ff8800">中</FONT>)雪をスムーズに降らせる

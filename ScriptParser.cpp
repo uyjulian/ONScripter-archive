@@ -130,6 +130,7 @@ ScriptParser::ScriptParser()
     underline_value = 479;
     rmode_flag = true;
     windowback_flag = false;
+    text_line_flag = false;
     
     num_of_labels = 0;
     label_info = NULL;
@@ -467,7 +468,7 @@ int ScriptParser::readLine( char **buf, bool raw_flag )
     int string_counter=0, no;
     char *end_point = script_buffer + script_buffer_length;
     bool head_flag = true;
-    text_line_flag = true;
+    bool text_flag = true;
     char num_buf[10], num_sjis_buf[3];
     bool quat_flag = false, comment_flag = false;
     unsigned int i;
@@ -496,25 +497,26 @@ int ScriptParser::readLine( char **buf, bool raw_flag )
             addStringBuffer( ch, string_counter++ );
         }
         else if ( (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') ){
-            if ( head_flag ) text_line_flag = false;
+            if ( head_flag ) text_flag = false;
             if ( !quat_flag && ch >= 'A' && ch <= 'Z' ) ch += 'a' - 'A';
             addStringBuffer( ch, string_counter++ );
         }
         else if ( ch == '$' ){
-            if ( text_line_flag ){
+            if ( text_flag ){
                 no = readInt( buf );
                 if ( str_variables[no] ){
                     for ( i=0 ; i<strlen( str_variables[no] ) ; i++ ){
                         addStringBuffer( str_variables[no][i], string_counter++ );
                     }
                 }
+                if ( end_with_comma_flag ) addStringBuffer( ',', string_counter++ );
             }
             else{
                 addStringBuffer( '$', string_counter++ );
             }
         }
         else if ( ch == '%' || ch == '?'){
-            if ( text_line_flag ){
+            if ( text_flag ){
                 (*buf)--;
                 no = readInt( buf );
                 if ( no<0 ){
@@ -530,6 +532,7 @@ int ScriptParser::readLine( char **buf, bool raw_flag )
                     addStringBuffer( num_sjis_buf[0], string_counter++ );
                     addStringBuffer( num_sjis_buf[1], string_counter++ );
                 }
+                if ( end_with_comma_flag ) addStringBuffer( ',', string_counter++ );
             }
             else{
                 addStringBuffer( ch, string_counter++ );
@@ -544,7 +547,7 @@ int ScriptParser::readLine( char **buf, bool raw_flag )
             ch = *(*buf)++;
             addStringBuffer( ch, string_counter++ );
             if ( !quat_flag )
-                text_line_flag = true;
+                text_flag = true;
         }
         else{
             addStringBuffer( ch, string_counter++ );
@@ -675,6 +678,7 @@ int ScriptParser::parseLine()
 
     while( string_buffer[ string_buffer_offset ] == ' ' ||
            string_buffer[ string_buffer_offset ] == '\t' ) string_buffer_offset++;
+    if ( text_line_flag ) return RET_NOMATCH;
     if ( string_buffer[ string_buffer_offset ] == ':' ){
         string_buffer_offset++;
         return RET_CONTINUE;
@@ -683,7 +687,7 @@ int ScriptParser::parseLine()
     else if ( string_buffer[ string_buffer_offset ] & 0x80 ) return RET_NOMATCH;
 
     char *p_string_buffer = string_buffer + string_buffer_offset;
-    if ( debug_level > 0 ) printf("ScriptParser::Parseline %d %s\n",string_buffer_offset,p_string_buffer );
+    if ( debug_level > 0 ) printf("ScriptParser::Parseline %d %d %s\n",text_line_flag, string_buffer_offset,p_string_buffer );
     readToken( &p_string_buffer, tmp_string_buffer );
 
     while( func_lut[ lut_counter ].method ){

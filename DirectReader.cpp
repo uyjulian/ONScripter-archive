@@ -249,7 +249,7 @@ size_t DirectReader::decodeSPB( FILE *fp, size_t offset, unsigned char *buf )
     memcpy( buf, str, strlen( str ) );
     buf += strlen( str );
 
-    unsigned char *spb_buffer = new unsigned char[ width * height ];
+    unsigned char *spb_buffer = new unsigned char[ width * height + 4 ];
     
     for ( i=0 ; i<3 ; i++ ){
         count = 0;

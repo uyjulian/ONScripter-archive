@@ -56,11 +56,10 @@ void ONScripterLabel::searchSaveFiles()
         }
         tm = localtime( &buf.st_mtime );
         
-        save_file_info[i].valid = true;
-        getSJISFromInteger( save_file_info[i].month,  tm->tm_mon + 1 );
-        getSJISFromInteger( save_file_info[i].day,    tm->tm_mday );
-        getSJISFromInteger( save_file_info[i].hour,   tm->tm_hour );
-        getSJISFromInteger( save_file_info[i].minute, tm->tm_min );
+        save_file_info[i].month  = tm->tm_mon + 1;
+        save_file_info[i].day    = tm->tm_mday;
+        save_file_info[i].hour   = tm->tm_hour;
+        save_file_info[i].minute = tm->tm_min;
 #elif defined(WIN32)
         HANDLE  handle;
         FILETIME    tm, ltm;
@@ -78,11 +77,10 @@ void ONScripterLabel::searchSaveFiles()
         FileTimeToSystemTime( &ltm, &stm );
         CloseHandle( handle );
 
-        save_file_info[i].valid = true;
-        getSJISFromInteger( save_file_info[i].month,  stm.wMonth );
-        getSJISFromInteger( save_file_info[i].day,    stm.wDay );
-        getSJISFromInteger( save_file_info[i].hour,   stm.wHour );
-        getSJISFromInteger( save_file_info[i].minute, stm.wMinute );
+        save_file_info[i].month  = stm.wMonth;
+        save_file_info[i].day    = stm.wDay;
+        save_file_info[i].hour   = stm.wHour;
+        save_file_info[i].minute = stm.wMinute;
 #else
         FILE *fp;
         if ( (fp = fopen( file_name, "rb" )) == NULL ){
@@ -91,12 +89,16 @@ void ONScripterLabel::searchSaveFiles()
         }
         fclose( fp );
 
-        save_file_info[i].valid = true;
-        getSJISFromInteger( save_file_info[i].month,  0);
-        getSJISFromInteger( save_file_info[i].day,    0);
-        getSJISFromInteger( save_file_info[i].hour,   0);
-        getSJISFromInteger( save_file_info[i].minute, 0);
+        save_file_info[i].month  = 1;
+        save_file_info[i].day    = 1;
+        save_file_info[i].hour   = 0;
+        save_file_info[i].minute = 0;
 #endif
+        save_file_info[i].valid = true;
+        getSJISFromInteger( save_file_info[i].sjis_month,  save_file_info[i].month );
+        getSJISFromInteger( save_file_info[i].sjis_day,    save_file_info[i].day );
+        getSJISFromInteger( save_file_info[i].sjis_hour,   save_file_info[i].hour );
+        getSJISFromInteger( save_file_info[i].sjis_minute, save_file_info[i].minute );
     }
 }
 
@@ -731,17 +733,17 @@ void ONScripterLabel::executeSystemLoad()
             if ( save_file_info[i].valid ){
                 sprintf( buffer, "%s%s@%sŒŽ%s“ú%sŽž%s•ª",
                          save_item_name,
-                         save_file_info[i].no,
-                         save_file_info[i].month,
-                         save_file_info[i].day,
-                         save_file_info[i].hour,
-                         save_file_info[i].minute );
+                         save_file_info[i].sjis_no,
+                         save_file_info[i].sjis_month,
+                         save_file_info[i].sjis_day,
+                         save_file_info[i].sjis_hour,
+                         save_file_info[i].sjis_minute );
                 nofile_flag = false;
             }
             else{
                 sprintf( buffer, "%s%s@||||||||||||",
                          save_item_name,
-                         save_file_info[i].no );
+                         save_file_info[i].sjis_no );
                 nofile_flag = true;
             }
             last_button_link->next = getSelectableSentence( buffer, &system_font, false, nofile_flag );
@@ -792,17 +794,17 @@ void ONScripterLabel::executeSystemSave()
             if ( save_file_info[i].valid ){
                 sprintf( buffer, "%s%s@%sŒŽ%s“ú%sŽž%s•ª",
                          save_item_name,
-                         save_file_info[i].no,
-                         save_file_info[i].month,
-                         save_file_info[i].day,
-                         save_file_info[i].hour,
-                         save_file_info[i].minute );
+                         save_file_info[i].sjis_no,
+                         save_file_info[i].sjis_month,
+                         save_file_info[i].sjis_day,
+                         save_file_info[i].sjis_hour,
+                         save_file_info[i].sjis_minute );
                 nofile_flag = false;
             }
             else{
                 sprintf( buffer, "%s%s@||||||||||||",
                          save_item_name,
-                         save_file_info[i].no );
+                         save_file_info[i].sjis_no );
                 nofile_flag = true;
             }
             last_button_link->next = getSelectableSentence( buffer, &system_font, false, nofile_flag );

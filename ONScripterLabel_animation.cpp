@@ -72,7 +72,11 @@ void ONScripterLabel::setupAnimationInfo( AnimationInfo *anim )
         }
 
         drawString( anim->file_name, anim->color_list[ anim->current_cell ], &f_info, true, NULL, &anim->pos );
-        if ( anim->font_size_xy[0] < 0 ){
+        if ( anim->font_size_xy[0] >= 0 ){
+            if ( f_info.ttf_font )
+                TTF_CloseFont( (TTF_Font*)f_info.ttf_font );
+        }
+        else{
             sentence_font.font_valid_flag = f_info.font_valid_flag;
             sentence_font.ttf_font = f_info.ttf_font;
         }
@@ -235,7 +239,11 @@ void ONScripterLabel::drawTaggedSurface( SDL_Surface *dst_surface, AnimationInfo
         }
 
         drawString( anim->file_name, anim->color_list[ anim->current_cell ], &f_info, false, dst_surface, NULL, false, clip );
-        if ( anim->font_size_xy[0] < 0 ){
+        if ( anim->font_size_xy[0] >= 0 ){
+            if ( f_info.ttf_font )
+                TTF_CloseFont( (TTF_Font*)f_info.ttf_font );
+        }
+        else{
             sentence_font.font_valid_flag = f_info.font_valid_flag;
             sentence_font.ttf_font = f_info.ttf_font;
         }

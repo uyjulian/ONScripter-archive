@@ -178,6 +178,27 @@ int ONScripterLabel::texecCommand()
     return RET_CONTINUE;
 }
 
+int ONScripterLabel::tablegotoCommand()
+{
+    char *p_string_buffer = string_buffer + string_buffer_offset + 9; // strlen("tablegoto") = 9
+    int count = 0;
+    
+    int no = readInt( &p_string_buffer );
+
+    while( end_with_comma_flag ){
+        readStr( &p_string_buffer, tmp_string_buffer );
+        if ( count++ == no ){
+            current_link_label_info->label_info = lookupLabel( tmp_string_buffer + 1 );
+            current_link_label_info->current_line = 0;
+            current_link_label_info->offset = 0;
+    
+            return RET_JUMP;
+        }
+    }
+
+    return RET_CONTINUE;
+}
+
 int ONScripterLabel::systemcallCommand()
 {
     char *p_string_buffer = string_buffer + string_buffer_offset + 10; // strlen("systemcall") = 10
@@ -510,6 +531,31 @@ int ONScripterLabel::selectCommand()
 
         return RET_WAIT;
     }
+}
+
+int ONScripterLabel::savetimeCommand()
+{
+    char *p_string_buffer = string_buffer + string_buffer_offset + 8; // strlen("savetime") = 8
+
+    int no = readInt( &p_string_buffer ) - 1;
+    
+    searchSaveFiles();
+
+    if ( !save_file_info[no].valid ){
+        setInt( p_string_buffer, 0 );
+        return RET_CONTINUE;
+    }
+
+    setInt( p_string_buffer, save_file_info[no].month );
+    readInt( &p_string_buffer );
+    setInt( p_string_buffer, save_file_info[no].day );
+    readInt( &p_string_buffer );
+    setInt( p_string_buffer, save_file_info[no].hour );
+    readInt( &p_string_buffer );
+    setInt( p_string_buffer, save_file_info[no].minute );
+    readInt( &p_string_buffer );
+
+    return RET_CONTINUE;
 }
 
 int ONScripterLabel::saveonCommand()

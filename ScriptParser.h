@@ -297,11 +297,12 @@ protected:
     /* Save/Load related variables */
     struct SaveFileInfo{
         bool valid;
-        char no[5];
-        char month[5];
-        char day[5];
-        char hour[5];
-        char minute[5];
+        int  month, day, hour, minute;
+        char sjis_no[5];
+        char sjis_month[5];
+        char sjis_day[5];
+        char sjis_hour[5];
+        char sjis_minute[5];
     } save_file_info[MAX_SAVE_FILE];
     unsigned int  num_save_file;
     char *save_menu_name;

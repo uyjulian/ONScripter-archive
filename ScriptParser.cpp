@@ -206,7 +206,7 @@ ScriptParser::ScriptParser()
     num_save_file = 9;
     for ( i=0 ; i<MAX_SAVE_FILE ; i++ ){
         save_file_info[i].valid = false;
-        getSJISFromInteger( save_file_info[i].no, i+1 );
+        getSJISFromInteger( save_file_info[i].sjis_no, i+1 );
     }
 
     /* ---------------------------------------- */

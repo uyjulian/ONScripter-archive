@@ -240,16 +240,12 @@ ONScripterLabel::ONScripterLabel( bool cdaudio_flag, char *default_font, char *d
     SDL_SetAlpha( background_surface, DEFAULT_BLIT_FLAG, SDL_ALPHA_OPAQUE );
     accumulation_surface = SDL_CreateRGBSurface( DEFAULT_SURFACE_FLAG, screen_width, screen_height, 32, rmask, gmask, bmask, amask );
     SDL_SetAlpha( accumulation_surface, DEFAULT_BLIT_FLAG, SDL_ALPHA_OPAQUE );
-    select_surface = SDL_CreateRGBSurface( DEFAULT_SURFACE_FLAG, screen_width, screen_height, 32, rmask, gmask, bmask, amask );
-    SDL_SetAlpha( select_surface, DEFAULT_BLIT_FLAG, SDL_ALPHA_OPAQUE );
     text_surface = SDL_CreateRGBSurface( DEFAULT_SURFACE_FLAG, screen_width, screen_height, 32, rmask, gmask, bmask, amask );
     SDL_SetAlpha( text_surface, DEFAULT_BLIT_FLAG, SDL_ALPHA_OPAQUE );
     effect_src_surface   = SDL_CreateRGBSurface( DEFAULT_SURFACE_FLAG, screen_width, screen_height, 32, rmask, gmask, bmask, amask );
     SDL_SetAlpha( effect_src_surface, DEFAULT_BLIT_FLAG, SDL_ALPHA_OPAQUE );
     effect_dst_surface   = SDL_CreateRGBSurface( DEFAULT_SURFACE_FLAG, screen_width, screen_height, 32, rmask, gmask, bmask, amask );
     SDL_SetAlpha( effect_dst_surface, DEFAULT_BLIT_FLAG, SDL_ALPHA_OPAQUE );
-    shelter_select_surface = SDL_CreateRGBSurface( DEFAULT_SURFACE_FLAG, screen_width, screen_height, 32, rmask, gmask, bmask, amask );
-    SDL_SetAlpha( shelter_select_surface, DEFAULT_BLIT_FLAG, SDL_ALPHA_OPAQUE );
     shelter_text_surface = SDL_CreateRGBSurface( DEFAULT_SURFACE_FLAG, screen_width, screen_height, 32, rmask, gmask, bmask, amask );
     SDL_SetAlpha( shelter_text_surface, DEFAULT_BLIT_FLAG, SDL_ALPHA_OPAQUE );
 
@@ -307,6 +303,7 @@ ONScripterLabel::ONScripterLabel( bool cdaudio_flag, char *default_font, char *d
     mp3_buffer = NULL;
     midi_info = NULL;
     current_cd_track = -1;
+
     for ( i=0 ; i<MIX_CHANNELS ; i++ ) wave_sample[i] = NULL;
 
     for ( i=0 ; i<MAX_PARAM_NUM ; i++ ) bar_info[i] = prnum_info[i] = NULL;
@@ -429,13 +426,13 @@ void ONScripterLabel::mouseOverCheck( int x, int y )
     if ( current_over_button != button ){
         bool f_flag = false;
         if ( event_mode & WAIT_BUTTON_MODE && !first_mouse_over_flag ){
-            if ( current_button_link.button_type == SPRITE_BUTTON || 
-                 current_button_link.button_type == EX_SPRITE_BUTTON ){
-                sprite_info[ current_button_link.sprite_no ].current_cell = 0;
-                refreshSurface( text_surface, &current_button_link.image_rect, (display_mode&TEXT_DISPLAY_MODE)?REFRESH_SHADOW_MODE:REFRESH_NORMAL_MODE );
+            if ( current_button_link->button_type == SPRITE_BUTTON || 
+                 current_button_link->button_type == EX_SPRITE_BUTTON ){
+                sprite_info[ current_button_link->sprite_no ].current_cell = 0;
+                refreshSurface( text_surface, &current_button_link->image_rect, (display_mode&TEXT_DISPLAY_MODE)?REFRESH_SHADOW_MODE:REFRESH_NORMAL_MODE );
             }
-            else{
-                SDL_BlitSurface( select_surface, &current_button_link.image_rect, text_surface, &current_button_link.image_rect );
+            else if ( current_button_link->no_selected_surface ){
+                SDL_BlitSurface( current_button_link->no_selected_surface, NULL, text_surface, &current_button_link->image_rect );
             }
             f_flag = true;
         }
@@ -454,8 +451,8 @@ void ONScripterLabel::mouseOverCheck( int x, int y )
 
                 if ( ( p_button_link->button_type == NORMAL_BUTTON ||
                        p_button_link->button_type == CUSTOM_SELECT_BUTTON ) &&
-                     p_button_link->image_surface ){
-                    SDL_BlitSurface( p_button_link->image_surface, NULL, text_surface, &p_button_link->image_rect );
+                     p_button_link->selected_surface ){
+                    SDL_BlitSurface( p_button_link->selected_surface, NULL, text_surface, &p_button_link->image_rect );
                 }
                 else if ( p_button_link->button_type == SPRITE_BUTTON || 
                           p_button_link->button_type == EX_SPRITE_BUTTON ){
@@ -470,18 +467,15 @@ void ONScripterLabel::mouseOverCheck( int x, int y )
                 if ( nega_mode == 2 && !(event_mode & WAIT_INPUT_MODE) ) makeNegaSurface( text_surface, &p_button_link->image_rect );
                 flush( &p_button_link->image_rect );
             }
-            if ( f_flag ) flush( &current_button_link.image_rect );
-            current_button_link.image_rect  = p_button_link->image_rect;
-            current_button_link.sprite_no   = p_button_link->sprite_no;
-            current_button_link.button_type = p_button_link->button_type;
-            current_button_link.exbtn_ctl   = p_button_link->exbtn_ctl;
+            if ( f_flag ) flush( &current_button_link->image_rect );
+            current_button_link = p_button_link;
             shortcut_mouse_line = c;
         }
         else{
             if ( exbtn_d_button_link.exbtn_ctl ){
                 drawExbtn( exbtn_d_button_link.exbtn_ctl );
             }
-            if ( f_flag ) flush( &current_button_link.image_rect );
+            if ( f_flag ) flush( &current_button_link->image_rect );
         }
     }
     current_over_button = button;
@@ -736,11 +730,12 @@ SDL_Surface *ONScripterLabel::loadImage( char *file_name )
     buffer = new unsigned char[length];
     script_h.cBR->getFile( file_name, buffer );
     tmp = IMG_Load_RW(SDL_RWFromMem( buffer, length ),1);
+    delete[] buffer;
     if ( !tmp ){
         fprintf( stderr, " *** can't load file [%s] ***\n", file_name );
-        delete[] buffer;
         return NULL;
     }
+
     ret = SDL_ConvertSurface( tmp, text_surface->format, DEFAULT_SURFACE_FLAG );
     if ( ret && screen_ratio2 != 1 ){
         SDL_Surface *ret2 = ret;
@@ -757,7 +752,6 @@ SDL_Surface *ONScripterLabel::loadImage( char *file_name )
         SDL_FreeSurface( ret2 );
     }
     SDL_FreeSurface( tmp );
-    delete[] buffer;
 
     return ret;
 }
@@ -798,6 +792,7 @@ void ONScripterLabel::refreshMouseOverButton()
 {
     int mx, my;
     current_over_button = 0;
+    current_button_link = root_button_link.next;
     first_mouse_over_flag = true;
     SDL_GetMouseState( &mx, &my );
     mouseOverCheck( mx, my );
@@ -1144,10 +1139,10 @@ struct ONScripterLabel::ButtonLink *ONScripterLabel::getSelectableSentence( char
 
     button_link->select_rect = button_link->image_rect;
 
-    button_link->image_surface = SDL_CreateRGBSurface( DEFAULT_SURFACE_FLAG, button_link->image_rect.w, button_link->image_rect.h, 32, rmask, gmask, bmask, amask );
-    SDL_SetAlpha( button_link->image_surface, DEFAULT_BLIT_FLAG, SDL_ALPHA_OPAQUE );
-    SDL_BlitSurface( text_surface, &button_link->image_rect, button_link->image_surface, NULL );
-    
+    button_link->selected_surface = SDL_CreateRGBSurface( DEFAULT_SURFACE_FLAG, button_link->image_rect.w, button_link->image_rect.h, 32, rmask, gmask, bmask, amask );
+    SDL_SetAlpha( button_link->selected_surface, DEFAULT_BLIT_FLAG, SDL_ALPHA_OPAQUE );
+    SDL_BlitSurface( text_surface, &button_link->image_rect, button_link->selected_surface, NULL );
+
     /* ---------------------------------------- */
     /* Draw shadowed characters */
     info->xy[0] = current_text_xy[0];
@@ -1156,7 +1151,11 @@ struct ONScripterLabel::ButtonLink *ONScripterLabel::getSelectableSentence( char
         drawString( buffer, info->nofile_color, info, flush_flag, text_surface, NULL );
     else
         drawString( buffer, info->off_color, info, flush_flag, text_surface, NULL );
-        
+
+    button_link->no_selected_surface = SDL_CreateRGBSurface( DEFAULT_SURFACE_FLAG, button_link->image_rect.w, button_link->image_rect.h, 32, rmask, gmask, bmask, amask );
+    SDL_SetAlpha( button_link->no_selected_surface, DEFAULT_BLIT_FLAG, SDL_ALPHA_OPAQUE );
+    SDL_BlitSurface( text_surface, &button_link->image_rect, button_link->no_selected_surface, NULL );
+
     info->xy[0] = current_text_xy[0];
     info->xy[1]++;
 

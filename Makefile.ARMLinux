@@ -3,9 +3,9 @@
 # Makefile.ARMLinux - Makefile rules for linux on Zaurus
 #
 
-INCS = `sdl-config --cflags` `smpeg-config --cflags`
-LIBS = `sdl-config --libs` `smpeg-config --libs` -lSDL_ttf -lSDL_image -lSDL_mixer -lbz2 -lfreetype -lmad -lm
-DEFS = -DLINUX -DPDA -DMP3_MAD
+INCS = `sdl-config --cflags`
+LIBS = `sdl-config --libs` -lSDL_ttf -lSDL_image -lSDL_mixer -lbz2 -lfreetype -lmad -lm
+DEFS = -DLINUX -DPDA -DQWS -DMP3_MAD
 
 EXESUFFIX =
 OBJSUFFIX = .o
@@ -16,7 +16,7 @@ OBJSUFFIX = .o
 CC = arm-linux-g++ 
 LD = arm-linux-g++ -o 
 
-CFLAGS = -O3 -Wall -Wpointer-arith -fcheck-new -pipe -c $(INCS) $(DEFS)
+CFLAGS = -O3 -Wall -Wpointer-arith -fno-exceptions -fno-rtti -fno-check-new -pipe -c $(INCS) $(DEFS)
 RM = rm -f
 
 TARGET = onscripter$(EXESUFFIX)

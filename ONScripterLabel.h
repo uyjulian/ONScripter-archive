@@ -254,12 +254,10 @@ private:
     int event_mode;
     SDL_Surface *background_surface; // Backgroud image
     SDL_Surface *accumulation_surface; // Text window + Sprite + Tachi image + background
-    SDL_Surface *select_surface; // Select_image + Tachi image + background
     SDL_Surface *text_surface; // Text + Select_image + Tachi image + background
     SDL_Surface *screen_surface; // Text + Select_image + Tachi image + background
     SDL_Surface *effect_dst_surface; // Intermediate source buffer for effect
     SDL_Surface *effect_src_surface; // Intermediate destnation buffer for effect
-    SDL_Surface *shelter_select_surface; // Intermediate buffer to store accumulation_surface when entering system menu
     SDL_Surface *shelter_text_surface; // Intermediate buffer to store text_surface when entering system menu
 
     /* ---------------------------------------- */
@@ -285,18 +283,21 @@ private:
         char *exbtn_ctl;
         SDL_Rect select_rect;
         SDL_Rect image_rect;
-        SDL_Surface *image_surface;
+        SDL_Surface *selected_surface;
+        SDL_Surface *no_selected_surface;
 
         ButtonLink(){
             next = NULL;
             exbtn_ctl = NULL;
-            image_surface = NULL;
+            selected_surface = NULL;
+            no_selected_surface = NULL;
         };
         ~ButtonLink(){
-            if ( image_surface ) SDL_FreeSurface( image_surface );
+            if ( selected_surface )    SDL_FreeSurface( selected_surface );
+            if ( no_selected_surface ) SDL_FreeSurface( no_selected_surface );
             if ( exbtn_ctl ) delete[] exbtn_ctl;
         };
-    } root_button_link, *last_button_link, current_button_link, *shelter_button_link, exbtn_d_button_link;
+    } root_button_link, *last_button_link, *current_button_link, *shelter_button_link, exbtn_d_button_link;
 
     int current_over_button;
 

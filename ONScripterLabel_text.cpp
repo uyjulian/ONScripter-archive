@@ -460,7 +460,7 @@ int ONScripterLabel::textCommand()
     else if ( ch == '/' ){ // skip new line
         new_line_skip_flag = true;
         string_buffer_offset++;
-        if ( script_h.isQuat() ) // for puttext
+        if ( script_h.isQuat() )
             return RET_CONTINUE;
         else
             return RET_CONTINUE_NOREAD;

@@ -44,8 +44,11 @@ void optionVersion()
     printf("This is free software; see the source for copying conditions.\n");
     exit(0);
 }
-
+#if defined(QWS)
+int SDL_main( int argc, char **argv )
+#else
 int main( int argc, char **argv )
+#endif
 {
     bool cdaudio_flag = false;
     char *default_font = NULL;
@@ -92,7 +95,7 @@ int main( int argc, char **argv )
                 edit_flag = true;
             }
             else{
-                optionHelp();
+                //optionHelp();
             }
         }
         else{

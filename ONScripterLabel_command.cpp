@@ -491,7 +491,6 @@ int ONScripterLabel::selectCommand()
                 counter++;
                 last_select_link = last_select_link->next;
             }
-            SDL_BlitSurface( text_surface, NULL, select_surface, NULL );
         }
 
         if ( select_mode == SELECT_GOTO_MODE || select_mode == SELECT_CSEL_MODE ){ /* Resume */
@@ -1462,8 +1461,6 @@ int ONScripterLabel::cselbtnCommand()
     sentence_font.is_valid = csel_info.is_valid;
     sentence_font.ttf_font = csel_info.ttf_font;
 
-    SDL_BlitSurface( text_surface, &last_button_link->select_rect, select_surface, NULL );
-
     return RET_CONTINUE;
 }
 
@@ -1612,9 +1609,9 @@ int ONScripterLabel::btnwaitCommand()
 
         ButtonLink *p_button_link = root_button_link.next;
         while( p_button_link ){
-            if ( current_button_link.button_type == SPRITE_BUTTON ||
-                 current_button_link.button_type == EX_SPRITE_BUTTON )
-                sprite_info[ current_button_link.sprite_no ].current_cell = 0;
+            if ( p_button_link->button_type == SPRITE_BUTTON ||
+                 p_button_link->button_type == EX_SPRITE_BUTTON )
+                sprite_info[ p_button_link->sprite_no ].current_cell = 0;
             p_button_link = p_button_link->next;
         }
 
@@ -1653,15 +1650,15 @@ int ONScripterLabel::btnwaitCommand()
                 }
             
                 drawString( s_link->text, f_info.off_color, &f_info, false, text_surface );
-            
             }
+
+            SDL_BlitSurface( text_surface, &p_button_link->image_rect, p_button_link->no_selected_surface, NULL );
+
             p_button_link = p_button_link->next;
         }
     
         sentence_font.is_valid = f_info.is_valid;
         sentence_font.ttf_font = f_info.ttf_font;
-        
-        SDL_BlitSurface( text_surface, NULL, select_surface, NULL );
 
         flush();
 
@@ -1736,9 +1733,11 @@ int ONScripterLabel::btnCommand()
     src_rect.w = b_link->image_rect.w;
     src_rect.h = b_link->image_rect.h;
 
-    b_link->image_surface = SDL_CreateRGBSurface( DEFAULT_SURFACE_FLAG, b_link->image_rect.w, b_link->image_rect.h, 32, rmask, gmask, bmask, amask );
+    b_link->selected_surface = SDL_CreateRGBSurface( DEFAULT_SURFACE_FLAG, b_link->image_rect.w, b_link->image_rect.h, 32, rmask, gmask, bmask, amask );
+    b_link->no_selected_surface = SDL_CreateRGBSurface( DEFAULT_SURFACE_FLAG, b_link->image_rect.w, b_link->image_rect.h, 32, rmask, gmask, bmask, amask );
+    SDL_SetAlpha( b_link->no_selected_surface, DEFAULT_BLIT_FLAG, SDL_ALPHA_OPAQUE );
 
-    SDL_BlitSurface( btndef_info.image_surface, &src_rect, b_link->image_surface, NULL );
+    SDL_BlitSurface( btndef_info.image_surface, &src_rect, b_link->selected_surface, NULL );
 
     last_button_link->next = b_link;
     last_button_link = last_button_link->next;

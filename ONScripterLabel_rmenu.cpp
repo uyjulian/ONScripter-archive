@@ -592,7 +592,6 @@ void ONScripterLabel::enterSystemCall()
     last_button_link->next = NULL;
     shelter_select_link = root_select_link.next;
     root_select_link.next = NULL;
-    SDL_BlitSurface( select_surface, NULL, shelter_select_surface, NULL );
     SDL_BlitSurface( text_surface, NULL, shelter_text_surface, NULL );
     shelter_event_mode = event_mode;
     shelter_mouse_state.x = last_mouse_state.x;
@@ -606,7 +605,6 @@ void ONScripterLabel::enterSystemCall()
 void ONScripterLabel::leaveSystemCall( bool restore_flag )
 {
     if ( restore_flag ){
-        SDL_BlitSurface( shelter_select_surface, NULL, select_surface, NULL );
         SDL_BlitSurface( shelter_text_surface, NULL, text_surface, NULL );
 
         flush();
@@ -728,7 +726,6 @@ void ONScripterLabel::executeSystemMenu()
             link = link->next;
             flush();
         }
-        SDL_BlitSurface( text_surface, NULL, select_surface, NULL );
 
         event_mode = WAIT_INPUT_MODE | WAIT_BUTTON_MODE;
         refreshMouseOverButton();
@@ -838,7 +835,6 @@ void ONScripterLabel::executeSystemLoad()
             flush();
         }
         delete[] buffer;
-        SDL_BlitSurface( text_surface, NULL, select_surface, NULL );
 
         event_mode = WAIT_INPUT_MODE | WAIT_BUTTON_MODE;
         refreshMouseOverButton();
@@ -905,7 +901,6 @@ void ONScripterLabel::executeSystemSave()
         }
         delete[] buffer;
 
-        SDL_BlitSurface( text_surface, NULL, select_surface, NULL );
         event_mode = WAIT_INPUT_MODE | WAIT_BUTTON_MODE;
         refreshMouseOverButton();
         system_menu_mode = SYSTEM_SAVE;
@@ -991,7 +986,6 @@ void ONScripterLabel::executeSystemYesNo()
         last_button_link->no = 2;
 
         flush();
-        SDL_BlitSurface( text_surface, NULL, select_surface, NULL );
         event_mode = WAIT_INPUT_MODE | WAIT_BUTTON_MODE;
         refreshMouseOverButton();
     }
@@ -1037,17 +1031,17 @@ void ONScripterLabel::setupLookbackButton()
             last_button_link->image_rect.w = info[0]->pos.w;
             last_button_link->image_rect.h = info[0]->pos.h;
             
-            last_button_link->image_surface =
+            last_button_link->selected_surface =
                 SDL_CreateRGBSurface( DEFAULT_SURFACE_FLAG,
                                       info[0]->pos.w, info[0]->pos.h,
                                       32, rmask, gmask, bmask, amask );
-            SDL_SetAlpha( last_button_link->image_surface, DEFAULT_BLIT_FLAG, SDL_ALPHA_OPAQUE );
+            SDL_SetAlpha( last_button_link->selected_surface, DEFAULT_BLIT_FLAG, SDL_ALPHA_OPAQUE );
 
             offset = (info[0]->pos.w + info[0]->alpha_offset) * info[0]->current_cell;
             rect.x = rect.y = 0;
             rect.w = info[0]->pos.w;
             rect.h = info[0]->pos.h;
-            alphaBlend( last_button_link->image_surface, rect,
+            alphaBlend( last_button_link->selected_surface, rect,
                         text_surface, last_button_link->image_rect.x, last_button_link->image_rect.y,
                         info[0]->image_surface, offset, 0,
                         info[0]->mask_surface, info[0]->alpha_offset,
@@ -1101,17 +1095,17 @@ void ONScripterLabel::setupLookbackButton()
             last_button_link->image_rect.w = info[0]->pos.w;
             last_button_link->image_rect.h = info[0]->pos.h;
             
-            last_button_link->image_surface =
+            last_button_link->selected_surface =
                 SDL_CreateRGBSurface( DEFAULT_SURFACE_FLAG,
                                       info[0]->pos.w, info[0]->pos.h,
                                       32, rmask, gmask, bmask, amask );
-            SDL_SetAlpha( last_button_link->image_surface, DEFAULT_BLIT_FLAG, SDL_ALPHA_OPAQUE );
+            SDL_SetAlpha( last_button_link->selected_surface, DEFAULT_BLIT_FLAG, SDL_ALPHA_OPAQUE );
 
             offset = (info[0]->pos.w + info[0]->alpha_offset) * info[0]->current_cell;
             rect.x = rect.y = 0;
             rect.w = info[0]->pos.w;
             rect.h = info[0]->pos.h;
-            alphaBlend( last_button_link->image_surface, rect,
+            alphaBlend( last_button_link->selected_surface, rect,
                         text_surface, last_button_link->image_rect.x, last_button_link->image_rect.y,
                         info[0]->image_surface, offset, 0,
                         info[0]->mask_surface, info[0]->alpha_offset,
@@ -1173,7 +1167,6 @@ void ONScripterLabel::executeSystemLookback()
     restoreTextBuffer();
     for ( i=0 ; i<3 ; i++ ) sentence_font.color[i] = color[i];
     setupLookbackButton();
-    SDL_BlitSurface( text_surface, NULL, select_surface, NULL );
     refreshMouseOverButton();
     flush();
 }

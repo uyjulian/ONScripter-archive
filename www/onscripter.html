@@ -1,0 +1,225 @@
+<HTML>
+<HEAD>
+<meta http-equiv="Content-Type" content="text/html">
+<TITLE> ONScripter のページ </TITLE>
+<LINK rel="stylesheet" type="text/css" href="ogapee.css">
+</HEAD>
+
+<BODY TEXT="#000000" BGCOLOR="#FFFFFF" LINK="#000080" VLINK="#800000" ALINK="#FF0000">
+
+<CENTER>
+<H1> ONScripter のページ </H1>
+</CENTER>
+
+Created: Feb. 6, 2002<br>
+Last updated: Feb. 11, 2002
+
+<HR>
+
+<table>
+<tr><th>はじめに</th></tr>
+<tr><td>
+
+<p>ONScripterとは、NScripter 用に作られたスクリプトを解釈して実行するプログラムです。</p>
+
+<p>現在はベータ版<A HREF="onscripter-beta-20020211.tar.gz">onscripter-beta-20020211.tar.gz</A>を配布しております。</p>
+
+<p>NScripterとは<a
+href="http://www2.osk.3web.ne.jp/~naokikun/index.htm">高橋直樹</a>氏が開発したゲーム実行エンジンであり、高橋氏のホームページから<a href="http://www2.osk.3web.ne.jp/~naokikun/index.htm">ダウンロード</a>できます。</p>
+
+</td></tr>
+</table>
+
+
+<table>
+<tr><th> 特徴 </th></tr>
+<tr><td>
+
+<h3>NScripter と比較した特徴</h3>
+
+<OL>
+  <LI> 全ての操作をキーボードから行えます。もちろんマウスも使えますが、使う必要はありません。
+  <LI> CD AUDIO の演奏には対応していませんが、代わりに MP3 ファイルの演奏に振り替える機能があります。
+  <LI> マルチプラットフォームに対応しています。当方では Windows と Linux で動作確認をしていますが、下記の SDL が動く環境ならどこでも同じソースをコンパイルするだけで動くはずです。<BR>
+  <LI> 全てのコマンド・仕様を実装していないため、ゲームによって挙動がおかしくなります。その場合は下記メールアドレスまで御報告下さい。
+</OL>
+
+</td></tr>
+<tr><td>
+
+<h3>実行環境としての特徴</h3>
+
+<OL>
+  <LI> セーブ・ロード機能があります(ただし、save?.dat は独自形式)。<BR>
+  <LI> Nsa のデコードを実装しています。<BR>
+  <LI> よく使われる画面効果（効果番号 1 - 14）を実装しています。<BR>
+  <LI> wave 演奏と MP3 演奏を実装しています。<BR>
+  <LI> 右クリックメニューを実装しています。<BR>
+</OL>
+
+</td></tr>
+</table>
+
+<table>
+<tr><th>実行方法</th></tr>
+<tr><td>
+
+<h3> 動作環境 </h3>
+<p> 下記のライブラリと処理系が必要です。バージョンは最新である必要はないかもしれませんが、他のバージョンでは確認していません。</p>
+
+<DL>
+  <DT> ・<A HREF="http://www.libsdl.org">SDL (Simple Direct Layer)</A>
+  <DD> SDL-1.2.3, SDL_image-1.2.1, SDL_mixer-1.2.1, SDL_sound-0.1.4, SDL_ttf-2.0.4
+  <DT> ・<A HREF="http://www.lokigames.com/development/smpeg.php3">SMPEG (SDL Mpeg Player Library)</A>
+  <DD> SMPEG-0.4.4
+  <DT> ・<A HREF="http://www.freetype.org/"> FreeType 2.0 </A>
+  <DT> ・Unicode で指定された日本語 TTF フォント
+  <DT> ・C++ 処理系
+  <DD> Linux g++ 2.95.4
+  <DD> Windows Visual C++ 6.0
+</DL>
+<p> 
+
+<p> Windows と Linux で動作確認をしています。<BR>
+
+その他の多くの Unix 系 OS, BeOS, MacOS については SDL と SMPEG が対応しているため適切な Makefile を書けばコンパイル・実行できると思いますが、当方では確認できないので誰かやって下さい。</p>
+
+<h3> コンパイル </h3>
+<p>適当な場所に ONScripter を展開し、Linux の場合は make -f Makefile.Linux, Windows の場合は、nmake -f Makefile.Win とやって下さい。Windows の場合は、SDL と SMPEG のヘッダファイルとライブラリのある場所を Makefile.Win で指定しているので、自身の環境に合わせて適宜修正してください。</p>
+
+<h3> 実行 </h3>
+<p><FONT color="#ff0000">[必須]</FONT>まずゲームのアーカイブを一カ所にまとめます。通常は、スクリプト(0.txt もしくは nscript.dat)とアーカイブ(arc.sar もしくは arc.nsa)の２つのファイルがあれば十分なはずです。arc1.nsa 〜 arc9.nsa がある場合は、それも置いてください。</p>
+
+<p><FONT color="#ff0000">[必須]</FONT>下記の"TrueType font による漢字表示について"を参考に、日本語 TrueType font を用意し、"default.ttf" という名前で置いてください。</p>
+
+<p>[任意] CD audio の振り替え演奏をしたい場合は、下記の"CD audio 演奏の振り替えについて"に従って MP3 ファイルを用意してください。</p>
+
+<p><FONT color="#ff0000">[必須]</FONT>最後に、ONScripter を実行してください。同じディレクトリにある nscript.dat とアーカイブを自動的に探し、ゲームが開始されます。なお ONScripter は、同じディレクトリにセーブデータやファイルログ等の状態ファイルを保存するため、このディレクトリには write permission を出しておいてください。</p>
+
+</td></tr>
+</table>
+
+<table>
+<tr><th> TODO </th></tr>
+<tr><td>
+
+<p>現在把握しており直す予定のバグ・未実装機能。</p>
+
+<OL>
+  <LI> nbz decode (bz2 base?)
+  <LI> save/load 時に確認画面を表示する
+  <LI> btndef "" クリック待ちの実装
+  <LI> sprite の透明度サポート
+  <LI> parseTaggedString で memory leak してそうなのを直す
+  <LI> dwave で全てのチャンネル 0 にマッピングしているのを直す（かも）
+  <LI> lookback の実装
+  <LI> archive の検索の高速化
+  <LI> アニメーションカーソルの実装
+  <LI> マウスカーソルが最初にボタンの上にある場合に選択状態にならないバグを直す
+  <LI> select が複数行にまたがるときに、先頭が * ではじまるとラベルの先頭として解釈されてしますバグをとる。
+  <LI> for, next, spbtn の実装。
+  <LI> 一文字毎に readLine するのをなんとかする。
+  <LI> blt の拡大縮小に対応。
+</OL>       
+
+</td></tr>
+</table>
+
+<table>
+<tr><th>雑多なこと</th></tr>
+<tr><td>
+
+<h3> 開発日誌 </h3>
+
+<p><A HREF="onscripter_devel.html">こちら</A>を参照してください。</p>
+
+<h3> キーボードショートカットについて </h3>
+
+<p> ONScripter は全ての操作をキーボードで行うことができます。下にショートカット一覧を書きます。</p>
+
+<table>
+<tr><td>キー</td><td>説明</td></tr>
+<tr><td>space</td><td>マウスの左クリックと同じ</td></tr>
+<tr><td>return</td><td>マウスの左クリックと同じ</td></tr>
+<tr><td>escape</td><td>マウスの右クリックと同じ</td></tr>
+<tr><td>p, ↑</td><td>ボタン・文章選択時にマウスカーソルを前の選択肢に動かす</td></tr>
+<tr><td>n, ↓</td><td>ボタン・文章選択時にマウスカーソルを次の選択肢に動かす</td></tr>
+<tr><td> s </td><td>次の選択肢まで飛ばすか通常に戻すかの切り替え</td></tr>
+<tr><td> o </td><td>１ページ表示をするかしないかの切り替え</td></tr>
+<tr><td> 1, 2, 3 </td><td>文字の描画速度を変更</td></tr>
+</table>
+
+<p> ただし、s 以外のキーは入力待ちの時しか受け付けません（文字を描画している最中は受け付けません）。次の選択肢まで飛ばしている最中に限り、任意のタイミングで s キーにより通常の状態に戻すことができます。</p>
+
+<p> また、コンソール画面で Ctl-c することで ONScripter を終了できます。その場合、グローバル変数等は保存されるので、終了する場合はゲームのメニューから終了するか、これで強制終了するかしてください。</p>
+
+<h3> TrueType font による漢字表示について </h3>
+
+<p> 漢字を表示するためには、TrueType font を用意する必要があります。例えば Windows 2000 では \WinNT\Fonts の下に msgothic.ttc があり、またフリーの TreuType font として、kochi-gothic.ttf や wadalab-gothic.ttf があります。<BR>
+
+ここで注意しなければいけないのは、TrueType font によっては正常に漢字表示ができないということです。この原因は FreeType library か SDL_ttf の制約だと思いますが、以下に私が試した４つのフォントについて書きます。</p>
+
+<DL>
+  <DT> ＭＳゴシック (msgothic.ttc)
+  <DD> embedded bitmap を使っており、ゲームで 22pt 以下のフォントを要求すると正常に表示できません。
+  <DT> 東風ゴシックフォント (kochi-gothic.ttf)
+  <DD> embedded bitmap を使っており、ゲームで 17pt 以下のフォントを要求すると正常に表示できません。
+  <DT> 和田研ゴシック (wadalab-gothic.ttf)
+  <DD> embedded bitmap は使っていませんが、UNICODE で記述されていないため使えません。
+  <DT> HG ゴシック (hgrsmp.ttf)
+  <DD> embedded bitmap は使っておらず、全てのサイズのフォントを正常に表示できます。
+</DL>
+
+<p> まとめると、UNICODE で記述されておりかつ embedded bitmap を使っていないフォント(上の例では HG ゴシック)が一番問題がなく、大きなフォントしか使わないゲームでは embedded bitmap が使用されていても使える(上の例では ＭＳゴシックや東風ゴシック)といったところです。</p>
+
+<p> ONScripter を起動する前に、使用する TreuType font ファイルを、<STRONG>default.ttf</STRONG> という名前にしてゲームのスクリプトがある場所のコピーしておいてください。</p>
+
+</td></tr><tr><td>
+
+<h3> CD audio 演奏の振り替えについて </h3>
+
+<p>ゲームのスクリプトがある場所に cd というディレクトリを作り、そこに<BR>
+cd/track01.mp3<BR>
+cd/track02.mp3<BR>
+cd/track03.mp3<BR>
+...<BR>
+cd/track14.mp3<BR>
+...<BR>
+という名前で MP3 ファイルを置きます。</p>
+
+<p>すると、スクリプトで CD audio の１曲目を演奏するコマンドがあった場合に、対応する track01.mp3 を演奏するようになります。</p>
+
+<p>MP3 を必ず用意する必要はなく、その場合は音が鳴らないだけです。</p>
+
+</td></tr><tr><td>
+
+<h3> Windows 上で MP3 の音がぶつぶつとぎれる問題について </h3>
+
+<P> Windows でコンパイル済の SMPEG のバイナリを持ってくると、MP3 によっては音がぶつぶつとぎれて演奏されます。これは、SMPEG を MSVC でコンパイルする時の最適化の問題で、下記の通りに MSVC の global optimization を一部抑制する指定をし、自分でコンパイルすることで解決できます。</P>
+
+
+<PRE>
+修正するファイル: audio/mpeglayer3.cpp
+関数 layer3reorderandantialias の前後に、下のように #pragma 指定を追加する。
+
+#pragma optimize( "g", off )
+void MPEGaudio::layer3reorderandantialias(int ch,int gr,
+					  REAL  in[SBLIMIT][SSLIMIT],
+					  REAL out[SBLIMIT][SSLIMIT]){
+  ......
+}
+#pragma optimize( "g", on )
+</PRE>
+
+</td></tr>
+</table>
+
+<hr>
+<center>
+メール宛先 <a href="mailto:ogapee@aqua.dti2.ne.jp">ogapee@aqua.dti2.ne.jp</a> <BR>
+Copyright (c) 1998-2002 Studio O.G.A. All rights reserved.
+</center>
+
+</BODY>
+</HTML>
+

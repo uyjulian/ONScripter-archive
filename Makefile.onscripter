@@ -1,0 +1,45 @@
+# -*- Makefile -*-
+#
+# Makefile.onscripter - General makefile rules for ONScripter
+#
+
+GUI_OBJS = ONScripterLabel$(OBJSUFFIX) ONScripterLabel_rmenu$(OBJSUFFIX)
+SAR_OBJS = sardec$(OBJSUFFIX) BaseReader$(OBJSUFFIX) SarReader$(OBJSUFFIX)
+NSA_OBJS = nsadec$(OBJSUFFIX) BaseReader$(OBJSUFFIX) SarReader$(OBJSUFFIX) NsaReader$(OBJSUFFIX)
+DECODER_OBJS = BaseReader$(OBJSUFFIX) DirectReader$(OBJSUFFIX) SarReader$(OBJSUFFIX) NsaReader$(OBJSUFFIX)
+ONSCRIPTER_OBJS = onscripter$(OBJSUFFIX) $(DECODER_OBJS) ScriptParser$(OBJSUFFIX) ScriptParser_command$(OBJSUFFIX) $(GUI_OBJS) sjis2utf16$(OBJSUFFIX)
+PARSER_HEADER = BaseReader.h SarReader.h NsaReader.h DirectReader.h ScriptParser.h
+ONSCRIPTER_HEADER = ONScripterLabel.h $(PARSER_HEADER)
+
+ALL: $(TARGET)
+
+sardec$(EXESUFFIX): $(SAR_OBJS)
+	$(LD)$@ $(SAR_OBJS) $(LIB)
+
+nsadec$(EXESUFFIX): $(NSA_OBJS)
+	$(LD)$@ $(NSA_OBJS) $(LIB)
+
+onscripter$(EXESUFFIX): $(ONSCRIPTER_OBJS)
+	$(LD)$@ $(ONSCRIPTER_OBJS) $(LIBS)
+
+clean:
+	-$(RM) $(TARGET)
+	-$(RM) *$(OBJSUFFIX)
+
+.cpp$(OBJSUFFIX):
+	$(CC) $(CFLAGS) $<
+
+BaseReader$(OBJSUFFIX):   BaseReader.h
+SarReader$(OBJSUFFIX):    BaseReader.h SarReader.h 
+NsaReader$(OBJSUFFIX):    BaseReader.h SarReader.h NsaReader.h 
+DirectReader$(OBJSUFFIX): BaseReader.h DirectReader.h
+ScriptParser$(OBJSUFFIX): $(PARSER_HEADER)
+ScriptParser_command$(OBJSUFFIX): $(PARSER_HEADER)
+
+sardec$(OBJSUFFIX): BaseReader.h SarReader.h 
+nsadec$(OBJSUFFIX): BaseReader.h SarReader.h NsaReader.h 
+
+onscripter$(OBJSUFFIX): $(ONSCRIPTER_HEADER)
+ONScripterLabel$(OBJSUFFIX): $(ONSCRIPTER_HEADER)
+ONScripterLabel_rmenu$(OBJSUFFIX): $(ONSCRIPTER_HEADER)
+

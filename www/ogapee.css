@@ -1,0 +1,49 @@
+A:link{text-decoration:none}
+A:visited{text-decoration:none}
+A:active{text-decoration:underline}
+A:hover{text-decoration:underline}
+P{line-height:1.2em;}
+
+H3{
+background-color: lightgreen;
+border-width:2pt;
+}
+
+TABLE {
+padding: 2pt;
+background-color: ligthyellow;
+width: 80%;
+color: black;
+align: center;
+text-align: left;
+margin-bottom: 10pt;
+}
+
+TH {
+font-size:LARGE;
+padding: 2pt;
+border-color: orange;
+color:black;
+border-width: 1pt 3pt 5pt 1pt;
+border-style: solid;
+font-weight: bold;
+color: black;
+background: white;
+}
+
+TD {
+padding: 2pt;
+font-weight: normal;
+color: black;
+border: 0pt;
+border-top-width: 1pt;
+border-bottom-width: 1pt;
+border-style: solid;
+text-indent: 1em;
+}
+
+HR {
+width: 80%;
+text-align: center;
+align: center;
+}

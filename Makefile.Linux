@@ -1,0 +1,24 @@
+# -*- Makefile -*-
+#
+# Makefile.Linux - Makefile rules for linux
+#
+
+INCS = `sdl-config --cflags`
+LIBS = `sdl-config --libs` -lSDL_ttf -lSDL_image -lSDL_sound -lSDL_mixer
+
+EXESUFFIX =
+OBJSUFFIX = .o
+
+.SUFFIXES:
+.SUFFIXES: $(OBJSUFFIX) .cpp .idl .h .moc .ui
+
+CC = g++ 
+LD = g++ -o 
+
+CFLAGS = -g -DLINUX -Wall -Wpointer-arith -fcheck-new -pipe -c $(INCS)
+#CFLAGS = -O3 -DLINUX -Wall -Wpointer-arith -fcheck-new -pipe -c $(INCS)
+RM = rm -f
+
+TARGET = onscripter$(EXESUFFIX) sardec$(EXESUFFIX) nsadec$(EXESUFFIX)
+
+include Makefile.onscripter

@@ -1,0 +1,41 @@
+ONScripter
+
+0. はじめに
+
+	高橋直樹さん作の NScripter 用のスクリプトを解釈して実行します。
+
+
+1. 動作環境
+
+	SDL-1.2.3, SDL_image-1.2.1, SDL_mixer-1.2.1, SDL_sound-0.1.4, SDL_ttf-2.0.4, 及び SMPEG-0.4.4 が動作する環境です。
+	Linux 2.4.17 + XFree86 4.1.0 + g++ (gcc 2.95.4) で開発しています。
+	Linux と Windows 2000 (Visual C++ 6.0)上で動作確認をしています。
+
+
+2. コンパイル・起動方法
+
+	コンパイル・起動方法は以下の通りです。
+	ただし、onscripter を実行する場所に default.ttf, スクリプト, アーカイブがなければいけません。
+	詳しくは同梱の www/onscripter.html を参照してください。
+
+	Linux の場合
+	$ make -f Makefile.Linux
+	$ onscripter
+
+	Windows の場合 (DOS プロンプトで)
+	$ SDL と SMPEG のインストール場所に合わせて Makefile.Win を修正
+	$ nmake -f Makefile.Win
+	$ onscripter.exe
+
+	それ以外のプラットフォームでは、Makefile.Linux を雛形にして Makefile.### を作ってください。
+
+	ONScripter は、カレントディレクトリの 0.txt もしくは nscript.dat を自動的に読み込み、それにしたがってカレントディレクトリの arc.sar もしくは arc.nsa を読み込みます。
+
+
+3. 連絡先
+
+	本ソフトウェアに関する問い合わせは
+
+	ogapee@aqua.dti2.ne.jp
+
+	まで電子メールにてお願いします。

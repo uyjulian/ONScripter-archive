@@ -170,10 +170,6 @@ int ONScripterLabel::texecCommand()
         new_line_skip_flag = true;
         newPage( true );
     }
-    else{
-        sentence_font.xy[0] = 0;
-        sentence_font.xy[1]++;
-    }
 
     return RET_CONTINUE;
 }
@@ -524,7 +520,7 @@ int ONScripterLabel::savetimeCommand()
 
     int no = readInt( &p_string_buffer ) - 1;
     
-    searchSaveFiles();
+    searchSaveFiles( no );
 
     if ( !save_file_info[no].valid ){
         setInt( p_string_buffer, 0 );
@@ -1224,6 +1220,8 @@ int ONScripterLabel::getcselnumCommand()
 
 int ONScripterLabel::gameCommand()
 {
+    int i;
+    
     current_link_label_info->label_info = lookupLabel( "start" );
     current_link_label_info->current_line = 0;
     current_link_label_info->offset = 0;
@@ -1238,19 +1236,20 @@ int ONScripterLabel::gameCommand()
     
     /* ---------------------------------------- */
     /* Lookback related variables */
-    for ( int i=0 ; i<4 ; i++ ){
+    for ( i=0 ; i<4 ; i++ ){
         setStr( &lookback_info[i].image_name, lookback_image_name[i] );
         parseTaggedString( &lookback_info[i] );
         setupAnimationInfo( &lookback_info[i] );
     }
     
     /* ---------------------------------------- */
-    /* Read global variables if available */
-    FILE *fp;
-
-    if ( ( fp = fopen( "global.sav", "rb" ) ) != NULL ){
-        loadVariables( fp, 200, VARIABLE_RANGE );
-        fclose( fp );
+    /* Initialize local variables */
+    for ( i=0 ; i<200 ; i++ ){
+        num_variables[i] = 0;
+        num_limit_flag[i] = false;
+        delete[] str_variables[i];
+        str_variables[i] = new char[1];
+        str_variables[i][0] = '\0';
     }
 
     return RET_JUMP;

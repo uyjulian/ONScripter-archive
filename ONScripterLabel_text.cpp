@@ -44,7 +44,7 @@ void ONScripterLabel::drawChar( char* text, struct FontInfo *info, bool flush_fl
     int minx, maxx, miny, maxy, advanced;
     char *p_text;
 
-    //printf("draw %x-%x[%s] %d, %d\n", text[0], text[1], text, system_menu_enter_flag, buffering_flag );
+    //printf("draw %x-%x[%s] %d, %d\n", text[0], text[1], text, info->xy[0], info->xy[1] );
 
     if ( !info->font_valid_flag && info->ttf_font ){
         TTF_CloseFont( (TTF_Font*)info->ttf_font );
@@ -264,6 +264,7 @@ int ONScripterLabel::clickWait( char *out_text )
             flush();
             string_buffer_offset++;
         }
+        if ( textgosub_label ) text_line_flag = false;
         return RET_CONTINUE;
     }
     else{
@@ -308,7 +309,7 @@ int ONScripterLabel::clickNewPage( char *out_text )
             saveoffCommand();
             if ( out_text ) string_buffer_offset += 2;
             else            string_buffer_offset++;
-            gosubReal( textgosub_label, true );
+            gosubReal( textgosub_label );
             new_line_skip_flag = true;
             return RET_JUMP;
         }

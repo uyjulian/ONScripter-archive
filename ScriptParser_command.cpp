@@ -255,6 +255,17 @@ int ScriptParser::returnCommand()
     if ( --label_stack_depth < 0 ) errorAndExit( string_buffer + string_buffer_offset, "too many returns" );
     
     current_link_label_info = current_link_label_info->previous;
+
+    if ( current_link_label_info->next->end_of_line_flag ){
+        current_link_label_info->current_line++;
+        current_link_label_info->offset = 0;
+    }
+    
+    if ( current_link_label_info->next->new_line_flag ){
+        sentence_font.xy[0] = 0;
+        sentence_font.xy[1]++;
+    }
+    
     delete current_link_label_info->next;
     current_link_label_info->next = NULL;
 
@@ -687,7 +698,7 @@ int ScriptParser::gotoCommand()
     return RET_JUMP;
 }
 
-void ScriptParser::gosubReal( char *label, bool textgosub_flag )
+void ScriptParser::gosubReal( char *label, bool atmark_and_textgosub_flag )
 {
     label_stack_depth++;
     
@@ -697,19 +708,12 @@ void ScriptParser::gosubReal( char *label, bool textgosub_flag )
     info->label_info = lookupLabel( label );
     info->current_line = 0;
     info->offset = 0;
-    info->textgosub_flag = textgosub_flag;
+    info->end_of_line_flag = (string_buffer[ string_buffer_offset ] == '\0');
+    info->new_line_flag = atmark_and_textgosub_flag && info->end_of_line_flag;
 
     current_link_label_info->next = info;
-
-    /* ---------------------------------------- */
-    /* Step forward callee's label info */
-    if ( string_buffer[ string_buffer_offset ] == '\0' ){
-        current_link_label_info->current_line++;
-        current_link_label_info->offset = 0;
-    }
-    else
-        current_link_label_info->offset = string_buffer_offset;
-
+    current_link_label_info->offset = string_buffer_offset;
+    
     current_link_label_info = current_link_label_info->next;
 }
 

@@ -449,7 +449,7 @@ private:
     int shelter_event_mode;
     struct TextBuffer *shelter_text_buffer;
     
-    void searchSaveFiles();
+    void searchSaveFiles( int no = -1 );
     int loadSaveFile( int no );
     int saveSaveFile( int no );
     void setupLookbackButton();

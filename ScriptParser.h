@@ -64,7 +64,8 @@ public:
         struct LabelInfo label_info;
         int current_line;
         int offset;
-        bool textgosub_flag;
+        bool end_of_line_flag; // True if here is the end of the line
+        bool new_line_flag; // True if new line is requested after returning from a subroutine
         char *current_script;
     };
     
@@ -254,7 +255,7 @@ protected:
     void setNumVariable( int no, int val );
     void setStr( char **dst, char *src );
     
-    void gosubReal( char *label, bool textgosub_flag = false );
+    void gosubReal( char *label, bool atmark_and_textgosub_flag = false );
 
     /* ---------------------------------------- */
     /* Effect related variables */

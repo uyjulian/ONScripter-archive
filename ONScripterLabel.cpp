@@ -379,6 +379,15 @@ ONScripterLabel::ONScripterLabel( bool cdaudio_flag, char *default_font, char *d
     bg_effect_image = COLOR_EFFECT_IMAGE;
 
     clearCurrentTextBuffer();
+
+    /* ---------------------------------------- */
+    /* Load global variables if available */
+    FILE *fp;
+
+    if ( ( fp = fopen( "global.sav", "rb" ) ) != NULL ){
+        loadVariables( fp, 200, VARIABLE_RANGE );
+        fclose( fp );
+    }
 }
 
 ONScripterLabel::~ONScripterLabel( )
@@ -550,7 +559,7 @@ void ONScripterLabel::executeLabel()
             line_cache = -1;
             goto executeLabelTop;
         }
-        else if ( ret == RET_CONTINUE ){
+        else if ( ret == RET_CONTINUE || ret == RET_CONTINUE_NONEXT ){
             if ( string_buffer[ string_buffer_offset ] == '\0' ){
                 current_link_label_info->current_script = p_script_buffer;
                 string_buffer_offset = 0;

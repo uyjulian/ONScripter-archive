@@ -39,12 +39,22 @@
 
 #define READ_LENGTH 4096
 
-void ONScripterLabel::searchSaveFiles()
+void ONScripterLabel::searchSaveFiles( int no )
 {
     unsigned int i;
+    int start, end;
     char file_name[256];
+
+    if ( no == -1 ){
+        start = 0;
+        end = num_save_file;
+    }
+    else{
+        start = no;
+        end = no+1;
+    }
     
-    for ( i=0 ; i<num_save_file ; i++ ){
+    for ( i=start ; i<end ; i++ ){
 
 #if defined(LINUX) || defined(MACOSX)
         sprintf( file_name, "%ssave%d.dat", archive_path, i+1 );

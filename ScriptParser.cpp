@@ -58,6 +58,7 @@ static struct FuncLUT{
     {"sub", &ScriptParser::subCommand},
     {"stralias", &ScriptParser::straliasCommand},
     {"skip",     &ScriptParser::skipCommand},
+    {"selectvoice",     &ScriptParser::selectvoiceCommand},
     {"selectcolor",     &ScriptParser::selectcolorCommand},
     {"savenumber",     &ScriptParser::savenumberCommand},
     {"savename",     &ScriptParser::savenameCommand},
@@ -85,6 +86,7 @@ static struct FuncLUT{
     {"mod",      &ScriptParser::modCommand},
     {"mid",      &ScriptParser::midCommand},
     {"menusetwindow",      &ScriptParser::menusetwindowCommand},
+    {"menuselectvoice",      &ScriptParser::menuselectvoiceCommand},
     {"menuselectcolor",      &ScriptParser::menuselectcolorCommand},
     {"lookbacksp",      &ScriptParser::lookbackspCommand},
     {"lookbackcolor",      &ScriptParser::lookbackcolorCommand},
@@ -113,6 +115,7 @@ static struct FuncLUT{
     {"dec",   &ScriptParser::decCommand},
     {"date",   &ScriptParser::dateCommand},
     {"cmp",      &ScriptParser::cmpCommand},
+    {"clickvoice",   &ScriptParser::clickvoiceCommand},
     {"clickstr",   &ScriptParser::clickstrCommand},
     {"break",   &ScriptParser::breakCommand},
     {"atoi",      &ScriptParser::atoiCommand},
@@ -242,6 +245,12 @@ ScriptParser::ScriptParser()
     /* ---------------------------------------- */
     /* Sound related variables */
     mp3_volume = voice_volume = se_volume = DEFAULT_VOLUME;
+    for ( i=0 ; i<     CLICKVOICE_NUM ; i++ )
+             clickvoice_file_name[i] = NULL;
+    for ( i=0 ; i<    SELECTVOICE_NUM ; i++ )
+            selectvoice_file_name[i] = NULL;
+    for ( i=0 ; i<MENUSELECTVOICE_NUM ; i++ )
+        menuselectvoice_file_name[i] = NULL;
 
     /* ---------------------------------------- */
     /* Menu related variables */

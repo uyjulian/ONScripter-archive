@@ -171,6 +171,7 @@ void ONScripterLabel::mousePressEvent( SDL_MouseButtonEvent *event )
     }
     
     if ( event_mode & (WAIT_INPUT_MODE | WAIT_BUTTON_MODE) ){
+        playClickVoice();
         stopAnimation( clickstr_state );
         advancePhase();
     }
@@ -391,6 +392,7 @@ void ONScripterLabel::keyPressEvent( SDL_KeyboardEvent *event )
                 current_button_state.button = 0;
                 volatile_button_state.button = 0;
             }
+            playClickVoice();
             stopAnimation( clickstr_state );
             advancePhase();
             return;
@@ -418,6 +420,7 @@ void ONScripterLabel::keyPressEvent( SDL_KeyboardEvent *event )
             event->keysym.sym == SDLK_SPACE ){
             skip_flag = false;
             key_pressed_flag = true;
+            playClickVoice();
             stopAnimation( clickstr_state );
             advancePhase();
         }

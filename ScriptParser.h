@@ -147,6 +147,7 @@ public:
     int subCommand();
     int straliasCommand();
     int skipCommand();
+    int selectvoiceCommand();
     int selectcolorCommand();
     int savenumberCommand();
     int savenameCommand();
@@ -162,6 +163,7 @@ public:
     int modCommand();
     int midCommand();
     int menusetwindowCommand();
+    int menuselectvoiceCommand();
     int menuselectcolorCommand();
     int lookbackspCommand();
     int lookbackcolorCommand();
@@ -190,6 +192,7 @@ public:
     int decCommand();
     int dateCommand();
     int cmpCommand();
+    int clickvoiceCommand();
     int clickstrCommand();
     int breakCommand();
     int atoiCommand();
@@ -358,7 +361,31 @@ protected:
     int mp3_volume;
     int voice_volume;
     int se_volume;
-    
+
+    enum { CLICKVOICE_NORMAL = 0,
+           CLICKVOICE_NEWPAGE = 1,
+           CLICKVOICE_NUM = 2
+    };
+    char *clickvoice_file_name[CLICKVOICE_NUM];
+
+    enum { SELECTVOICE_OPEN = 0,
+           SELECTVOICE_OVER = 1,
+           SELECTVOICE_SELECT = 2,
+           SELECTVOICE_NUM = 3
+    };
+    char *selectvoice_file_name[SELECTVOICE_NUM];
+
+    enum { MENUSELECTVOICE_OPEN = 0,
+           MENUSELECTVOICE_CANCEL = 1,
+           MENUSELECTVOICE_OVER = 2,
+           MENUSELECTVOICE_CLICK = 3,
+           MENUSELECTVOICE_WARN = 4,
+           MENUSELECTVOICE_YES = 5,
+           MENUSELECTVOICE_NO = 6,
+           MENUSELECTVOICE_NUM = 7
+    };
+    char *menuselectvoice_file_name[MENUSELECTVOICE_NUM];
+     
     /* ---------------------------------------- */
     /* Font related variables */
     FontInfo sentence_font, system_font, menu_font;

@@ -164,6 +164,25 @@ int ScriptParser::skipCommand()
     return RET_JUMP;
 }
 
+int ScriptParser::selectvoiceCommand()
+{
+    char *p_string_buffer = string_buffer + string_buffer_offset + 11;
+    if ( current_mode != DEFINE_MODE ) errorAndExit( string_buffer + string_buffer_offset, "not in the define section" );
+
+    for ( int i=0 ; i<SELECTVOICE_NUM ; i++ ){
+        readStr( &p_string_buffer, tmp_string_buffer );
+        if ( tmp_string_buffer[0] != '\0' ){
+            setStr( &selectvoice_file_name[i], tmp_string_buffer );
+        }
+        else if ( selectvoice_file_name[i] ){
+            delete selectvoice_file_name[i];
+            selectvoice_file_name[i] = NULL;
+        }
+    }
+
+    return RET_CONTINUE;
+}
+
 int ScriptParser::selectcolorCommand()
 {
     char *p_string_buffer = string_buffer + string_buffer_offset + 11;
@@ -455,6 +474,25 @@ int ScriptParser::menusetwindowCommand()
     readStr( &p_string_buffer, tmp_string_buffer );
     if ( strlen( tmp_string_buffer ) != 7 ) errorAndExit( string_buffer + string_buffer_offset );
     readColor( &menu_font.window_color, tmp_string_buffer + 1 );
+
+    return RET_CONTINUE;
+}
+
+int ScriptParser::menuselectvoiceCommand()
+{
+    char *p_string_buffer = string_buffer + string_buffer_offset + 15;
+    if ( current_mode != DEFINE_MODE ) errorAndExit( string_buffer + string_buffer_offset, "not in the define section" );
+
+    for ( int i=0 ; i<MENUSELECTVOICE_NUM ; i++ ){
+        readStr( &p_string_buffer, tmp_string_buffer );
+        if ( tmp_string_buffer[0] != '\0' ){
+            setStr( &menuselectvoice_file_name[i], tmp_string_buffer );
+        }
+        else if ( menuselectvoice_file_name[i] ){
+            delete menuselectvoice_file_name[i];
+            menuselectvoice_file_name[i] = NULL;
+        }
+    }
 
     return RET_CONTINUE;
 }
@@ -965,6 +1003,25 @@ int ScriptParser::cmpCommand()
 
     delete[] tmp_buffer;
     
+    return RET_CONTINUE;
+}
+
+int ScriptParser::clickvoiceCommand()
+{
+    char *p_string_buffer = string_buffer + string_buffer_offset + 10;
+    if ( current_mode != DEFINE_MODE ) errorAndExit( string_buffer + string_buffer_offset, "not in the define section" );
+
+    for ( int i=0 ; i<CLICKVOICE_NUM ; i++ ){
+        readStr( &p_string_buffer, tmp_string_buffer );
+        if ( tmp_string_buffer[0] != '\0' ){
+            setStr( &clickvoice_file_name[i], tmp_string_buffer );
+        }
+        else if ( clickvoice_file_name[i] ){
+            delete clickvoice_file_name[i];
+            clickvoice_file_name[i] = NULL;
+        }
+    }
+
     return RET_CONTINUE;
 }
 

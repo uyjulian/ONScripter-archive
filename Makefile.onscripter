@@ -5,7 +5,8 @@
 
 GUI_OBJS = ONScripterLabel$(OBJSUFFIX) ONScripterLabel_command$(OBJSUFFIX) ONScripterLabel_text$(OBJSUFFIX) \
 	ONScripterLabel_effect$(OBJSUFFIX) ONScripterLabel_event$(OBJSUFFIX) ONScripterLabel_rmenu$(OBJSUFFIX) \
-	ONScripterLabel_animation$(OBJSUFFIX) AnimationInfo$(OBJSUFFIX) FontInfo$(OBJSUFFIX)
+	ONScripterLabel_animation$(OBJSUFFIX) ONScripterLabel_sound$(OBJSUFFIX) \
+	AnimationInfo$(OBJSUFFIX) FontInfo$(OBJSUFFIX)
 SAR_OBJS = sardec$(OBJSUFFIX) DirectReader$(OBJSUFFIX) BaseReader$(OBJSUFFIX) SarReader$(OBJSUFFIX)
 NSA_OBJS = nsadec$(OBJSUFFIX) DirectReader$(OBJSUFFIX) BaseReader$(OBJSUFFIX) SarReader$(OBJSUFFIX) NsaReader$(OBJSUFFIX)
 DECODER_OBJS = BaseReader$(OBJSUFFIX) DirectReader$(OBJSUFFIX) SarReader$(OBJSUFFIX) NsaReader$(OBJSUFFIX)
@@ -50,6 +51,7 @@ ONScripterLabel_effect$(OBJSUFFIX): $(ONSCRIPTER_HEADER)
 ONScripterLabel_event$(OBJSUFFIX): $(ONSCRIPTER_HEADER)
 ONScripterLabel_rmenu$(OBJSUFFIX): $(ONSCRIPTER_HEADER)
 ONScripterLabel_animation$(OBJSUFFIX): $(ONSCRIPTER_HEADER)
+ONScripterLabel_sound$(OBJSUFFIX): $(ONSCRIPTER_HEADER)
 AnimationInfo$(OBJSUFFIX): AnimationInfo.h
 FontInfo$(OBJSUFFIX): FontInfo.h
 MadWrapper$(OBJSUFFIX): MadWrapper.h

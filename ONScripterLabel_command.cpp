@@ -23,7 +23,6 @@
 
 #include "ONScripterLabel.h"
 
-#define DEFAULT_WAVE_CHANNEL 1
 #define ONSCRIPTER_VERSION 198
 
 #define DEFAULT_CURSOR_WAIT    ":l/3,160,2;cursor0.bmp"
@@ -382,6 +381,9 @@ int ONScripterLabel::selectCommand()
 
         if ( current_button_state.button == 0 ) return RET_WAIT;
         
+        if ( selectvoice_file_name[SELECTVOICE_SELECT] )
+            playWave( selectvoice_file_name[SELECTVOICE_SELECT], false, DEFAULT_WAVE_CHANNEL );
+
         event_mode = IDLE_EVENT_MODE;
 
         deleteButtonLink();
@@ -427,6 +429,9 @@ int ONScripterLabel::selectCommand()
         skip_flag = false;
         xy[0] = sentence_font.xy[0];
         xy[1] = sentence_font.xy[1];
+
+        if ( selectvoice_file_name[SELECTVOICE_OPEN] )
+            playWave( selectvoice_file_name[SELECTVOICE_OPEN], false, DEFAULT_WAVE_CHANNEL );
 
         last_select_link = &root_select_link;
         select_label_info.current_line = current_link_label_info->current_line;

@@ -657,10 +657,15 @@ void ONScripterLabel::executeSystemMenu()
         deleteButtonLink();
 
         if ( current_button_state.button == -1 ){
+            if ( menuselectvoice_file_name[MENUSELECTVOICE_CANCEL] )
+                playWave( menuselectvoice_file_name[MENUSELECTVOICE_CANCEL], false, DEFAULT_WAVE_CHANNEL );
             leaveSystemCall();
             return;
         }
     
+        if ( menuselectvoice_file_name[MENUSELECTVOICE_CLICK] )
+            playWave( menuselectvoice_file_name[MENUSELECTVOICE_CLICK], false, DEFAULT_WAVE_CHANNEL );
+        
         link = root_menu_link.next;
         while ( link ){
             if ( current_button_state.button == counter++ ){
@@ -673,6 +678,8 @@ void ONScripterLabel::executeSystemMenu()
         advancePhase();
     }
     else{
+        if ( menuselectvoice_file_name[MENUSELECTVOICE_OPEN] )
+            playWave( menuselectvoice_file_name[MENUSELECTVOICE_OPEN], false, DEFAULT_WAVE_CHANNEL );
         refreshSurface( text_surface, NULL );
         shadowTextDisplay( text_surface, text_surface, NULL, &menu_font );
 
@@ -879,7 +886,7 @@ void ONScripterLabel::executeSystemSave()
 
 void ONScripterLabel::executeSystemYesNo()
 {
-	char name[64] = {'\0'};
+    char name[64] = {'\0'};
 	
     if ( event_mode & (WAIT_INPUT_MODE | WAIT_BUTTON_MODE) ){
 
@@ -889,6 +896,8 @@ void ONScripterLabel::executeSystemYesNo()
         deleteButtonLink();
 
         if ( current_button_state.button == 1 ){ // yes is selected
+            if ( menuselectvoice_file_name[MENUSELECTVOICE_YES] )
+                playWave( menuselectvoice_file_name[MENUSELECTVOICE_YES], false, DEFAULT_WAVE_CHANNEL );
             if ( yesno_caller == SYSTEM_SAVE ){
                 saveSaveFile( yesno_selected_file_no );
                 leaveSystemCall();
@@ -912,7 +921,9 @@ void ONScripterLabel::executeSystemYesNo()
                 leaveSystemCall( false );
             }
         }
-		else{
+        else{
+            if ( menuselectvoice_file_name[MENUSELECTVOICE_NO] )
+                playWave( menuselectvoice_file_name[MENUSELECTVOICE_NO], false, DEFAULT_WAVE_CHANNEL );
             system_menu_mode = yesno_caller;
             advancePhase();
         }

@@ -51,6 +51,8 @@
 #define DEFAULT_WM_TITLE "ONScripter"
 #define DEFAULT_WM_ICON  "ONScripter"
 
+#define DEFAULT_WAVE_CHANNEL 1
+
 class ONScripterLabel : public ScriptParser
 {
 public:
@@ -410,6 +412,7 @@ private:
     int playCDAudio( int cd_no );
     int playWave( char *file_name, bool loop_flag, int channel );
     void stopBGM( bool continue_flag );
+    void playClickVoice();
     
     /* ---------------------------------------- */
     /* Text event related variables */

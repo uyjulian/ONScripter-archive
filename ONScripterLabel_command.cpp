@@ -707,6 +707,7 @@ int ONScripterLabel::playCommand()
 #endif
     }
     else{ // play MIDI
+        stopBGM( false );
         setStr( &music_file_name, tmp_string_buffer );
         playMIDIFile();
     }
@@ -1135,7 +1136,7 @@ int ONScripterLabel::endCommand()
     }
     if ( midi_info ){
         Mix_HaltMusic();
-        SDL_Delay(500);
+        //SDL_Delay(500);
         Mix_FreeMusic( midi_info );
     }
     SDL_Quit();

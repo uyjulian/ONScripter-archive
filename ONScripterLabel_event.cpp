@@ -36,6 +36,7 @@
 
 static SDL_TimerID timer_id = NULL;
 SDL_TimerID timer_cdaudio_id = NULL;
+bool midi_play_once_flag = false;
 
 /* **************************************** *
  * Callback functions
@@ -86,16 +87,15 @@ void ONScripterLabel::startTimer( int count )
 
 void midiCallback( int sig )
 {
-    printf("waiting for Ext MIDI player terminating\n");
 #if defined(LINUX)
     int status;
     wait( &status );
 #endif
-    SDL_Event event;
-    event.type = ONS_MIDI_EVENT;
-    SDL_PushEvent(&event);
-
-    printf("Ext MIDI player terminated\n");
+    if ( !midi_play_once_flag ){
+        SDL_Event event;
+        event.type = ONS_MIDI_EVENT;
+        SDL_PushEvent(&event);
+    }
 }
 
 /* **************************************** *
@@ -510,13 +510,8 @@ int ONScripterLabel::eventLoop()
             break;
 
           case ONS_MIDI_EVENT:
-            if ( !music_play_once_flag ){
-                stopBGM( true );
-                playMIDI( );
-            }
-            else{
-                stopBGM( false );
-            }
+            Mix_FreeMusic( midi_info );
+            playMIDI();
             break;
 
           case SDL_QUIT:
@@ -529,7 +524,7 @@ int ONScripterLabel::eventLoop()
             }
             if ( midi_info ){
                 Mix_HaltMusic();
-                SDL_Delay(500);
+                //SDL_Delay(500);
                 Mix_FreeMusic( midi_info );
             }
             return(0);

@@ -12,7 +12,7 @@
 </CENTER>
 
 Created: Feb. 6, 2002<br>
-Last updated: Apr. 4, 2002
+Last updated: Apr. 5, 2002
 
 <HR>
 
@@ -27,9 +27,9 @@ href="http://www2.osk.3web.ne.jp/~naokikun/index.htm">高橋直樹</a>氏が開発したゲ
 
 <p>ONScripter で何ができるのかについてはαβεさんの[<A HREF="http://abe.platina.sakura.ne.jp/onscripter/">ONScripter のスゝメ</A>]を参照してください。</p>
 
-<p>現在はベータ版<A HREF="onscripter-beta-20020404.tar.gz">onscripter-beta-20020404.tar.gz</A>を配布しております。<br>
+<p>現在はベータ版<A HREF="onscripter-beta-20020405.tar.gz">onscripter-beta-20020405.tar.gz</A>を配布しております。<br>
 ベータ版ゆえデバッグ出力・assert 等が有効になっていますが、正式版になったら取り除きます。<br>
-(一つ前のベータ版<A HREF="onscripter-beta-20020403.tar.gz">onscripter-beta-20020403.tar.gz</A>)</p>
+(一つ前のベータ版<A HREF="onscripter-beta-20020404.tar.gz">onscripter-beta-20020404.tar.gz</A>)</p>
 
 <p>更新内容については[<A HREF="onscripter_devel.html">開発日誌</A>]を参照して下さい。</p>
 
@@ -344,8 +344,11 @@ registry.txt を一カ所にまとめておくことができます。--registry を指定し
   <DD> OS の機能を使用して演奏するようなので、特に準備することはありません。
   <DT> Unix系(動作確認は Linux)でソフトウェア音源で演奏する場合（デフォルト）。
   <DD> SDL_mixer に取り込まれている timidity を使用してソフトウェア音源で演奏します。この場合、MIDIの音色データ<A HREF="http://www.libsdl.org/projects/SDL_mixer/timidity/timidity.tar.gz">timidity.tar.gz</A>をダウンロードして /usr/local/lib/ 以下に展開してください。
-  <DT> Unix系(動作確認は Linux)で外部 MIDI 音源を利用して演奏する場合。（現在当方未確認）
-  <DD> playmidi 等の外部音源を使用できる MIDI player をインストールし、環境変数 MUSIC_CMD を設定してください。（例 set MUSIC_CMD=/usr/bin/playmidi）
+  <DT> Unix系(動作確認は Linux)で外部 MIDI 音源を利用して演奏する場合。
+  <DD> playmidi 等の外部音源を使用できる MIDI player をインストールし、環境変数 MUSIC_CMD を設定してください。（例 MUSIC_CMD=/usr/bin/playmidi）<br>
+       当方では、シリアル接続で外部音源を繋ぎ、MUSIC_CMD に '/usr/bin/midiplay -q -o /dev/ttyS0' を設定して動作確認をしています。<br>
+       <A HREF="http://sourceforge.net/projects/playmidi/">playmidi</A>は、カーネルで認識される MIDI ポートに対してしか演奏できませんが、<A HREF="http://member.nifty.ne.jp/Breeze/softwares/unix/midiplay+.html">midiplay</A>はシリアルに直接出せます。<br>
+       <A HREF="http://crystal.apana.org.au/ghansper/MidiAxis.html">シリアルポートをMIDIポートにする patch</A>を使えば、playmidi でもシリアル接続音源を使えそうですが、未確認です。       
 </DL>
 
 </td></tr><tr><td>

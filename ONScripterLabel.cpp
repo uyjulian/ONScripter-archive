@@ -27,6 +27,7 @@
 #endif
 
 extern void initSJIS2UTF16();
+extern bool midi_play_once_flag;
 
 #define FONT_SIZE 26
 
@@ -1153,7 +1154,7 @@ int ONScripterLabel::playMIDIFile()
     printf( "playMIDI %s once %d\n", music_file_name, music_play_once_flag );
     
     if ( (fp = fopen( TMP_MIDI_FILE, "wb" )) == NULL ){
-        fprintf( stderr, "can't open temporaly MIDI file\n" );
+        fprintf( stderr, "can't open temporaly MIDI file %s\n", TMP_MIDI_FILE );
         return -1;
     }
 
@@ -1186,12 +1187,13 @@ int ONScripterLabel::playMIDI()
     Mix_SetMusicCMD( music_cmd );
 
     if ( (midi_info = Mix_LoadMUS( TMP_MIDI_FILE )) == NULL ) {
-        printf( "can't load MIDI file\n" );
+        printf( "can't load MIDI file %s\n", TMP_MIDI_FILE );
         return -1;
     }
 
     Mix_VolumeMusic( mp3_volume );
     Mix_PlayMusic( midi_info, midi_looping );
+    midi_play_once_flag = music_play_once_flag;
     current_cd_track = -2; 
     
     return 0;
@@ -1310,9 +1312,10 @@ void ONScripterLabel::stopBGM( bool continue_flag )
     }
 
     if ( midi_info ){
-        music_play_once_flag = true;
+        midi_play_once_flag = true;
         Mix_HaltMusic();
-        SDL_Delay(500);
+        midi_play_once_flag = music_play_once_flag;
+        //SDL_Delay(500);
         Mix_FreeMusic( midi_info );
         midi_info = NULL;
         setStr( &music_file_name, NULL );

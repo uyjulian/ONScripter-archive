@@ -35,7 +35,7 @@
 
 #define SAVEFILE_MAGIC_NUMBER "ONS"
 #define SAVEFILE_VERSION_MAJOR 1
-#define SAVEFILE_VERSION_MINOR 5
+#define SAVEFILE_VERSION_MINOR 6
 
 #define READ_LENGTH 4096
 
@@ -243,13 +243,17 @@ int ONScripterLabel::loadSaveFile( int no )
                 loadInt( fp, &j );
 
             loadInt( fp, &address );
+            current_link_label_info->string_buffer_offset = 0;
         }
         else{
-            loadInt( fp, &string_buffer_offset );
+            loadInt( fp, &current_link_label_info->string_buffer_offset );
         }
         
         if ( fgetc( fp ) == 0 ) break;
 
+        if ( file_version<= 105 )
+            current_link_label_info->string_buffer_offset = 0;
+        
         current_link_label_info->next = new LinkLabelInfo();
         current_link_label_info->next->previous = current_link_label_info;
         current_link_label_info = current_link_label_info->next;
@@ -257,6 +261,7 @@ int ONScripterLabel::loadSaveFile( int no )
         label_stack_depth++;
     }
     script_h.setCurrent( current_link_label_info->current_script );
+    string_buffer_offset = current_link_label_info->string_buffer_offset;
     if ( script_h.isQuat() ){ // for puttext
         script_h.text_line_flag = true;
         script_h.next_text_line_flag = true;
@@ -502,6 +507,7 @@ int ONScripterLabel::saveSaveFile( int no )
     /* ---------------------------------------- */
     /* Save link label info */
     current_link_label_info->current_script = script_h.getCurrent();
+    current_link_label_info->string_buffer_offset = string_buffer_offset;
     LinkLabelInfo *info = &root_link_label_info;
 
     while( info ){
@@ -513,7 +519,7 @@ int ONScripterLabel::saveSaveFile( int no )
         script_h.skipLine( info->current_line );
         saveInt( fp, info->current_script - script_h.getCurrent() );
         script_h.popCurrent();
-        saveInt( fp, string_buffer_offset );
+        saveInt( fp, info->string_buffer_offset );
 
         if ( info->next ) fputc( 1, fp );
         info = info->next;

@@ -186,8 +186,6 @@ ONScripterLabel::ONScripterLabel( bool cdaudio_flag, char *default_font, char *d
 {
     int i;
 
-    //if ( open( default_archive_path ) ) exit(-1);
-
     printf("ONScripter\n");
 
 	if ( SDL_Init( SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_AUDIO ) < 0 ){
@@ -528,6 +526,11 @@ void ONScripterLabel::executeLabel()
             continue;
         }
 
+        if ( kidokuskip_flag ){
+            if ( skip_flag && kidokumode_flag && !script_h.isKidoku() ) skip_flag = false;
+            script_h.markAsKidoku();
+        }
+        
         char *current = script_h.getCurrent();
         ret = ScriptParser::parseLine();
         if ( ret == RET_NOMATCH ) ret = this->parseLine();

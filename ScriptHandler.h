@@ -69,8 +69,10 @@ public:
     bool isQuat();
     void skipLine( int no=1 );
 
-    bool rereadToken( bool advance_flag=true );
-    bool readToken( bool advance_flag=true );
+    bool isKidoku();
+    void markAsKidoku();
+    bool rereadToken();
+    bool readToken();
     char *getStringBuffer();
     char *getSavedStringBuffer();
 

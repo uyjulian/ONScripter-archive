@@ -139,6 +139,7 @@ public:
     int lenCommand();
     int labellogCommand();
     int kidokuskipCommand();
+    int kidokumodeCommand();
     int itoaCommand();
     int intlimitCommand();
     int incCommand();
@@ -179,6 +180,7 @@ protected:
     bool filelog_flag;
     bool labellog_flag;
     bool kidokuskip_flag;
+    bool kidokumode_flag;
     int label_stack_depth;
 
     bool jumpf_flag;

@@ -162,13 +162,27 @@ void ScriptHandler::skipLine( int no )
     rereadToken();
 }
 
-bool ScriptHandler::rereadToken( bool advance_flag )
+bool ScriptHandler::isKidoku()
 {
-    next_script = current_script;
-    return readToken( advance_flag );
+    int offset = current_script - script_buffer;
+    
+    return (kidoku_buffer[ offset/8 ] & ((char)1 << (offset % 8)))?true:false;
 }
 
-bool ScriptHandler::readToken( bool advance_flag )
+void ScriptHandler::markAsKidoku()
+{
+    int offset = current_script - script_buffer;
+    
+    kidoku_buffer[ offset/8 ] |= ((char)1 << (offset % 8));
+}
+
+bool ScriptHandler::rereadToken()
+{
+    next_script = current_script;
+    return readToken();
+}
+
+bool ScriptHandler::readToken()
 {
     current_script = next_script;
     char *buf = current_script;
@@ -192,8 +206,6 @@ bool ScriptHandler::readToken( bool advance_flag )
         if ( ch == ':' ) head_flag = true; // ??
         ch = *buf++;
     }
-
-    // mark kidoku here when stack_script == NULL
 
     text_line_flag = next_text_line_flag;
 
@@ -832,7 +844,7 @@ void ScriptHandler::saveKidokuData()
         return;
     }
 
-    fread( kidoku_buffer, 1, script_buffer_length/8 + 1, fp );
+    fwrite( kidoku_buffer, 1, script_buffer_length/8 + 1, fp );
     fclose( fp );
 }
 
@@ -841,14 +853,11 @@ void ScriptHandler::loadKidokuData()
     FILE *fp;
 
     kidoku_buffer = new char[ script_buffer_length/8 + 1 ];
+    memset( kidoku_buffer, 0, script_buffer_length/8 + 1 );
 
-    if ( ( fp = fopen( "kidoku.dat", "rb" ) ) != NULL )
-    {
+    if ( ( fp = fopen( "kidoku.dat", "rb" ) ) != NULL ){
         fread( kidoku_buffer, 1, script_buffer_length/8 + 1, fp );
         fclose( fp );
-    }
-    else{
-        memset( kidoku_buffer, script_buffer_length/8 + 1, 0 );
     }
 }
 

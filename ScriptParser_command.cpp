@@ -259,7 +259,7 @@ int ScriptParser::returnCommand()
     current_link_label_info = current_link_label_info->previous;
 
     script_h.setCurrent( current_link_label_info->current_script );
-    string_buffer_offset = current_link_label_info->next->string_buffer_offset;
+    string_buffer_offset = current_link_label_info->string_buffer_offset;
 
     if ( current_link_label_info->next->textgosub_flag ){
         script_h.next_text_line_flag = false;
@@ -549,9 +549,20 @@ int ScriptParser::labellogCommand()
 
 int ScriptParser::kidokuskipCommand()
 {
-    //kidokuskip_flag = true;
+    kidokuskip_flag = true;
+    kidokumode_flag = true;
     script_h.loadKidokuData();
     
+    return RET_CONTINUE;
+}
+
+int ScriptParser::kidokumodeCommand()
+{
+    if ( script_h.readInt() == 1 )
+        kidokumode_flag = true;
+    else
+        kidokumode_flag = false;
+
     return RET_CONTINUE;
 }
 
@@ -712,6 +723,7 @@ void ScriptParser::gosubReal( const char *label, bool textgosub_flag, char *curr
     label_stack_depth++;
     
     current_link_label_info->current_script = current;
+    current_link_label_info->string_buffer_offset = string_buffer_offset;
 
     LinkLabelInfo *info = new LinkLabelInfo();
     info->previous = current_link_label_info;
@@ -719,7 +731,6 @@ void ScriptParser::gosubReal( const char *label, bool textgosub_flag, char *curr
     info->label_info = script_h.lookupLabel( label );
     info->current_line = 0;
     info->textgosub_flag = textgosub_flag;
-    info->string_buffer_offset = string_buffer_offset;
 
     script_h.setCurrent( info->label_info.start_address );
     string_buffer_offset = 0;

@@ -95,6 +95,7 @@ static struct FuncLUT{
     {"len",      &ScriptParser::lenCommand},
     {"labellog",      &ScriptParser::labellogCommand},
     {"kidokuskip", &ScriptParser::kidokuskipCommand},
+    {"kidokumode", &ScriptParser::kidokumodeCommand},
     {"itoa", &ScriptParser::itoaCommand},
     {"intlimit", &ScriptParser::intlimitCommand},
     {"inc",      &ScriptParser::incCommand},
@@ -138,6 +139,7 @@ ScriptParser::ScriptParser( char *path )
     filelog_flag = false;
     labellog_flag = false;
     kidokuskip_flag = false;
+    kidokumode_flag = false;
     rmode_flag = true;
     windowback_flag = false;
     usewheel_flag = false;
@@ -391,7 +393,10 @@ void ScriptParser::skipToken() // skip phrase
     {
         if ( script_h.readToken() ) continue;
         if ( script_h.getStringBuffer()[0] == ':' ) break;
-        if ( script_h.getStringBuffer()[0] == 0x0a ) break;
+        if ( script_h.getStringBuffer()[0] == 0x0a ){
+            if ( kidokuskip_flag ) script_h.markAsKidoku();
+            break;
+        }
     }
 }
 

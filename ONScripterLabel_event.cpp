@@ -131,15 +131,24 @@ void ONScripterLabel::trapHandler()
  * **************************************** */
 void ONScripterLabel::mouseMoveEvent( SDL_MouseMotionEvent *event )
 {
+#ifndef SCREEN_ROTATION
     mouseOverCheck( event->x, event->y );
+#else
+    mouseOverCheck( screen_width - event->y - 1, event->x );
+#endif    
 }
 
 void ONScripterLabel::mousePressEvent( SDL_MouseButtonEvent *event )
 {
     if ( variable_edit_mode ) return;
     
+#ifndef SCREEN_ROTATION
     current_button_state.x = event->x;
     current_button_state.y = event->y;
+#else
+    current_button_state.x = screen_width - event->y - 1;
+    current_button_state.y = event->x;
+#endif
     current_button_state.down_flag = false;
     
     if ( event->button == SDL_BUTTON_RIGHT &&
@@ -342,8 +351,13 @@ void ONScripterLabel::shiftCursorOnButton( int diff )
             p_button_link  = p_button_link->next;
     }
     if ( p_button_link ){
+#ifndef SCREEN_ROTATION
         SDL_WarpMouse( p_button_link->select_rect.x + p_button_link->select_rect.w / 2,
                        p_button_link->select_rect.y + p_button_link->select_rect.h / 2 );
+#else
+        SDL_WarpMouse( p_button_link->select_rect.y + p_button_link->select_rect.h / 2,
+                       screen_width - (p_button_link->select_rect.x + p_button_link->select_rect.w / 2) - 1 );
+#endif                
     }
 }
 

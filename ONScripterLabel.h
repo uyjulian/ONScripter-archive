@@ -443,6 +443,7 @@ private:
     void newPage( bool next_flag );
     
     void deleteLabelLink();
+    void blitRotation( SDL_Surface *src_surface, SDL_Rect *src_rect, SDL_Surface *dst_surface, SDL_Rect *dst_rect );
     void flush( SDL_Rect *rect=NULL );
     void flush( int x, int y, int w, int h );
     void executeLabel();

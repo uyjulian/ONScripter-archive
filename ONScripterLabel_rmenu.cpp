@@ -614,7 +614,11 @@ void ONScripterLabel::leaveSystemCall( bool restore_flag )
         root_select_link.next = shelter_select_link;
         event_mode = shelter_event_mode;
         if ( event_mode & WAIT_BUTTON_MODE ){
+#ifndef SCREEN_ROTATION
             SDL_WarpMouse( shelter_mouse_state.x, shelter_mouse_state.y );
+#else            
+            SDL_WarpMouse( shelter_mouse_state.y, screen_width - shelter_mouse_state.x - 1 );
+#endif
         }
         current_text_buffer = shelter_text_buffer;
     }

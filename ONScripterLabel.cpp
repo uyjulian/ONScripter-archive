@@ -183,7 +183,12 @@ void ONScripterLabel::initSDL( bool cdaudio_flag )
 #else
     int bpp = 32;
 #endif
+#ifndef SCREEN_ROTATION
     screen_surface = SDL_SetVideoMode( screen_width, screen_height, bpp, DEFAULT_SURFACE_FLAG );
+#else    
+    screen_surface = SDL_SetVideoMode( screen_height, screen_width, bpp, DEFAULT_SURFACE_FLAG );
+#endif    
+
     if ( screen_surface == NULL ) {
         fprintf( stderr, "Couldn't set %dx%dx%d video mode: %s\n",
                  screen_width, screen_height, bpp, SDL_GetError() );
@@ -391,13 +396,62 @@ void ONScripterLabel::resetSentenceFont()
     sentence_font_info.pos.h = screen_height;
 }
 
+void ONScripterLabel::blitRotation( SDL_Surface *src_surface, SDL_Rect *src_rect, SDL_Surface *dst_surface, SDL_Rect *dst_rect )
+{
+    SDL_Rect s_rect, d_rect;
+        
+    if ( src_rect ) s_rect = *src_rect;
+    else{
+        s_rect.x = s_rect.y = 0;
+        s_rect.w = src_surface->w;
+        s_rect.h = src_surface->h;
+    }
+
+    if ( dst_rect ) d_rect = *dst_rect;
+    else{
+        d_rect.x = d_rect.y = 0;
+        d_rect.w = dst_surface->h;
+        d_rect.h = dst_surface->w;
+    }
+
+    SDL_LockSurface( src_surface );
+    SDL_LockSurface( dst_surface );
+
+    Uint32 *src_buffer = (Uint32 *)src_surface->pixels;
+    src_buffer += src_surface->w * s_rect.y + s_rect.x;
+        
+    for ( int i=0 ; i<s_rect.h ; i++ ){
+        Uint16 *dst_buffer = (Uint16 *)dst_surface->pixels + dst_surface->w * (dst_surface->h - d_rect.x) + d_rect.y + i;
+        for ( int j=0 ; j<s_rect.w ; j++ ){
+            *dst_buffer =  ((*src_buffer >> (src_surface->format->Rshift+3)) & 0x1f) << dst_surface->format->Rshift;
+            *dst_buffer |= ((*src_buffer >> (src_surface->format->Gshift+2)) & 0x3f) << dst_surface->format->Gshift;
+            *dst_buffer |= ((*src_buffer >> (src_surface->format->Bshift+3)) & 0x1f) << dst_surface->format->Bshift;
+
+            src_buffer++;
+            dst_buffer -= dst_surface->w;
+        }
+        src_buffer += src_surface->w - s_rect.w;
+    }
+        
+    SDL_UnlockSurface( dst_surface );
+    SDL_UnlockSurface( src_surface );
+}
+
 void ONScripterLabel::flush( SDL_Rect *rect )
 {
 
+#ifndef SCREEN_ROTATION
     SDL_BlitSurface( text_surface, rect, screen_surface, rect );
+#else
+    blitRotation( text_surface, rect, screen_surface, rect );
+#endif    
 
     if ( rect )
+#ifndef SCREEN_ROTATION        
         SDL_UpdateRect( screen_surface, rect->x, rect->y, rect->w, rect->h );
+#else        
+        SDL_UpdateRect( screen_surface, rect->y, screen_width - rect->x - rect->w, rect->h, rect->w );
+#endif        
     else
         SDL_UpdateRect( screen_surface, 0, 0, 0, 0 );
 }
@@ -806,7 +860,11 @@ void ONScripterLabel::refreshMouseOverButton()
     current_button_link = root_button_link.next;
     first_mouse_over_flag = true;
     SDL_GetMouseState( &mx, &my );
+#ifndef SCREEN_ROTATION
     mouseOverCheck( mx, my );
+#else    
+    mouseOverCheck( screen_width - my - 1, mx );
+#endif    
 }
 
 /* ---------------------------------------- */

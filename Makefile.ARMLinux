@@ -8,9 +8,13 @@ INCS = `sdl-config --cflags`
 # for FB console
 #LIBS = /sdcard/lib/libSDL.a `sdl-config --libs` -lSDL_ttf -lSDL_image -lSDL_mixer -lbz2 -lfreetype -lmad -lm
 #DEFS = -DLINUX -DPDA -DMP3_MAD
+
 # for Qtopia
 LIBS = `sdl-config --libs` -lSDL_ttf -lSDL_image -lSDL_mixer -lbz2 -lfreetype -lmad -lm 
-DEFS = -DLINUX -DPDA -DQWS -DMP3_MAD
+# for SL-5500
+#DEFS = -DLINUX -DPDA -DQWS -DMP3_MAD
+# for SL-5500 and SL-A300
+DEFS = -DLINUX -DPDA -DQWS -DMP3_MAD -DSCREEN_ROTATION
 
 EXESUFFIX =
 OBJSUFFIX = .o

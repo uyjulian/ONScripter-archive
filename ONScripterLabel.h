@@ -222,6 +222,11 @@ private:
     /* Global definitions */
     bool edit_flag;
     bool disable_rescale_flag;
+    enum { MOUSE_ROTATION_NONE    = 0,
+           MOUSE_ROTATION_PDA     = 1,
+           MOUSE_ROTATION_PDA_VGA = 2
+    };
+    int mouse_rotation_mode;
     
     long internal_timer;
     long autoclick_timer;

@@ -619,11 +619,11 @@ void ONScripterLabel::leaveSystemCall( bool restore_flag )
         root_select_link.next = shelter_select_link;
         event_mode = shelter_event_mode;
         if ( event_mode & WAIT_BUTTON_MODE ){
-#ifndef SCREEN_ROTATION
-            SDL_WarpMouse( shelter_mouse_state.x, shelter_mouse_state.y );
-#else            
-            SDL_WarpMouse( shelter_mouse_state.y, screen_width - shelter_mouse_state.x - 1 );
-#endif
+            if ( mouse_rotation_mode == MOUSE_ROTATION_NONE ||
+                 mouse_rotation_mode == MOUSE_ROTATION_PDA_VGA )
+                SDL_WarpMouse( shelter_mouse_state.x, shelter_mouse_state.y );
+            else if ( mouse_rotation_mode == MOUSE_ROTATION_PDA )
+                SDL_WarpMouse( screen_height - shelter_mouse_state.y - 1, shelter_mouse_state.x );
         }
         current_text_buffer = shelter_text_buffer;
     }

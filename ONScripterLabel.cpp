@@ -188,6 +188,7 @@ void ONScripterLabel::initSDL( bool cdaudio_flag )
         SDL_Quit();
         exit(-1);
     }
+
 #if defined(PDA)
     int bpp = 16;
 #if defined(PDA_VGA)
@@ -197,6 +198,8 @@ void ONScripterLabel::initSDL( bool cdaudio_flag )
 #else
     int bpp = 32;
 #endif
+
+    mouse_rotation_mode = MOUSE_ROTATION_NONE;
 #ifndef SCREEN_ROTATION
     screen_surface = SDL_SetVideoMode( screen_width, screen_height, bpp, DEFAULT_SURFACE_FLAG );
 #else    
@@ -211,15 +214,18 @@ void ONScripterLabel::initSDL( bool cdaudio_flag )
         screen_height /= 2;
 #ifndef SCREEN_ROTATION
         screen_surface = SDL_SetVideoMode( screen_width, screen_height, bpp, DEFAULT_SURFACE_FLAG );
-#else    
+#else
         screen_surface = SDL_SetVideoMode( screen_height, screen_width, bpp, DEFAULT_SURFACE_FLAG );
 #endif
+        mouse_rotation_mode = MOUSE_ROTATION_PDA;
     }
     else{
         screen_ratio1 *= 2;
+        mouse_rotation_mode = MOUSE_ROTATION_PDA_VGA;
     }
 #endif
-    
+    underline_value = screen_height - 1;
+
     if ( screen_surface == NULL ) {
         fprintf( stderr, "Couldn't set %dx%dx%d video mode: %s\n",
                  screen_width, screen_height, bpp, SDL_GetError() );
@@ -459,14 +465,14 @@ void ONScripterLabel::blitRotation( SDL_Surface *src_surface, SDL_Rect *src_rect
     src_buffer += src_surface->w * s_rect.y + s_rect.x;
         
     for ( int i=0 ; i<s_rect.h ; i++ ){
-        Uint16 *dst_buffer = (Uint16 *)dst_surface->pixels + dst_surface->w * (dst_surface->h - d_rect.x) + d_rect.y + i;
+        Uint16 *dst_buffer = (Uint16 *)dst_surface->pixels + dst_surface->w * d_rect.x + dst_surface->w - d_rect.y - i - 1;
         for ( int j=0 ; j<s_rect.w ; j++ ){
             *dst_buffer =  ((*src_buffer >> (src_surface->format->Rshift+3)) & 0x1f) << dst_surface->format->Rshift;
             *dst_buffer |= ((*src_buffer >> (src_surface->format->Gshift+2)) & 0x3f) << dst_surface->format->Gshift;
             *dst_buffer |= ((*src_buffer >> (src_surface->format->Bshift+3)) & 0x1f) << dst_surface->format->Bshift;
 
             src_buffer++;
-            dst_buffer -= dst_surface->w;
+            dst_buffer += dst_surface->w;
         }
         src_buffer += src_surface->w - s_rect.w;
     }
@@ -488,7 +494,7 @@ void ONScripterLabel::flush( SDL_Rect *rect )
 #ifndef SCREEN_ROTATION        
         SDL_UpdateRect( screen_surface, rect->x, rect->y, rect->w, rect->h );
 #else        
-        SDL_UpdateRect( screen_surface, rect->y, screen_width - rect->x - rect->w, rect->h, rect->w );
+        SDL_UpdateRect( screen_surface, screen_height - (rect->y +rect->h), rect->x, rect->h, rect->w );
 #endif        
     else
         SDL_UpdateRect( screen_surface, 0, 0, 0, 0 );
@@ -912,11 +918,12 @@ void ONScripterLabel::refreshMouseOverButton()
     current_button_link = root_button_link.next;
     first_mouse_over_flag = true;
     SDL_GetMouseState( &mx, &my );
-#ifndef SCREEN_ROTATION
-    mouseOverCheck( mx, my );
-#else    
-    mouseOverCheck( screen_width - my - 1, mx );
-#endif    
+
+    if      ( mouse_rotation_mode == MOUSE_ROTATION_NONE ||
+              mouse_rotation_mode == MOUSE_ROTATION_PDA_VGA )
+        mouseOverCheck( mx, my );
+    else if ( mouse_rotation_mode == MOUSE_ROTATION_PDA )
+        mouseOverCheck( my, screen_height - mx - 1 );
 }
 
 /* ---------------------------------------- */

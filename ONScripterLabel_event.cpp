@@ -131,24 +131,27 @@ void ONScripterLabel::trapHandler()
  * **************************************** */
 void ONScripterLabel::mouseMoveEvent( SDL_MouseMotionEvent *event )
 {
-#ifndef SCREEN_ROTATION
-    mouseOverCheck( event->x, event->y );
-#else
-    mouseOverCheck( screen_width - event->y - 1, event->x );
-#endif    
+  printf("mouseMoveEvent (%d) %d %d %d %d\n", mouse_rotation_mode, event->x, event->y, screen_width, screen_height );
+    if      ( mouse_rotation_mode == MOUSE_ROTATION_NONE )
+        mouseOverCheck( event->x, event->y );
+    else if ( mouse_rotation_mode == MOUSE_ROTATION_PDA ||
+              mouse_rotation_mode == MOUSE_ROTATION_PDA_VGA )
+        mouseOverCheck( event->y, screen_height - event->x - 1 );
 }
 
 void ONScripterLabel::mousePressEvent( SDL_MouseButtonEvent *event )
 {
     if ( variable_edit_mode ) return;
     
-#ifndef SCREEN_ROTATION
-    current_button_state.x = event->x;
-    current_button_state.y = event->y;
-#else
-    current_button_state.x = screen_width - event->y - 1;
-    current_button_state.y = event->x;
-#endif
+    if      ( mouse_rotation_mode == MOUSE_ROTATION_NONE ){
+        current_button_state.x = event->x;
+        current_button_state.y = event->y;
+    }
+    else if ( mouse_rotation_mode == MOUSE_ROTATION_PDA ||
+              mouse_rotation_mode == MOUSE_ROTATION_PDA_VGA ){
+        current_button_state.x = event->y;
+        current_button_state.y = screen_height - event->x - 1;
+    }
     current_button_state.down_flag = false;
     
     if ( event->button == SDL_BUTTON_RIGHT &&
@@ -361,13 +364,15 @@ void ONScripterLabel::shiftCursorOnButton( int diff )
             p_button_link  = p_button_link->next;
     }
     if ( p_button_link ){
-#ifndef SCREEN_ROTATION
-        SDL_WarpMouse( p_button_link->select_rect.x + p_button_link->select_rect.w / 2,
-                       p_button_link->select_rect.y + p_button_link->select_rect.h / 2 );
-#else
-        SDL_WarpMouse( p_button_link->select_rect.y + p_button_link->select_rect.h / 2,
-                       screen_width - (p_button_link->select_rect.x + p_button_link->select_rect.w / 2) - 1 );
-#endif                
+        if ( mouse_rotation_mode == MOUSE_ROTATION_NONE ||
+             mouse_rotation_mode == MOUSE_ROTATION_PDA_VGA ){
+            SDL_WarpMouse( p_button_link->select_rect.x + p_button_link->select_rect.w / 2,
+                           p_button_link->select_rect.y + p_button_link->select_rect.h / 2 );
+        }
+        else if ( mouse_rotation_mode == MOUSE_ROTATION_PDA ){
+            SDL_WarpMouse( screen_height - (p_button_link->select_rect.y + p_button_link->select_rect.h / 2) - 1,
+                           p_button_link->select_rect.x + p_button_link->select_rect.w / 2);
+        }
     }
 }
 

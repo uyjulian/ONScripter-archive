@@ -319,7 +319,6 @@ int ScriptParser::open( char *path )
         screen_width  = 800 * screen_ratio1 / screen_ratio2;
         screen_height = 600 * screen_ratio1 / screen_ratio2;
     }
-    underline_value = screen_height - 1;
 
     label_stack_depth = 0;
 

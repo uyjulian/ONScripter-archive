@@ -969,11 +969,11 @@ int ONScripterLabel::movemousecursorCommand()
     int x = script_h.readInt();
     int y = script_h.readInt();
 
-#ifndef SCREEN_ROTATION
-    SDL_WarpMouse( x, y );
-#else
-    SDL_WarpMouse( y, screen_width - x - 1 );
-#endif
+    if ( mouse_rotation_mode == MOUSE_ROTATION_NONE ||
+         mouse_rotation_mode == MOUSE_ROTATION_PDA_VGA )
+        SDL_WarpMouse( x, y );
+    else if ( mouse_rotation_mode == MOUSE_ROTATION_PDA )
+        SDL_WarpMouse( screen_height - y - 1, x );
     
     return RET_CONTINUE;
 }

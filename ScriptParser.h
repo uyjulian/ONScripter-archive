@@ -96,6 +96,7 @@ public:
     int lookbackspCommand();
     int lookbackcolorCommand();
     int lookbackbuttonCommand();
+    int linepageCommand();
     int lenCommand();
     int labellogCommand();
     int kidokuskipCommand();
@@ -210,13 +211,12 @@ protected:
         int num;
         int effect;
         int duration;
-        char *image;
+        AnimationInfo anim;
 
         EffectLink(){
             next = NULL;
             effect = 10;
             duration = 1000;
-            image = NULL;
         };
     };
     
@@ -225,7 +225,7 @@ protected:
     int effect_blank;
     bool effect_cut_flag;
 
-    EffectLink getEffect( int effect_no );
+    EffectLink *getEffect( int effect_no );
     int readEffect( EffectLink *effect );
 
     /* ---------------------------------------- */

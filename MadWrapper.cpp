@@ -62,9 +62,6 @@ static MAD_WRAPPER* init( SDL_RWops *src )
 	mad_stream_init( &mad->Stream );
 	mad_frame_init( &mad->Frame );
 	mad_synth_init( &mad->Synth );
-#if defined(PDA)    
-    mad->Stream.options |= MAD_OPTION_HALFSAMPLERATE;
-#endif
     mad->volume = 64;
     
     mad->input_buf = new unsigned char[ INPUT_BUFFER_SIZE ];
@@ -134,6 +131,10 @@ int MAD_WRAPPER_playAudio( void *userdata, Uint8 *stream, int len )
             }
         }
 
+#if defined(PDA)    
+        if ( mad->Frame.header.samplerate == 44100 )
+            mad->Frame.options |= MAD_OPTION_HALFSAMPLERATE;
+#endif
         mad_synth_frame( &mad->Synth, &mad->Frame );
     
         char *ptr = (char*)mad->output_buf + mad->output_buf_index;

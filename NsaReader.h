@@ -33,7 +33,7 @@ public:
     NsaReader( char *path=NULL );
     ~NsaReader();
 
-    int open( char *nsa_path=NULL );
+    int open( char *nsa_path=NULL, int archive_type = ARCHIVE_TYPE_NSA );
     char *getArchiveName() const;
     int getNumFiles();
     int getNumAccessed();

@@ -45,8 +45,15 @@ struct BaseReader
         SPB_COMPRESSION  = 1,
         LZSS_COMPRESSION = 2,
         NBZ_COMPRESSION  = 4
-    } COMPRESSION_TYPE;
+    };
     
+    enum {
+        ARCHIVE_TYPE_NONE = 0,
+        ARCHIVE_TYPE_SAR  = 1,
+        ARCHIVE_TYPE_NSA  = 2,
+        ARCHIVE_TYPE_NS2  = 3
+    };
+
     struct FileInfo{
         char name[256];
         int  compression_type;
@@ -75,7 +82,7 @@ struct BaseReader
 
     virtual ~BaseReader(){};
     
-    virtual int open( char *name=NULL ) = 0;
+    virtual int open( char *name=NULL, int archive_type = ARCHIVE_TYPE_NONE ) = 0;
     virtual int close() = 0;
     
     virtual char *getArchiveName() const = 0;

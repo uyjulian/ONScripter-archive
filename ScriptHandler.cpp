@@ -37,6 +37,7 @@ ScriptHandler::ScriptHandler()
     kidoku_buffer = NULL;
 
     text_flag = true;
+    linepage_flag = false;
 
     string_buffer_length = 512;
     string_buffer = new char[ string_buffer_length ];
@@ -173,6 +174,11 @@ void ScriptHandler::skipLine( int no )
     rereadToken();
 }
 
+void ScriptHandler::setLinepage( bool val )
+{
+    linepage_flag = val;
+}
+
 bool ScriptHandler::isKidoku()
 {
     int offset = current_script - script_buffer;
@@ -204,6 +210,7 @@ bool ScriptHandler::readToken()
     int string_counter=0, no;
     bool op_flag = true;
     bool num_flag = false;
+    bool variable_flag = false;
     char num_buf[10], num_sjis_buf[3];
 
     char ch = *buf++;
@@ -308,6 +315,8 @@ bool ScriptHandler::readToken()
                 next_text_line_flag = true;
             }
             else{
+                if ( string_counter != 0 ) break;
+                variable_flag = true;
                 addStringBuffer( '$', string_counter++ );
             }
                 
@@ -333,6 +342,8 @@ bool ScriptHandler::readToken()
                 next_text_line_flag = true;
             }
             else{
+                if ( string_counter != 0 && !variable_flag ) break;
+                variable_flag = true;
                 addStringBuffer( ch, string_counter++ );
             }
         }
@@ -389,6 +400,9 @@ bool ScriptHandler::readToken()
         SKIP_SPACE( buf );
     }
 
+    if ( linepage_flag && text_line_flag )
+        addStringBuffer( '\\', string_counter++ );
+    
     addStringBuffer( '\0', string_counter++ );
     next_script = buf;
 

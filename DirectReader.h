@@ -35,7 +35,7 @@ public:
     DirectReader( char *path=NULL );
     ~DirectReader();
 
-    int open( char *name=NULL );
+    int open( char *name=NULL, int archive_type = ARCHIVE_TYPE_NONE );
     int close();
 
     char *getArchiveName() const;

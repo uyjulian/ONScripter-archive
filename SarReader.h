@@ -32,7 +32,7 @@ public:
     SarReader( char *path=NULL );
     ~SarReader();
 
-    int open( char *name=NULL );
+    int open( char *name=NULL, int archive_type = ARCHIVE_TYPE_SAR );
     int close();
     char *getArchiveName() const;
     int getNumFiles();
@@ -51,7 +51,7 @@ protected:
     struct ArchiveInfo *root_archive_info, *last_archive_info;
     int num_of_sar_archives;
 
-    int readArchive( ArchiveInfo *ai, bool nsa_flag = false );
+    int readArchive( ArchiveInfo *ai, int archive_type = ARCHIVE_TYPE_SAR );
     int getIndexFromFile( ArchiveInfo *ai, const char *file_name );
     size_t getFileSub( ArchiveInfo *ai, const char *file_name, unsigned char *buf );
 

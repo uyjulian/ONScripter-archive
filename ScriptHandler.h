@@ -68,6 +68,7 @@ public:
     bool isQuat();
     bool isEndWithComma();
     void skipLine( int no=1 );
+    void setLinepage( bool val );
 
     bool isKidoku();
     void markAsKidoku();
@@ -198,6 +199,7 @@ private:
     bool text_flag; // true if the current token is text
     bool quat_flag;
     bool end_with_comma_flag;
+    bool linepage_flag;
 
     StackInfo root_stack_info, *last_stack_info;
     char *current_script;

@@ -110,7 +110,7 @@ void DirectReader::writeLong( FILE *fp, unsigned long ch )
     fwrite( &buf, 1, 4, fp );
 }
 
-int DirectReader::open( char *name )
+int DirectReader::open( char *name, int archive_type )
 {
     return 0;
 }

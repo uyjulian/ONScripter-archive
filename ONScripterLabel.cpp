@@ -90,9 +90,11 @@ static struct FuncLUT{
     {"nega", &ONScripterLabel::negaCommand},
     {"msp", &ONScripterLabel::mspCommand},
     {"mp3vol", &ONScripterLabel::mp3volCommand},
+    {"mp3stop", &ONScripterLabel::playstopCommand},
     {"mp3save", &ONScripterLabel::mp3Command},
     {"mp3loop", &ONScripterLabel::mp3Command},
     {"mp3", &ONScripterLabel::mp3Command},
+    {"movemousecursor", &ONScripterLabel::movemousecursorCommand},
     {"monocro", &ONScripterLabel::monocroCommand},
     {"menu_window", &ONScripterLabel::menu_windowCommand},
     {"menu_full", &ONScripterLabel::menu_fullCommand},
@@ -228,6 +230,8 @@ void ONScripterLabel::initSDL( bool cdaudio_flag )
         audio_format.channels = channels;
 
         audio_open_flag = true;
+
+        Mix_AllocateChannels( 50 );
     }
 }
 
@@ -365,8 +369,6 @@ ONScripterLabel::ONScripterLabel( bool cdaudio_flag, char *default_font, char *d
 
     /* ---------------------------------------- */
     /* Effect related variables */
-    effect_mask_surface = NULL;
-    
     bg_effect_image = COLOR_EFFECT_IMAGE;
 
     clearCurrentTextBuffer();
@@ -803,6 +805,15 @@ SDL_Surface *ONScripterLabel::loadImage( char *file_name )
     buffer = new unsigned char[length];
     script_h.cBR->getFile( file_name, buffer );
     tmp = IMG_Load_RW(SDL_RWFromMem( buffer, length ),1);
+
+    char *ext = strrchr(file_name, '.');
+    if ( !tmp && ext && !strcasecmp( ext+1, "JPG" ) ){
+        fprintf( stderr, " *** force-loading a JPG image [%s]\n", file_name );
+        SDL_RWops *src = SDL_RWFromMem( buffer, length );
+        tmp = IMG_LoadJPG_RW(src);
+        SDL_RWclose(src);
+    }
+    
     delete[] buffer;
     if ( !tmp ){
         fprintf( stderr, " *** can't load file [%s] ***\n", file_name );
@@ -1060,13 +1071,13 @@ void ONScripterLabel::alphaBlend( SDL_Surface *dst_surface, SDL_Rect dst_rect,
         }
     }
     else if ( trans_mode == AnimationInfo::TRANS_FADE_MASK ){
-        SDL_LockSurface( effect_mask_surface );
-        Uint32 *mask_buffer = (Uint32 *)effect_mask_surface->pixels;
+        SDL_LockSurface( mask_surface );
+        Uint32 *mask_buffer = (Uint32 *)mask_surface->pixels;
         src2_buffer += src2_surface->w * y2 + x2;
         for ( i=0; i<dst_rect.h ; i++ ){
-            int y4 = effect_mask_surface->w * ((y2+i) % effect_mask_surface->h );
+            int y4 = mask_surface->w * ((y2+i) % mask_surface->h );
             for ( j=0 ; j<dst_rect.w ; j++ ){
-                mask = (*(mask_buffer + y4 + (x2 + j) % effect_mask_surface->w ) >> effect_mask_surface->format->Rshift) & 0xff;
+                mask = (*(mask_buffer + y4 + (x2 + j) % mask_surface->w ) >> mask_surface->format->Rshift) & 0xff;
                 if ( effect_value > mask )
                     mask = (Uint32)mask_value << src2_surface->format->Ashift;
                 else
@@ -1077,15 +1088,15 @@ void ONScripterLabel::alphaBlend( SDL_Surface *dst_surface, SDL_Rect dst_rect,
             }
             src2_buffer += src2_surface->w - dst_rect.w;
         }
-        SDL_UnlockSurface( effect_mask_surface );
+        SDL_UnlockSurface( mask_surface );
     }
     else if ( trans_mode == AnimationInfo::TRANS_CROSSFADE_MASK ){
-        SDL_LockSurface( effect_mask_surface );
-        Uint32 *mask_buffer = (Uint32 *)effect_mask_surface->pixels;
+        SDL_LockSurface( mask_surface );
+        Uint32 *mask_buffer = (Uint32 *)mask_surface->pixels;
         for ( i=0; i<dst_rect.h ; i++ ){
-            int y4 = effect_mask_surface->w * ((y2+i) % effect_mask_surface->h );
+            int y4 = mask_surface->w * ((y2+i) % mask_surface->h );
             for ( j=0 ; j<dst_rect.w ; j++, src2_buffer++ ){
-                mask = (*(mask_buffer + y4 + (x2 + j) % effect_mask_surface->w ) >> effect_mask_surface->format->Rshift) & 0xff;
+                mask = (*(mask_buffer + y4 + (x2 + j) % mask_surface->w ) >> mask_surface->format->Rshift) & 0xff;
                 if ( effect_value > mask ){
                     mask = effect_value - mask;
                     if ( mask > 0xff ){
@@ -1104,7 +1115,7 @@ void ONScripterLabel::alphaBlend( SDL_Surface *dst_surface, SDL_Rect dst_rect,
             }
             src2_buffer += src2_surface->w - dst_rect.w;
         }
-        SDL_UnlockSurface( effect_mask_surface );
+        SDL_UnlockSurface( mask_surface );
     }
     else if ( trans_mode == AnimationInfo::TRANS_COPY ){
         mask = (Uint32)mask_value << src2_surface->format->Ashift;

@@ -115,6 +115,7 @@ public:
     int mspCommand();
     int mp3volCommand();
     int mp3Command();
+    int movemousecursorCommand();
     int monocroCommand();
     int menu_windowCommand();
     int menu_fullCommand();
@@ -380,7 +381,6 @@ private:
     int effect_timer_resolution;
     int effect_start_time;
     int effect_start_time_old;
-    SDL_Surface *effect_mask_surface;
     bool first_mouse_over_flag;
     
     int  setEffect( int effect_no );

@@ -940,6 +940,20 @@ int ONScripterLabel::mp3Command()
     return RET_CONTINUE;
 }
 
+int ONScripterLabel::movemousecursorCommand()
+{
+    int x = script_h.readInt();
+    int y = script_h.readInt();
+
+#ifndef SCREEN_ROTATION
+    SDL_WarpMouse( x, y );
+#else
+    SDL_WarpMouse( y, screen_width - x - 1 );
+#endif
+    
+    return RET_CONTINUE;
+}
+
 int ONScripterLabel::monocroCommand()
 {
     const char *buf = script_h.readStr();

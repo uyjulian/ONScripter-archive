@@ -36,7 +36,7 @@ SarReader::~SarReader()
     close();
 }
 
-int SarReader::open( char *name )
+int SarReader::open( char *name, int archive_type )
 {
     printf("SarReader::open %s\n",name);
     ArchiveInfo* info = new ArchiveInfo();
@@ -56,15 +56,20 @@ int SarReader::open( char *name )
     return 0;
 }
 
-int SarReader::readArchive( struct ArchiveInfo *ai, bool nsa_flag )
+int SarReader::readArchive( struct ArchiveInfo *ai, int archive_type )
 {
-    int i;
+    int i=0;
     
     /* Read header */
+    if ( archive_type > ARCHIVE_TYPE_NSA ){
+        i = readChar( ai->file_handle ); // FIXME: for what ?
+    }
     ai->num_of_files = readShort( ai->file_handle );
     ai->fi_list = new struct FileInfo[ ai->num_of_files ];
     
     ai->base_offset = readLong( ai->file_handle );
+    if ( archive_type >= ARCHIVE_TYPE_NS2 )
+        ai->base_offset++; // FIXME: It's temporary fix.
     
     for ( i=0 ; i<ai->num_of_files ; i++ ){
         unsigned char ch;
@@ -76,14 +81,14 @@ int SarReader::readArchive( struct ArchiveInfo *ai, bool nsa_flag )
         }
         ai->fi_list[i].name[count] = ch;
 
-        if ( nsa_flag )
+        if ( archive_type >= ARCHIVE_TYPE_NSA )
             ai->fi_list[i].compression_type = readChar( ai->file_handle );
         else
             ai->fi_list[i].compression_type = NO_COMPRESSION;
         ai->fi_list[i].offset = readLong( ai->file_handle ) + ai->base_offset;
         ai->fi_list[i].length = readLong( ai->file_handle );
 
-        if ( nsa_flag ){
+        if ( archive_type >= ARCHIVE_TYPE_NSA ){
             ai->fi_list[i].original_length = readLong( ai->file_handle );
         }
         else{

@@ -72,6 +72,7 @@ static struct FuncLUT{
     {"notif",    &ScriptParser::ifCommand},
     {"next",    &ScriptParser::nextCommand},
     {"nsa",    &ScriptParser::arcCommand},
+    {"ns2",    &ScriptParser::nsaCommand},
     {"mul",      &ScriptParser::mulCommand},
     {"movl",      &ScriptParser::movCommand},
     {"mov10",      &ScriptParser::movCommand},
@@ -92,6 +93,7 @@ static struct FuncLUT{
     {"lookbacksp",      &ScriptParser::lookbackspCommand},
     {"lookbackcolor",      &ScriptParser::lookbackcolorCommand},
     {"lookbackbutton",      &ScriptParser::lookbackbuttonCommand},
+    {"linepage",    &ScriptParser::linepageCommand},
     {"len",      &ScriptParser::lenCommand},
     {"labellog",      &ScriptParser::labellogCommand},
     {"kidokuskip", &ScriptParser::kidokuskipCommand},
@@ -401,14 +403,14 @@ void ScriptParser::skipToken() // skip phrase
     }
 }
 
-ScriptParser::EffectLink ScriptParser::getEffect( int effect_no )
+ScriptParser::EffectLink *ScriptParser::getEffect( int effect_no )
 {
-    if      ( effect_no == WINDOW_EFFECT ) return window_effect;
-    else if ( effect_no == TMP_EFFECT )    return tmp_effect;
+    if      ( effect_no == WINDOW_EFFECT ) return &window_effect;
+    else if ( effect_no == TMP_EFFECT )    return &tmp_effect;
     
     EffectLink *link = &root_effect_link;
     while( link ){
-        if ( link->num == effect_no ) return *link;
+        if ( link->num == effect_no ) return link;
         link = link->next;
     }
 
@@ -614,10 +616,10 @@ int ScriptParser::readEffect( EffectLink *effect )
         if ( script_h.isEndWithComma() ){
             num++;
             const char *buf = script_h.readStr();
-            setStr( &effect->image, buf );
+            effect->anim.setImageName( buf );
         }
         else
-            effect->image = NULL;
+            effect->anim.remove();
     }
     else{
         effect->duration = 0;

@@ -43,7 +43,7 @@ NsaReader::~NsaReader()
 {
 }
 
-int NsaReader::open( char *nsa_path )
+int NsaReader::open( char *nsa_path, int archive_type )
 {
     int i;
     char archive_name[256], archive_name2[256];
@@ -59,7 +59,7 @@ int NsaReader::open( char *nsa_path )
         return -1;
     }
 
-    readArchive( &archive_info, true );
+    readArchive( &archive_info, archive_type );
     
     for ( i=0 ; i<MAX_EXTRA_ARCHIVE ; i++ ){
         sprintf( archive_name2, NSA_ARCHIVE_NAME2, i+1 );
@@ -68,7 +68,7 @@ int NsaReader::open( char *nsa_path )
             return 0;
         }
         num_of_nsa_archives = i+1;
-        readArchive( &archive_info2[i], true );
+        readArchive( &archive_info2[i], archive_type );
     }
 
     return 0;
@@ -82,7 +82,7 @@ int NsaReader::openForConvert( char *nsa_name )
         return -1;
     }
 
-    readArchive( &archive_info, true );
+    readArchive( &archive_info, ARCHIVE_TYPE_NSA );
 
     return 0;
 }

@@ -314,9 +314,15 @@ int ScriptParser::nsadirCommand()
 
 int ScriptParser::nsaCommand()
 {
+    int archive_type = NsaReader::ARCHIVE_TYPE_NSA;
+    
+    if ( script_h.isName("ns2") ){
+        archive_type = NsaReader::ARCHIVE_TYPE_NS2;
+    }
+    
     delete script_h.cBR;
     script_h.cBR = new NsaReader( archive_path );
-    if ( script_h.cBR->open( nsa_path ) ){
+    if ( script_h.cBR->open( nsa_path, archive_type ) ){
         printf(" *** failed to open Nsa archive, exitting ...  ***\n");
         exit(-1);
     }
@@ -378,8 +384,8 @@ int ScriptParser::movCommand()
     if ( script_h.isName( "mov10" ) ){
         count = 10;
     }
-    else if ( script_h.isName( "mov1" ) ){
-        count = 20;
+    else if ( script_h.isName( "movl" ) ){
+        count = -1; // infinite
     }
     else if ( script_h.getStringBuffer()[3] >= '3' && script_h.getStringBuffer()[3] <= '9' ){
         count = script_h.getStringBuffer()[3] - '0';
@@ -394,7 +400,7 @@ int ScriptParser::movCommand()
         char *save_buf = script_h.saveStringBuffer();
         bool loop_flag = script_h.isEndWithComma();
         int i=0;
-        while ( i<count && loop_flag ){
+        while ( (count==-1 || i<count) && loop_flag ){
             no = script_h.readInt();
             loop_flag = script_h.isEndWithComma();
             script_h.setInt( save_buf, no, i++ );
@@ -534,6 +540,14 @@ int ScriptParser::lookbackbuttonCommand()
         const char *buf = script_h.readStr();
         setStr( &lookback_image_name[i], buf );
     }
+    return RET_CONTINUE;
+}
+
+int ScriptParser::linepageCommand()
+{
+    if ( current_mode != DEFINE_MODE ) errorAndExit( script_h.getStringBuffer(), "not in the define section" );
+    script_h.setLinepage( true );
+
     return RET_CONTINUE;
 }
 

@@ -243,7 +243,9 @@ int ONScripterLabel::loadSaveFile( int no )
         loadStr( fp, &tachi_info[i].image_name );
         if ( tachi_info[i].image_name ){
             parseTaggedString( tachi_info[i].image_name, &tachi_info[i].tag );
-            tachi_info[i].image_surface = loadPixmap( &tachi_info[i].tag );
+            setupAnimationInfo( &tachi_info[ i ] );
+            tachi_info[ i ].pos.x = screen_width * (i+1) / 4 - tachi_info[ i ].pos.w / 2;
+            tachi_info[ i ].pos.y = underline_value - tachi_info[ i ].image_surface->h + 1;
         }
     }
 
@@ -258,8 +260,7 @@ int ONScripterLabel::loadSaveFile( int no )
         loadStr( fp, &sprite_info[i].image_name );
         if ( sprite_info[i].image_name ){
             parseTaggedString( sprite_info[i].image_name, &sprite_info[i].tag );
-            sprite_info[i].deleteImageSurface();
-            sprite_info[i].image_surface = loadPixmap( &sprite_info[i].tag );
+            setupAnimationInfo( &sprite_info[i] );
         }
     }
 
@@ -437,7 +438,7 @@ void ONScripterLabel::leaveSystemCall( bool restore_flag )
     }
     else{
         startCursor( clickstr_state );
-        if ( event_mode & WAIT_CURSOR_MODE ) startTimer( MINIMUM_TIMER_RESOLUTION );
+        if ( event_mode & WAIT_ANIMATION_MODE ) startTimer( MINIMUM_TIMER_RESOLUTION );
     }
 }
 
@@ -492,7 +493,7 @@ void ONScripterLabel::executeSystemMenu()
 {
     MenuLink *tmp_menu_link;
 
-    if ( event_mode & (WAIT_MOUSE_MODE | WAIT_BUTTON_MODE) ){
+    if ( event_mode & (WAIT_INPUT_MODE | WAIT_BUTTON_MODE) ){
 
         if ( current_button_state.button == 0 ) return;
         event_mode = IDLE_EVENT_MODE;
@@ -542,7 +543,7 @@ void ONScripterLabel::executeSystemMenu()
         }
         SDL_BlitSurface( text_surface, NULL, select_surface, NULL );
 
-        event_mode = WAIT_MOUSE_MODE | WAIT_BUTTON_MODE;
+        event_mode = WAIT_INPUT_MODE | WAIT_BUTTON_MODE;
         refreshMouseOverButton();
         system_menu_mode = SYSTEM_MENU;
     }
@@ -569,7 +570,7 @@ void ONScripterLabel::executeWindowErase()
 {
     //printf("ONScripterLabel::executeWindowErase() %d\n", event_mode);
 
-    if ( event_mode & (WAIT_MOUSE_MODE | WAIT_BUTTON_MODE) ){
+    if ( event_mode & (WAIT_INPUT_MODE | WAIT_BUTTON_MODE) ){
         event_mode = IDLE_EVENT_MODE;
 
         leaveSystemCall();
@@ -578,7 +579,7 @@ void ONScripterLabel::executeWindowErase()
         SDL_BlitSurface( accumulation_surface, NULL, text_surface, NULL );
         flush();
 
-        event_mode = WAIT_MOUSE_MODE | WAIT_KEY_MODE;
+        event_mode = WAIT_INPUT_MODE;
         system_menu_mode = SYSTEM_WINDOWERASE;
     }
 }
@@ -586,15 +587,14 @@ void ONScripterLabel::executeWindowErase()
 void ONScripterLabel::executeSystemLoad()
 {
     unsigned int i;
-    char out_text[3] = {'\0','\0','\0'};
 
-    if ( event_mode & (WAIT_MOUSE_MODE | WAIT_BUTTON_MODE) ){
+    if ( event_mode & (WAIT_INPUT_MODE | WAIT_BUTTON_MODE) ){
 
         if ( current_button_state.button == 0 ) return;
         event_mode = IDLE_EVENT_MODE;
 
         if ( loadSaveFile( current_button_state.button ) ){
-            event_mode  = WAIT_MOUSE_MODE | WAIT_BUTTON_MODE;
+            event_mode  = WAIT_INPUT_MODE | WAIT_BUTTON_MODE;
             refreshMouseOverButton();
             return;
         }
@@ -612,12 +612,7 @@ void ONScripterLabel::executeSystemLoad()
 
         system_font.xy[0] = (system_font.num_xy[0] - strlen( load_menu_name ) / 2) / 2;
         system_font.xy[1] = 0;
-        for ( i=0 ; i<strlen( load_menu_name )/2 ; i++ ){
-            out_text[0] = load_menu_name[i*2];
-            out_text[1] = load_menu_name[i*2+1];
-            drawChar( out_text, &system_font, true, text_surface );
-        }
-
+        drawString( load_menu_name, system_font.color, &system_font, true, text_surface );
         system_font.xy[1] += 2;
         
         int counter = 1;
@@ -650,7 +645,7 @@ void ONScripterLabel::executeSystemLoad()
         delete[] buffer;
         SDL_BlitSurface( text_surface, NULL, select_surface, NULL );
 
-        event_mode = WAIT_MOUSE_MODE | WAIT_BUTTON_MODE;
+        event_mode = WAIT_INPUT_MODE | WAIT_BUTTON_MODE;
         refreshMouseOverButton();
         system_menu_mode = SYSTEM_LOAD;
     }
@@ -659,9 +654,8 @@ void ONScripterLabel::executeSystemLoad()
 void ONScripterLabel::executeSystemSave()
 {
     unsigned int i;
-    char out_text[3] = {'\0','\0','\0'};
 
-    if ( event_mode & (WAIT_MOUSE_MODE | WAIT_BUTTON_MODE) ){
+    if ( event_mode & (WAIT_INPUT_MODE | WAIT_BUTTON_MODE) ){
 
         if ( current_button_state.button == 0 ) return;
         event_mode = IDLE_EVENT_MODE;
@@ -679,12 +673,7 @@ void ONScripterLabel::executeSystemSave()
 
         system_font.xy[0] = (system_font.num_xy[0] - strlen( save_menu_name ) / 2 ) / 2;
         system_font.xy[1] = 0;
-        for ( i=0 ; i<strlen( save_menu_name )/2 ; i++ ){
-            out_text[0] = save_menu_name[i*2];
-            out_text[1] = save_menu_name[i*2+1];
-            drawChar( out_text, &system_font, true, text_surface );
-        }
-
+        drawString( save_menu_name, system_font.color, &system_font, true, text_surface );
         system_font.xy[1] += 2;
         
         int counter = 1;
@@ -717,7 +706,7 @@ void ONScripterLabel::executeSystemSave()
         delete[] buffer;
 
         SDL_BlitSurface( text_surface, NULL, select_surface, NULL );
-        event_mode = WAIT_MOUSE_MODE | WAIT_BUTTON_MODE;
+        event_mode = WAIT_INPUT_MODE | WAIT_BUTTON_MODE;
         refreshMouseOverButton();
         system_menu_mode = SYSTEM_SAVE;
     }
@@ -805,8 +794,7 @@ void ONScripterLabel::executeSystemLookback()
     SDL_BlitSurface( shelter_select_surface, NULL, select_surface, NULL );
     shadowTextDisplay();
 
-    if ( event_mode & (WAIT_MOUSE_MODE | WAIT_BUTTON_MODE) ){
-
+    if ( event_mode & (WAIT_INPUT_MODE | WAIT_BUTTON_MODE) ){
         if ( current_button_state.button == 0 ) return;
         event_mode = IDLE_EVENT_MODE;
         
@@ -819,7 +807,7 @@ void ONScripterLabel::executeSystemLookback()
             current_text_buffer = current_text_buffer->next;
         }
         restoreTextBuffer();
-        event_mode = WAIT_MOUSE_MODE | WAIT_BUTTON_MODE;
+        event_mode = WAIT_INPUT_MODE | WAIT_BUTTON_MODE;
         setupLookbackButton();
         flush();
     }
@@ -833,7 +821,7 @@ void ONScripterLabel::executeSystemLookback()
         current_text_buffer = current_text_buffer->previous;
 
         restoreTextBuffer();
-        event_mode = WAIT_MOUSE_MODE | WAIT_BUTTON_MODE;
+        event_mode = WAIT_INPUT_MODE | WAIT_BUTTON_MODE;
         setupLookbackButton();
         flush();
 

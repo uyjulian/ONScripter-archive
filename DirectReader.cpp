@@ -189,7 +189,7 @@ size_t DirectReader::decodeNBZ( FILE *fp, size_t offset, unsigned char *buf )
 	bfp = BZ2_bzReadOpen( &err, fp, 0, 0, NULL, 0 );
 	if ( bfp == NULL || err != BZ_OK ) return 0;
 
-	while( err == BZ_OK ){
+	while( err == BZ_OK && count > 0 ){
         if ( count >= READ_LENGTH )
             len = BZ2_bzRead( &err, bfp, buf, READ_LENGTH );
         else

@@ -42,7 +42,7 @@ typedef int (ScriptParser::*FuncList)();
 static struct FuncLUT{
     char command[40];
     FuncList method;
-} func_lut[100] = {
+} func_lut[] = {
     {"windoweffect",      &ScriptParser::effectCommand},
     {"versionstr",      &ScriptParser::versionstrCommand},
     {"underline", &ScriptParser::underlineCommand},
@@ -1256,8 +1256,8 @@ int ScriptParser::readInt( char **buf )
                 p_name_alias = p_name_alias->next;
             }
             if ( !p_name_alias ){
-                printf("can't find name alias for %s\n", alias_buf );
-                exit(-1);
+                printf("can't find name alias for %s... assume 0.\n", alias_buf );
+                alias_no = 0;
             }
         }
         no = alias_no;

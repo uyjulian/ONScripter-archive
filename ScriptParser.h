@@ -82,11 +82,7 @@ public:
         int duration;
         char *image;
     };
-    struct MenuLink{
-        struct MenuLink *next;
-        char *label;
-        int system_call_no;
-    };
+
     typedef enum{ SYSTEM_NULL = 0, SYSTEM_SKIP = 1, SYSTEM_RESET = 2, SYSTEM_SAVE = 3, SYSTEM_LOAD = 4, SYSTEM_LOOKBACK = 5, SYSTEM_WINDOWERASE = 6, SYSTEM_MENU = 7  } SYSTEM_CALLS;
 
     typedef enum{ RET_COMMENT = 0, RET_NOMATCH = 1, RET_CONTINUE = 2, RET_CONTINUE_NONEXT = 3, RET_WAIT = 4, RET_WAIT_NEXT = 5, RET_JUMP = 6 } COMMAND_RETURN;
@@ -304,7 +300,7 @@ protected:
     int se_volume;
     
     /* ---------------------------------------- */
-    /* Menu related variables */
+    /* Font related variables */
     struct FontInfo{
         void *ttf_font;
         bool font_valid_flag;
@@ -324,7 +320,14 @@ protected:
         char *window_image;
         int window_rect[4]; // Top left and bottom right of the text window
     } sentence_font, system_font, menu_font;
-    struct MenuLink root_menu_link, *last_menu_link;
+
+    /* ---------------------------------------- */
+    /* Menu related variables */
+    struct MenuLink{
+        struct MenuLink *next;
+        char *label;
+        int system_call_no;
+    } root_menu_link, *last_menu_link;
     unsigned int  menu_link_num, menu_link_width;
     uchar3 menu_select_on_color;
     uchar3 menu_select_off_color;

@@ -55,10 +55,6 @@ public:
 
     /* ---------------------------------------- */
     /* Commands */
-    int clickWait( char *out_text );
-    int clickNewPage( char *out_text );
-    int textCommand( char *text );
-    
     int wavestopCommand();
     int waveCommand();
     int waittimerCommand();
@@ -124,7 +120,7 @@ protected:
     void mousePressEvent( SDL_MouseButtonEvent *event );
     void mouseMoveEvent( SDL_MouseMotionEvent *event );
     void timerEvent();
-    void startTimer( Uint32 count );
+    void startTimer( int count );
     int SetVideoMode();
     
 private:
@@ -132,10 +128,9 @@ private:
     typedef enum{ IDLE_EVENT_MODE = 0,
                       EFFECT_EVENT_MODE = 1,
                       WAIT_BUTTON_MODE  = 2, // For select and btnwait.
-                      WAIT_MOUSE_MODE   = 4,  // For select and text wait. It allows the right click menu.
-                      WAIT_KEY_MODE     = 8,
+                      WAIT_INPUT_MODE   = (4|8),  // For select and text wait. It allows the right click menu.
                       WAIT_SLEEP_MODE   = 16,
-                      WAIT_CURSOR_MODE  = 32
+                      WAIT_ANIMATION_MODE  = 32
                       } EVENT_MODE;
     typedef enum{
         COLOR_EFFECT_IMAGE            = 0,
@@ -149,6 +144,7 @@ private:
         char direct_color[8];
         int pallet_number;
         uchar3 color;
+        SDL_Rect pos; // pose and size of the current cell
 
         int num_of_cells;
         int current_cell;
@@ -219,6 +215,13 @@ private:
     /* ---------------------------------------- */
     /* Text related variables */
     struct TaggedInfo sentence_font_tag;
+
+    void drawChar( char* text, struct FontInfo *info, bool flush_flag = true, SDL_Surface *surface = NULL, bool buffering_flag = true );
+    void drawString( char *str, uchar3 color, FontInfo *info, bool flush_flag, SDL_Surface *surface, SDL_Rect *rect = NULL );
+    void restoreTextBuffer();
+    int clickWait( char *out_text );
+    int clickNewPage( char *out_text );
+    int textCommand( char *text );
     
     /* ---------------------------------------- */
     /* Button related variables */
@@ -230,6 +233,7 @@ private:
                       SPRITE_BUTTON = 1,
                       EX_SPRITE_BUTTON = 2
                       } BUTTON_TYPE;
+
     struct ButtonLink{
         struct ButtonLink *next;
         BUTTON_TYPE button_type;
@@ -245,7 +249,7 @@ private:
             exbtn_ctl = NULL;
             image_surface = NULL;
         };
-    } root_button_link, *last_button_link, current_over_button_link, *shelter_button_link, exbtn_d_button_link;
+    } root_button_link, *last_button_link, current_button_link, *shelter_button_link, exbtn_d_button_link;
 
     int current_over_button;
 
@@ -293,7 +297,8 @@ private:
     /* ---------------------------------------- */
     /* Animation related variables */
     struct AnimationInfo{
-        bool valid; // valid flag for sprite and absolute flag for cursor
+        bool valid;
+        bool abs_flag;
         SDL_Rect pos;
         int trans;
         struct TaggedInfo tag;
@@ -302,6 +307,7 @@ private:
         SDL_Surface *preserve_surface;
 
         AnimationInfo(){
+            valid = false;
             image_name = NULL;
             image_surface = NULL;
             preserve_surface = NULL;
@@ -333,9 +339,13 @@ private:
     
     /* ---------------------------------------- */
     /* Cursor related variables */
+    typedef enum{ CURSOR_WAIT_NO = 0,
+                      CURSOR_NEWPAGE_NO = 1
+                      } CURSOR_NO;
     struct AnimationInfo cursor_info[2];
 
     void proceedAnimation( AnimationInfo *anim );
+    void showAnimation( AnimationInfo *anim );
     void loadCursor( int no, char *str, int x, int y, bool abs_flag = false );
     void startCursor( int click );
     void endCursor( int click );
@@ -366,7 +376,6 @@ private:
     int text_speed_no;
     int default_text_speed[3];
 
-    void drawChar( char* text, struct FontInfo *info, bool flush_flag = true, SDL_Surface *surface = NULL );
     void shadowTextDisplay();
     void clearCurrentTextBuffer();
     void enterNewPage();
@@ -388,7 +397,6 @@ private:
                            SDL_Surface *src_surface, TaggedInfo *tagged_info );
     void makeMonochromeSurface( SDL_Surface *surface, SDL_Rect *dst_rect=NULL, bool one_color_flag = true );
     void refreshAccumulationSurface( SDL_Surface *surface, SDL_Rect *rect=NULL );
-    void restoreTextBuffer();
     void mouseOverCheck( int x, int y );
     
     /* ---------------------------------------- */

@@ -63,12 +63,7 @@ int ONScripterLabel::waittimerCommand()
     char *p_string_buffer = string_buffer + string_buffer_offset + 9; // strlen("waittimer") = 9
 
     int count = readInt( &p_string_buffer ) + internal_timer - SDL_GetTicks();
-    if ( count > MINIMUM_TIMER_RESOLUTION ){
-        startTimer( count );
-    }
-    else{
-        startTimer( MINIMUM_TIMER_RESOLUTION );
-    }
+    startTimer( count );
     
     return RET_WAIT_NEXT;
 }
@@ -189,7 +184,7 @@ int ONScripterLabel::spbtnCommand()
     last_button_link->sprite_no   = sprite_no;
     last_button_link->no          = no;
     
-    if ( sprite_info[ sprite_no ].image_surface )
+    if ( sprite_info[ sprite_no ].image_surface || sprite_info[ sprite_no ].tag.trans_mode == TRANS_STRING )
         last_button_link->image_rect = last_button_link->select_rect = sprite_info[ last_button_link->sprite_no ].pos;
 
     return RET_CONTINUE;
@@ -306,7 +301,7 @@ int ONScripterLabel::selectCommand()
     int xy[2];
     if ( ret != RET_NOMATCH ) return ret;
 
-    printf("selectCommand %d\n", event_mode);
+    //printf("selectCommand %d\n", event_mode);
     char *p_script_buffer = current_link_label_info->current_script;
     readLine( &p_script_buffer );
     int select_mode;
@@ -333,9 +328,8 @@ int ONScripterLabel::selectCommand()
 
     //printf("p_string_buffer [%s], string_buffer [%s], string_buffer_offset %d\n",
     //p_string_buffer, string_buffer, string_buffer_offset );
-    if ( event_mode & (WAIT_MOUSE_MODE | WAIT_BUTTON_MODE) ){
+    if ( event_mode & (WAIT_INPUT_MODE | WAIT_BUTTON_MODE) ){
 
-        printf("current_button_state %d\n",current_button_state.button );
         if ( current_button_state.button == 0 ) return RET_WAIT;
         
         event_mode = IDLE_EVENT_MODE;
@@ -457,7 +451,7 @@ int ONScripterLabel::selectCommand()
         sentence_font.xy[0] = xy[0];
         sentence_font.xy[1] = xy[1];
 
-        event_mode = WAIT_MOUSE_MODE | WAIT_BUTTON_MODE;
+        event_mode = WAIT_INPUT_MODE | WAIT_BUTTON_MODE;
         refreshMouseOverButton();
 
         return RET_WAIT;
@@ -553,30 +547,15 @@ int ONScripterLabel::resetCommand()
 
 int ONScripterLabel::puttextCommand()
 {
+    char *p_string_buffer = string_buffer + string_buffer_offset + 8; // strlen("puttext") = 8
     int ret = enterTextDisplayMode();
     if ( ret != RET_NOMATCH ) return ret;
     
-    char out_text[3];
-    int c=0;
-    char ch, *p_string_buffer = string_buffer + string_buffer_offset + 8; // strlen("puttext") = 8
-
     readStr( &p_string_buffer, tmp_string_buffer );
-    printf("puttext %s\n",tmp_string_buffer );
-    
-    while( tmp_string_buffer[ c ] ){
-        ch = tmp_string_buffer[ c ];
-        if ( ch & 0x80 ){
-            out_text[0] = tmp_string_buffer[ c++ ];
-            out_text[1] = tmp_string_buffer[ c++ ];
-            out_text[2] = '\0';
-        }
-        else{
-            out_text[0] = tmp_string_buffer[ c++ ];
-            out_text[1] = '\0';
-        }
-        drawChar( out_text, &sentence_font, false, text_surface );
-    }
+
+    drawString( tmp_string_buffer, sentence_font.color, &sentence_font, false, text_surface );
     flush();
+
     return RET_CONTINUE;
 }
 
@@ -747,11 +726,14 @@ int ONScripterLabel::lspCommand()
 
     readStr( &p_string_buffer, tmp_string_buffer );
     sprite_info[ no ].setImageName( tmp_string_buffer );
-    parseTaggedString( sprite_info[ no ].image_name, &sprite_info[ no ].tag );
-    setupAnimationInfo( &sprite_info[ no ] );
 
     sprite_info[ no ].pos.x = readInt( &p_string_buffer );
     sprite_info[ no ].pos.y = readInt( &p_string_buffer );
+
+    parseTaggedString( sprite_info[ no ].image_name, &sprite_info[ no ].tag );
+    sprite_info[ no ].tag.pos.x = sprite_info[ no ].pos.x;
+    sprite_info[ no ].tag.pos.y = sprite_info[ no ].pos.y;
+    setupAnimationInfo( &sprite_info[ no ] );
 
     if ( *p_string_buffer != '\0' ){
         sprite_info[ no ].trans = readInt( &p_string_buffer );
@@ -799,7 +781,7 @@ int ONScripterLabel::loadgameCommand()
         deleteSelectLink();
         key_pressed_flag = false;
         printf("loadGmae %d %d\n",event_mode,skip_flag);
-        if ( event_mode & (WAIT_MOUSE_MODE | WAIT_KEY_MODE) ) return RET_WAIT;
+        if ( event_mode & WAIT_INPUT_MODE ) return RET_WAIT;
         startTimer( MINIMUM_TIMER_RESOLUTION );
         return RET_JUMP;
     }
@@ -829,8 +811,9 @@ int ONScripterLabel::ldCommand()
         
         tachi_info[ no ].setImageName( tmp_string_buffer );
         parseTaggedString( tachi_info[ no ].image_name, &tachi_info[ no ].tag );
-        tachi_info[ no ].deleteImageSurface();
-        tachi_info[ no ].image_surface = loadPixmap( &tachi_info[ no ].tag );
+        setupAnimationInfo( &tachi_info[ no ] );
+        tachi_info[ no ].pos.x = screen_width * (no+1) / 4 - tachi_info[ no ].pos.w / 2;
+        tachi_info[ no ].pos.y = underline_value - tachi_info[ no ].image_surface->h + 1;
 
         char *buf = new char[512];
         sprintf( buf, "ld %c, \"%s\",", loc, tmp_string_buffer );
@@ -975,12 +958,12 @@ int ONScripterLabel::delayCommand()
 {
     char *p_string_buffer = string_buffer + string_buffer_offset + 5; // strlen("delay") = 5
 
-    if ( event_mode & (WAIT_SLEEP_MODE | WAIT_MOUSE_MODE | WAIT_KEY_MODE) ){
+    if ( event_mode & (WAIT_SLEEP_MODE | WAIT_INPUT_MODE ) ){
         event_mode = IDLE_EVENT_MODE;
         return RET_CONTINUE;
     }
     else{
-        event_mode = WAIT_SLEEP_MODE | WAIT_MOUSE_MODE | WAIT_KEY_MODE;
+        event_mode = WAIT_SLEEP_MODE | WAIT_INPUT_MODE;
         key_pressed_flag = false;
         startTimer( readInt( &p_string_buffer ) );
         return RET_WAIT;
@@ -993,11 +976,13 @@ int ONScripterLabel::cspCommand()
     int no = readInt( &p_string_buffer );
 
     if ( no == -1 )
-        for ( int i=0 ; i<MAX_SPRITE_NUM ; i++ ) sprite_info[i].valid = false;
+        for ( int i=0 ; i<MAX_SPRITE_NUM ; i++ ){
+            sprite_info[i].valid = false;
+            sprite_info[i].deleteImageName();
+        }
     else{
         sprite_info[no].valid = false;
         sprite_info[no].deleteImageName();
-        sprite_info[no].deleteImageSurface();
     }
 
     return RET_CONTINUE;
@@ -1005,11 +990,11 @@ int ONScripterLabel::cspCommand()
 
 int ONScripterLabel::clickCommand()
 {
-    if ( event_mode & (WAIT_MOUSE_MODE | WAIT_BUTTON_MODE) ){
+    if ( event_mode & WAIT_INPUT_MODE ){
         return RET_CONTINUE;
     }
     else{
-        event_mode = WAIT_MOUSE_MODE | WAIT_KEY_MODE;
+        event_mode = WAIT_INPUT_MODE;
         key_pressed_flag = false;
         return RET_WAIT;
     }
@@ -1201,14 +1186,15 @@ int ONScripterLabel::btnwaitCommand()
         /* fill the button image */
         if ( current_over_button != 0 ){
             // Almost the same code as in the mouseOverCheck(), possible cause of bug !!
-            if ( current_over_button_link.button_type == NORMAL_BUTTON ){
-                SDL_BlitSurface( select_surface, &current_over_button_link.image_rect, text_surface, &current_over_button_link.image_rect );
+            if ( current_button_link.button_type == NORMAL_BUTTON ){
+                //SDL_BlitSurface( select_surface, &current_button_link.image_rect, text_surface, &current_button_link.image_rect );
             }
-            else if ( current_over_button_link.button_type == SPRITE_BUTTON ){
-                refreshAccumulationSurface( accumulation_surface );
-                SDL_BlitSurface( accumulation_surface, &current_over_button_link.image_rect, text_surface, &current_over_button_link.image_rect );
+            else if ( current_button_link.button_type == SPRITE_BUTTON ){
+                refreshAccumulationSurface( select_surface );
+                //SDL_BlitSurface( select_surface, &current_button_link.image_rect, text_surface, &current_button_link.image_rect );
             }
-            flush( &current_over_button_link.image_rect );
+            SDL_BlitSurface( select_surface, &current_button_link.image_rect, text_surface, &current_button_link.image_rect );
+            flush( &current_button_link.image_rect );
             current_over_button = 0;
         }
             

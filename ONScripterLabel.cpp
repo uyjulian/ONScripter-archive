@@ -166,8 +166,11 @@ ONScripterLabel::ONScripterLabel( bool cdaudio_flag, char *default_font, char *d
     if ( open() ) exit(-1);
 
     printf("ONScripter\n");
-
+#ifdef ONSCRIPTER_CDAUDIO_SUPPORT
 	if ( SDL_Init(SDL_INIT_VIDEO|SDL_INIT_TIMER|SDL_INIT_AUDIO|SDL_INIT_CDROM) < 0 ) {
+#else        
+	if ( SDL_Init(SDL_INIT_VIDEO|SDL_INIT_TIMER|SDL_INIT_AUDIO) < 0 ) {
+#endif        
 		fprintf(stderr,
 			"Couldn't initialize SDL: %s\n", SDL_GetError());
 		exit(1);
@@ -252,19 +255,22 @@ ONScripterLabel::ONScripterLabel( bool cdaudio_flag, char *default_font, char *d
     /* Sound related variables */
     this->cdaudio_flag = cdaudio_flag;
     if ( cdaudio_flag ){
+#ifdef ONSCRIPTER_CDAUDIO_SUPPORT
         if ( SDL_CDNumDrives() > 0 ) cdrom_info = SDL_CDOpen( 0 );
         if ( !cdrom_info ){
             fprintf(stderr, "Couldn't open default CD-ROM: %s\n", SDL_GetError());
         }
         else if ( cdrom_info && !CD_INDRIVE( SDL_CDStatus( cdrom_info ) ) ) {
+            fprintf( stderr, "no CD-ROM in the drive\n" );
             SDL_CDClose( cdrom_info );
             cdrom_info = NULL;
         }
+#endif        
     }
     else{
         cdrom_info = NULL;
     }
-    
+
     mp3_sample = NULL;
     mp3_file_name = NULL;
     mp3_buffer = NULL;
@@ -1139,8 +1145,9 @@ int ONScripterLabel::playCDAudio( int cd_no )
     int length = cdrom_info->track[cd_no - 1].length / 75;
 
     printf("playCDAudio %d\n", cd_no );
+#ifdef ONSCRIPTER_CDAUDIO_SUPPORT
     SDL_CDPlayTracks( cdrom_info, cd_no - 1, 0, 1, 0 );
-
+#endif
     timer_cdaudio_id = SDL_AddTimer( length * 1000, cdaudioCallback, NULL );
 
     return 0;
@@ -1180,9 +1187,10 @@ void ONScripterLabel::stopBGM( bool continue_flag )
             SDL_RemoveTimer( timer_cdaudio_id );
             timer_cdaudio_id = NULL;
         }
-
+#ifdef ONSCRIPTER_CDAUDIO_SUPPORT
         if (SDL_CDStatus( cdrom_info ) >= CD_PLAYING )
             SDL_CDStop( cdrom_info );
+#endif        
     }
 
     if ( mp3_sample ){

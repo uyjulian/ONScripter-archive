@@ -489,10 +489,12 @@ int ONScripterLabel::eventLoop()
             saveGlovalData();
             saveFileLog();
             saveLabelLog();
+#ifdef ONSCRIPTER_CDAUDIO_SUPPORT
             if ( cdrom_info ){
                 SDL_CDStop( cdrom_info );
                 SDL_CDClose( cdrom_info );
             }
+#endif            
             return(0);
             
           default:

@@ -65,6 +65,7 @@ public:
 
     bool isName( const char *name );
     bool isText();
+    void setText( bool val );
     bool isQuat();
     void skipLine( int no=1 );
 

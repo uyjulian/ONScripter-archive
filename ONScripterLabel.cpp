@@ -534,7 +534,6 @@ void ONScripterLabel::executeLabel()
 
         s_buf = script_h.getStringBuffer();
         if ( ret == RET_COMMENT ){
-            if ( s_buf[0] == 0x0a ) current_link_label_info->current_line++;
             script_h.readToken(); string_buffer_offset = 0;
             continue;
         }
@@ -606,8 +605,11 @@ int ONScripterLabel::parseLine( )
 
     /* Text */
     //text_line_flag = true;
-    if ( s_buf[string_buffer_offset] != 0x0a )
+    bool empty_line_flag = true;
+    if ( s_buf[string_buffer_offset] != 0x0a ){
         ret = textCommand();
+        empty_line_flag = false;
+    }
     else
         ret = RET_CONTINUE;
 
@@ -619,7 +621,7 @@ int ONScripterLabel::parseLine( )
         }
 
         event_mode = IDLE_EVENT_MODE;
-        new_line_skip_flag = false;
+        if ( !empty_line_flag ) new_line_skip_flag = false;
     }
 
     return ret;

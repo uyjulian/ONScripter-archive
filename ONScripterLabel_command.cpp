@@ -380,9 +380,6 @@ int ONScripterLabel::selectCommand()
         select_mode = SELECT_CSEL_MODE;
     }
 
-    bool first_token_flag = true;
-    int count = 0;
-
     if ( event_mode & (WAIT_INPUT_MODE | WAIT_BUTTON_MODE) ){
 
         if ( current_button_state.button == 0 ) return RET_WAIT;
@@ -444,16 +441,15 @@ int ONScripterLabel::selectCommand()
 
         last_select_link = &root_select_link;
         select_label_info.current_line = current_link_label_info->current_line;
-        select_label_info.current_script = script_h.getCurrent();
         const char *buf = script_h.readStr();
+        int count = 0;
         while(1){
             //printf("sel [%s] comma %d\n", buf, comma_flag  );
             if ( buf[0] != 0x0a ){
                 comma_flag = script_h.end_with_comma_flag;
-                first_token_flag = false;
                 count++;
                 if ( select_mode == SELECT_NUM_MODE || count % 2 ){
-                    if ( select_mode != SELECT_NUM_MODE && !comma_flag ) errorAndExit( script_h.getStringBuffer(), "select: comma is needed here" );
+                    if ( select_mode != SELECT_NUM_MODE && !comma_flag ) errorAndExit( "select: comma is needed here." );
                     link = new SelectLink();
                     setStr( &link->text, buf );
                     //printf("Select text %s\n", link->text);
@@ -464,27 +460,23 @@ int ONScripterLabel::selectCommand()
                     last_select_link->next = link;
                     last_select_link = last_select_link->next;
                 }
-                select_label_info.current_script = script_h.getCurrent();
                 buf = script_h.readStr();
             }
             else{
-                //if ( first_token_flag ) comma_flag = true;
-                if ( (count & 1) == 1 ) errorAndExit( script_h.getStringBuffer(), "select: label must be in the same line." );
-                //if ( (count & 1) == 0 && !comma_flag ) errorAndExit( script_h.getStringBuffer(), "select: comma is neede here." );
+                if ( (count & 1) == 1 ) errorAndExit( "select: label must be in the same line." );
                 do{
                     if ( buf[0] == 0x0a ) select_label_info.current_line++;
-                    select_label_info.current_script = script_h.getCurrent();
+                    script_h.setText( false );
                     buf = script_h.readStr();
+                    select_label_info.current_script = script_h.getCurrent();
                     if ( buf[0] == ',' ){
-                        if ( comma_flag ) errorAndExit( script_h.getStringBuffer(), "double comma" );
+                        if ( comma_flag ) errorAndExit( "select: double comma." );
                         else comma_flag = true;
                     }
                 } while ( buf[0] == 0x0a || buf[0] == ',' );
 
                 if ( !comma_flag ) break;
             }
-            
-            if ( first_token_flag ) first_token_flag = false;
         }
 
         if ( select_mode != SELECT_CSEL_MODE ){
@@ -926,9 +918,10 @@ int ONScripterLabel::mp3Command()
     stopBGM( false );
     
     const char *buf = script_h.readStr();
-    setStr( &music_file_name, buf );
-
-    playMP3( 0 );
+    if ( buf[0] != '\0' ){
+        setStr( &music_file_name, buf );
+        playMP3( 0 );
+    }
         
     return RET_CONTINUE;
 }

@@ -285,7 +285,6 @@ int ONScripterLabel::clickWait( char *out_text )
                 string_buffer_offset = 0;
             }
             gosubReal( textgosub_label, true, script_h.getCurrent() );
-            new_line_skip_flag = true;
             return RET_JUMP;
         }
         event_mode = WAIT_INPUT_MODE;

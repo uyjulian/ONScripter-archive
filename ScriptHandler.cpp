@@ -137,6 +137,11 @@ bool ScriptHandler::isText()
     return text_line_flag;
 }
 
+void ScriptHandler::setText( bool val )
+{
+    text_flag = val;
+}
+
 bool ScriptHandler::isQuat()
 {
     return quat_flag;
@@ -191,7 +196,7 @@ bool ScriptHandler::readToken( bool advance_flag )
     // mark kidoku here when stack_script == NULL
 
     text_line_flag = next_text_line_flag;
-    
+
     if ( ch == 0x0a || ch == '\0' )
     {
         text_flag = true;
@@ -217,7 +222,7 @@ bool ScriptHandler::readToken( bool advance_flag )
     {
         quat_flag = true;
         ch = *buf++;
-        while ( ch != '"' ){
+        while ( ch != '"' && ch != 0x0a ){
             addStringBuffer( ch, string_counter++ );
             ch = *buf++;
         }
@@ -370,7 +375,7 @@ bool ScriptHandler::readToken( bool advance_flag )
     addStringBuffer( '\0', string_counter++ );
     next_script = buf;
 
-    //printf("readToken [%s](%x) is %s script %x\n", string_buffer, *string_buffer, text_line_flag?"text":"command", current_script  );
+    //printf("readToken [%s](%x) is %s script %x, %d\n", string_buffer, *string_buffer, text_line_flag?"text":"command", current_script, end_with_comma_flag );
     return end_with_comma_flag;
 }
 

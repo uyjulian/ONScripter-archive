@@ -1063,16 +1063,22 @@ void ONScripterLabel::setupLookbackButton()
         if ( lookback_sp[0] >= 0 ) info[1]->current_cell = 1;
 
         if ( info[1]->image_surface ){
+            last_button_link->no_selected_surface =
+                SDL_CreateRGBSurface( DEFAULT_SURFACE_FLAG,
+                                      info[1]->pos.w, info[1]->pos.h,
+                                      32, rmask, gmask, bmask, amask );
+            SDL_SetAlpha( last_button_link->no_selected_surface, DEFAULT_BLIT_FLAG, SDL_ALPHA_OPAQUE );
+        
             offset = (info[1]->pos.w + info[1]->alpha_offset) * info[1]->current_cell;
-            rect.x = last_button_link->image_rect.x;
-            rect.y = last_button_link->image_rect.y;
+            rect.x = rect.y = 0;
             rect.w = info[1]->pos.w;
             rect.h = info[1]->pos.h;
-            alphaBlend( text_surface, rect,
+            alphaBlend( last_button_link->no_selected_surface, rect,
                         text_surface, last_button_link->image_rect.x, last_button_link->image_rect.y,
                         info[1]->image_surface, offset, 0,
                         info[1]->mask_surface, info[1]->alpha_offset,
                         info[1]->trans_mode );
+            SDL_BlitSurface( last_button_link->no_selected_surface, NULL, text_surface, &last_button_link->image_rect );
         }
     }
 
@@ -1127,16 +1133,22 @@ void ONScripterLabel::setupLookbackButton()
         if ( lookback_sp[1] >= 0 ) info[1]->current_cell = 1;
 
         if ( info[1]->image_surface ){
+            last_button_link->no_selected_surface =
+                SDL_CreateRGBSurface( DEFAULT_SURFACE_FLAG,
+                                      info[1]->pos.w, info[1]->pos.h,
+                                      32, rmask, gmask, bmask, amask );
+            SDL_SetAlpha( last_button_link->no_selected_surface, DEFAULT_BLIT_FLAG, SDL_ALPHA_OPAQUE );
+        
             offset = (info[1]->pos.w + info[1]->alpha_offset) * info[1]->current_cell;
-            rect.x = last_button_link->image_rect.x;
-            rect.y = last_button_link->image_rect.y;
+            rect.x = rect.y = 0;
             rect.w = info[1]->pos.w;
             rect.h = info[1]->pos.h;
-            alphaBlend( text_surface, rect,
+            alphaBlend( last_button_link->no_selected_surface, rect,
                         text_surface, last_button_link->image_rect.x, last_button_link->image_rect.y,
                         info[1]->image_surface, offset, 0,
                         info[1]->mask_surface, info[1]->alpha_offset,
                         info[1]->trans_mode );
+            SDL_BlitSurface( last_button_link->no_selected_surface, NULL, text_surface, &last_button_link->image_rect );
         }
     }
 }

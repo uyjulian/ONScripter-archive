@@ -391,7 +391,8 @@ private:
     
     int  setEffect( int effect_no );
     int  doEffect( int effect_no, AnimationInfo *anim, int effect_image );
-
+    void generateMosaic( SDL_Surface *dst_surface, SDL_Surface *src_surface, int level );
+    
     /* ---------------------------------------- */
     /* Select related variables */
     enum { SELECT_GOTO_MODE=0, SELECT_GOSUB_MODE=1, SELECT_NUM_MODE=2, SELECT_CSEL_MODE=3 };

@@ -282,6 +282,14 @@ int ONScripterLabel::doEffect( int effect_no, AnimationInfo *anim, int effect_im
                     effect_dst_surface, 0, 0,
                     effect->anim.image_surface, 0, AnimationInfo::TRANS_FADE_MASK, 255, 256 * effect_counter / effect->duration );
         break;
+
+      case 16: // Mosaic out
+        generateMosaic( text_surface, effect_src_surface, 5 - 6 * effect_counter / effect->duration );
+        break;
+        
+      case 17: // Mosaic in
+        generateMosaic( text_surface, effect_dst_surface, 6 * effect_counter / effect->duration );
+        break;
         
       case 18: // Cross fade with mask
         dst_rect.x = dst_rect.y = 0;
@@ -353,4 +361,33 @@ int ONScripterLabel::doEffect( int effect_no, AnimationInfo *anim, int effect_im
         event_mode = IDLE_EVENT_MODE;
         return RET_CONTINUE;
     }
+}
+
+void ONScripterLabel::generateMosaic( SDL_Surface *dst_surface, SDL_Surface *src_surface, int level )
+{
+    int i, j, ii, jj;
+    int width = 160 * screen_ratio1 / screen_ratio2;
+
+    for ( i=0 ; i<level ; i++ ) width >>= 1;
+
+    SDL_LockSurface( src_surface );
+    SDL_LockSurface( dst_surface );
+    Uint32 *src_buffer = (Uint32 *)src_surface->pixels;
+
+    for ( i=0 ; i<screen_height ; i+=width ){
+        for ( j=0 ; j<screen_width ; j+=width ){
+            Uint32 p = src_buffer[ (i+width-1)*screen_width+j ];
+            Uint32 *dst_buffer = (Uint32 *)dst_surface->pixels + i*screen_width + j;
+
+            for ( ii=0 ; ii<width ; ii++ ){
+                for ( jj=0 ; jj<width ; jj++ ){
+                    *dst_buffer++ = p;
+                }
+                dst_buffer += screen_width - width;
+            }
+        }
+    }
+    
+    SDL_UnlockSurface( dst_surface );
+    SDL_UnlockSurface( src_surface );
 }

@@ -4,7 +4,7 @@
 #
 
 INCS = `sdl-config --cflags` `smpeg-config --cflags`
-LIBS = `sdl-config --libs` `smpeg-config --libs` -lSDL_ttf -lSDL_image -lSDL_mixer -lbz2 -lm
+LIBS = `sdl-config --libs` `smpeg-config --libs` -lSDL_ttf -lSDL_image -lSDL_mixer -lbz2 -ljpeg -lm
 DEFS = -DLINUX
 
 EXESUFFIX =
@@ -29,6 +29,5 @@ CFLAGS = -g -Wall -Wpointer-arith -pipe -c $(INCS) $(DEFS)
 RM = rm -f
 
 TARGET = onscripter$(EXESUFFIX) sardec$(EXESUFFIX) nsadec$(EXESUFFIX) sarconv$(EXESUFFIX) nsaconv$(EXESUFFIX)
-CONV_LIBS = /usr/lib/libjpeg.a
 
 include Makefile.onscripter

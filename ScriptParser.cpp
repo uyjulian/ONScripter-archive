@@ -626,7 +626,7 @@ int ScriptParser::readEffect( EffectLink *effect )
     }
 
     if ( effect->effect == 1 ) effect->duration = 0;
-    //printf("readEffect %d: %d %d %s\n", num, effect->effect, effect->duration, effect->image );
+    //printf("readEffect %d: %d %d %s\n", num, effect->effect, effect->duration, effect->anim.image_name );
     return num;
 }
 

@@ -97,6 +97,8 @@ public:
     int mp3volCommand();
     int mp3Command();
     int monocroCommand();
+    int menu_windowCommand();
+    int menu_fullCommand();
     int lspCommand();
     int lookbackflushCommand();
     int locateCommand();
@@ -199,6 +201,7 @@ private:
     char *wm_title_string;
     char *wm_icon_string;
     char wm_edit_string[256];
+    bool fullscreen_mode;
 
     Uint32 rmask, gmask, bmask, amask;
 

@@ -817,6 +817,24 @@ int ONScripterLabel::monocroCommand()
     return RET_CONTINUE;
 }
 
+int ONScripterLabel::menu_windowCommand()
+{
+    if ( fullscreen_mode ){
+        if ( SDL_WM_ToggleFullScreen( screen_surface ) ) fullscreen_mode = false;
+    }
+
+    return RET_CONTINUE;
+}
+
+int ONScripterLabel::menu_fullCommand()
+{
+    if ( !fullscreen_mode ){
+        if ( SDL_WM_ToggleFullScreen( screen_surface ) ) fullscreen_mode = true;
+    }
+
+    return RET_CONTINUE;
+}
+
 int ONScripterLabel::lspCommand()
 {
     bool v;

@@ -406,6 +406,13 @@ void ONScripterLabel::keyPressEvent( SDL_KeyboardEvent *event )
             sentence_font.wait_time = default_text_speed[ text_speed_no ];
         }
     }
+
+    if ( event_mode & ( WAIT_INPUT_MODE | WAIT_BUTTON_MODE ) ){
+        if ( event->keysym.sym == SDLK_f ){
+            if ( fullscreen_mode ) menu_windowCommand();
+            else                   menu_fullCommand();
+        }
+    }
 }
 
 void ONScripterLabel::timerEvent( void )

@@ -96,6 +96,8 @@ static struct FuncLUT{
     {"mp3loop", &ONScripterLabel::mp3Command},
     {"mp3", &ONScripterLabel::mp3Command},
     {"monocro", &ONScripterLabel::monocroCommand},
+    {"menu_window", &ONScripterLabel::menu_windowCommand},
+    {"menu_full", &ONScripterLabel::menu_fullCommand},
     {"lsph", &ONScripterLabel::lspCommand},
     {"lsp", &ONScripterLabel::lspCommand},
     {"lookbackflush", &ONScripterLabel::lookbackflushCommand},
@@ -266,6 +268,7 @@ ONScripterLabel::ONScripterLabel( bool cdaudio_flag, char *default_font, char *d
     display_mode = NORMAL_DISPLAY_MODE;
     event_mode = IDLE_EVENT_MODE;
     all_sprite_hide_flag = false;
+    fullscreen_mode = false;
     
     last_button_link = &root_button_link;
     current_over_button = 0;

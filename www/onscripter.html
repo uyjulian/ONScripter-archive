@@ -27,7 +27,7 @@ href="http://www2.osk.3web.ne.jp/~naokikun/index.htm">高橋直樹</a>氏が開発したゲ
 
 <p>ONScripter で何ができるのかについてはαβεさんの[<A HREF="http://abe.platina.sakura.ne.jp/onscripter/">ONScripter のスゝメ</A>]を参照してください。</p>
 
-<p>現在はベータ版<A HREF="onscripter-beta-20020414.tar.gz">onscripter-beta-20020414.tar.gz</A>を配布しております。<br>
+<p>現在はベータ版<A HREF="onscripter-beta-20020414a.tar.gz">onscripter-beta-20020414a.tar.gz</A>を配布しております。<br>
 ベータ版ゆえデバッグ出力が有効になっていますが、正式版になったら取り除きます。<br>
 (一つ前のベータ版<A HREF="onscripter-beta-20020413.tar.gz">onscripter-beta-20020413.tar.gz</A>)</p>
 
@@ -225,6 +225,7 @@ Linux の Frame Buffer Console でも問題無く動作しました。（SL-5500 とかで動くよう
 <tr><td>n, ↓</td><td>ボタン・文章選択時にマウスカーソルを次の選択肢に動かす</td></tr>
 <tr><td> s </td><td>次の選択肢まで飛ばすモードに切り替え</td></tr>
 <tr><td> o </td><td>１ページ表示をするかしないかの切り替え</td></tr>
+<tr><td> f </td><td>Full screen mode と Window mode の切り替え</td></tr>
 <tr><td> z </td><td>--edit オプションを指定して起動したときに、音量及び変数変更モードに入る</td></tr>
 <tr><td> 1, 2, 3 </td><td>文字の描画速度を変更</td></tr>
 </table>
@@ -339,10 +340,13 @@ registry.txt を一カ所にまとめておくことができます。--registry を指定し
 この時、現在のディレクトリに tmp.mid という一時ファイルを作ります。美しくないですが、SDL_mixer の MIDI 読み込み部がファイルからの読み込みしかサポートしていないためやむをえません。</p>
 
 <DL>
-  <DT> Windows もしくは MacOS X の場合。（MacOS X については当方未確認）
-  <DD> OS の機能を使用して演奏するようなので、特に準備することはありません。
   <DT> Unix系(動作確認は Linux)でソフトウェア音源で演奏する場合（デフォルト）。
   <DD> SDL_mixer に取り込まれている timidity を使用してソフトウェア音源で演奏します。この場合、MIDIの音色データ<A HREF="http://www.libsdl.org/projects/SDL_mixer/timidity/timidity.tar.gz">timidity.tar.gz</A>をダウンロードして /usr/local/lib/ 以下に展開してください。
+  <DT> Windows の場合。
+  <DD> <A HREF="http://www.libsdl.org/projects/SDL_mixer/timidity/timidity.tar.gz">timidity.tar.gz</A>をダウンロードして c:\ 以下に展開してください。
+       これをしなくても MIDI が鳴ったと思っていたのですが、こうしないと落ちるようです。
+  <DT> MacOS X の場合。
+  <DD> 上の Unix系でソフトウェア音源で演奏する場合に準じてください。（当方未確認）
   <DT> Unix系(動作確認は Linux)で外部 MIDI 音源を利用して演奏する場合。
   <DD> playmidi 等の外部音源を使用できる MIDI player をインストールし、環境変数 MUSIC_CMD を設定してください。（例 MUSIC_CMD=/usr/bin/playmidi）<br>
        当方では、シリアル接続で外部音源を繋ぎ、MUSIC_CMD に '/usr/bin/midiplay -q -o /dev/ttyS0' を設定して動作確認をしています。<br>

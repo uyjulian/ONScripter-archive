@@ -33,6 +33,7 @@
 #include "NsaReader.h"
 #include "DirectReader.h"
 #include "AnimationInfo.h"
+#include "FontInfo.h"
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
@@ -360,22 +361,7 @@ protected:
     
     /* ---------------------------------------- */
     /* Font related variables */
-    struct FontInfo{
-        void *ttf_font;
-        bool font_valid_flag;
-        uchar3 color;
-        uchar3 on_color, off_color, nofile_color;
-        int font_size_xy[2];
-        int top_xy[2]; // Top left origin
-        int num_xy[2]; // Row and column of the text windows
-        int xy[2]; // Current position
-        int pitch_xy[2]; // Width and height of a character
-        int wait_time;
-        bool display_bold;
-        bool display_shadow;
-        bool display_transparency;
-        uchar3  window_color;
-    } sentence_font, system_font, menu_font;
+    FontInfo sentence_font, system_font, menu_font;
 
     /* ---------------------------------------- */
     /* Menu related variables */

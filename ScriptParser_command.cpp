@@ -444,19 +444,17 @@ int ScriptParser::menusetwindowCommand()
 {
     char *p_string_buffer = string_buffer + string_buffer_offset + 13;
 
-    menu_font.font_valid_flag = false;
+    menu_font.is_valid        = false;
     menu_font.font_size_xy[0] = readInt( &p_string_buffer );
     menu_font.font_size_xy[1] = readInt( &p_string_buffer );
     menu_font.pitch_xy[0]     = readInt( &p_string_buffer ) + menu_font.font_size_xy[0];
     menu_font.pitch_xy[1]     = readInt( &p_string_buffer ) + menu_font.font_size_xy[1];
-    menu_font.display_bold    = readInt( &p_string_buffer )?true:false;
-    menu_font.display_shadow  = readInt( &p_string_buffer )?true:false;
+    menu_font.is_bold         = readInt( &p_string_buffer )?true:false;
+    menu_font.is_shadow       = readInt( &p_string_buffer )?true:false;
 
     readStr( &p_string_buffer, tmp_string_buffer );
     if ( strlen( tmp_string_buffer ) != 7 ) errorAndExit( string_buffer + string_buffer_offset );
     readColor( &menu_font.window_color, tmp_string_buffer + 1 );
-
-    menu_font.display_transparency = true;
 
     return RET_CONTINUE;
 }

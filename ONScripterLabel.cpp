@@ -341,14 +341,7 @@ ONScripterLabel::ONScripterLabel( bool cdaudio_flag, char *default_font, char *d
     new_line_skip_flag = false;
     erase_text_window_mode = 1;
     text_on_flag = true;
-    sentence_font.ttf_font = (void*)TTF_OpenFont( font_file, FONT_SIZE * screen_ratio1 / screen_ratio2 );
-    if ( !sentence_font.ttf_font ){
-        fprintf( stderr, "can't open font file: %s\n", font_file );
-        SDL_Quit();
-        exit(-1);
-    }
-    sentence_font.font_valid_flag = true;
-    sentence_font.color[0] = sentence_font.color[1] = sentence_font.color[2] = 0xff;
+
     sentence_font.font_size_xy[0] = FONT_SIZE;
     sentence_font.font_size_xy[1] = FONT_SIZE;
     sentence_font.top_xy[0] = 8;
@@ -358,20 +351,17 @@ ONScripterLabel::ONScripterLabel( bool cdaudio_flag, char *default_font, char *d
     sentence_font.pitch_xy[0] = sentence_font.font_size_xy[0];
     sentence_font.pitch_xy[1] = 2 + sentence_font.font_size_xy[1];
     sentence_font.wait_time = default_text_speed[text_speed_no];
-    sentence_font.display_bold = true;
-    sentence_font.display_shadow = true;
-    sentence_font.display_transparency = true;
     sentence_font.window_color[0] = sentence_font.window_color[1] = sentence_font.window_color[2] = 0x99;
-    sentence_font.on_color[0] = sentence_font.on_color[1] = sentence_font.on_color[2] = 0xff;
-    sentence_font.off_color[0] = sentence_font.off_color[1] = sentence_font.off_color[2] = 0x80;
     sentence_font_info.pos.x = 0;
     sentence_font_info.pos.y = 0;
     sentence_font_info.pos.w = screen_width;
     sentence_font_info.pos.h = screen_height;
-
     
-    sentence_font.xy[0] = 0;
-    sentence_font.xy[1] = 0;
+    if ( sentence_font.openFont( font_file, screen_ratio1, screen_ratio2 ) == NULL ){
+        fprintf( stderr, "can't open font file: %s\n", font_file );
+        SDL_Quit();
+        exit(-1);
+    }
 
     /* ---------------------------------------- */
     /* Effect related variables */
@@ -1086,7 +1076,7 @@ void ONScripterLabel::shadowTextDisplay( SDL_Surface *dst_surface, SDL_Surface *
 {
     if ( !info )        info = &sentence_font;
     
-    if ( info->display_transparency ){
+    if ( info->is_transparent ){
         SDL_BlitSurface( src_surface, clip, dst_surface, clip );
 
         SDL_Rect rect;

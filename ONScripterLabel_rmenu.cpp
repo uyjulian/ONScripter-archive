@@ -35,7 +35,7 @@
 
 #define SAVEFILE_MAGIC_NUMBER "ONS"
 #define SAVEFILE_VERSION_MAJOR 1
-#define SAVEFILE_VERSION_MINOR 2
+#define SAVEFILE_VERSION_MINOR 3
 
 #define READ_LENGTH 4096
 
@@ -165,7 +165,7 @@ int ONScripterLabel::loadSaveFile( int no )
     /* ---------------------------------------- */
     /* Load sentence font */
     loadInt( fp, &j );
-    sentence_font.font_valid_flag = (j==1)?true:false;
+    sentence_font.is_valid = (j==1)?true:false;
     loadInt( fp, &sentence_font.font_size_xy[0] );
     if ( file_version >= 100 ){
         loadInt( fp, &sentence_font.font_size_xy[1] );
@@ -183,11 +183,11 @@ int ONScripterLabel::loadSaveFile( int no )
     loadInt( fp, &sentence_font.pitch_xy[1] );
     loadInt( fp, &sentence_font.wait_time );
     loadInt( fp, &j );
-    sentence_font.display_bold = (j==1)?true:false;
+    sentence_font.is_bold = (j==1)?true:false;
     loadInt( fp, &j );
-    sentence_font.display_shadow = (j==1)?true:false;
+    sentence_font.is_shadow = (j==1)?true:false;
     loadInt( fp, &j );
-    sentence_font.display_transparency = (j==1)?true:false;
+    sentence_font.is_transparent = (j==1)?true:false;
 
     /* Dummy, must be removed later !! */
     for ( i=0 ; i<8 ; i++ ){
@@ -206,19 +206,19 @@ int ONScripterLabel::loadSaveFile( int no )
     loadInt( fp, &j ); sentence_font_info.pos.w = j * screen_ratio1 / screen_ratio2;
     loadInt( fp, &j ); sentence_font_info.pos.h = j * screen_ratio1 / screen_ratio2;
 
-    if ( !sentence_font.display_transparency ){
+    if ( !sentence_font.is_transparent ){
         parseTaggedString( &sentence_font_info );
         setupAnimationInfo( &sentence_font_info );
     }
-    
-    if ( sentence_font.ttf_font ) TTF_CloseFont( (TTF_Font*)sentence_font.ttf_font );
-    int font_size = (sentence_font.font_size_xy[0] < sentence_font.font_size_xy[1])?
-        sentence_font.font_size_xy[0]:sentence_font.font_size_xy[1];
-    sentence_font.ttf_font = (void*)TTF_OpenFont( font_file, font_size * screen_ratio1 / screen_ratio2 );
+
+    sentence_font.openFont( font_file, screen_ratio1, screen_ratio2 );
 
     loadInt( fp, &clickstr_state );
     loadInt( fp, &j );
     new_line_skip_flag = (j==1)?true:false;
+    if ( file_version >= 103 ){
+        loadInt( fp, &erase_text_window_mode );
+    }
     
     /* ---------------------------------------- */
     /* Load link label info */
@@ -454,7 +454,7 @@ int ONScripterLabel::saveSaveFile( int no )
 
     /* ---------------------------------------- */
     /* Save sentence font */
-    saveInt( fp, (sentence_font.font_valid_flag?1:0) );
+    saveInt( fp, (sentence_font.is_valid?1:0) );
     saveInt( fp, sentence_font.font_size_xy[0] );
     saveInt( fp, sentence_font.font_size_xy[1] );
     saveInt( fp, sentence_font.top_xy[0] );
@@ -466,9 +466,9 @@ int ONScripterLabel::saveSaveFile( int no )
     saveInt( fp, sentence_font.pitch_xy[0] );
     saveInt( fp, sentence_font.pitch_xy[1] );
     saveInt( fp, sentence_font.wait_time );
-    saveInt( fp, (sentence_font.display_bold?1:0) );
-    saveInt( fp, (sentence_font.display_shadow?1:0) );
-    saveInt( fp, (sentence_font.display_transparency?1:0) );
+    saveInt( fp, (sentence_font.is_bold?1:0) );
+    saveInt( fp, (sentence_font.is_shadow?1:0) );
+    saveInt( fp, (sentence_font.is_transparent?1:0) );
     /* Dummy, must be removed later !! */
     for ( i=0 ; i<8 ; i++ )
         saveInt( fp, 0 );
@@ -483,6 +483,7 @@ int ONScripterLabel::saveSaveFile( int no )
 
     saveInt( fp, clickstr_state );
     saveInt( fp, new_line_skip_flag?1:0 );
+    saveInt( fp, erase_text_window_mode );
     
     /* ---------------------------------------- */
     /* Save link label info */

@@ -46,20 +46,15 @@ void ONScripterLabel::drawChar( char* text, struct FontInfo *info, bool flush_fl
 
     //printf("draw %x-%x[%s] %d, %d\n", text[0], text[1], text, info->xy[0], info->xy[1] );
 
-    if ( !info->font_valid_flag && info->ttf_font ){
-        TTF_CloseFont( (TTF_Font*)info->ttf_font );
-        info->ttf_font = NULL;
-    }
+    if ( !info->is_valid )
+        info->closeFont();
+    
     if ( info->ttf_font == NULL ){
-        int font_size = (info->font_size_xy[0] < info->font_size_xy[1])?
-            info->font_size_xy[0]:info->font_size_xy[1];
-        info->ttf_font = TTF_OpenFont( font_file, font_size * screen_ratio1 / screen_ratio2 );
-        if ( !info->ttf_font ){
+        if ( info->openFont( font_file, screen_ratio1, screen_ratio2 ) == NULL ){
             fprintf( stderr, "can't open font file: %s\n", font_file );
             SDL_Quit();
             exit(-1);
         }
-        info->font_valid_flag = true;
     }
 
     if ( text[0] & 0x80 ){
@@ -88,13 +83,13 @@ void ONScripterLabel::drawChar( char* text, struct FontInfo *info, bool flush_fl
         info->xy[0] = 0;
         info->xy[1]++;
     }
-    xy[0] = (info->xy[0] * info->pitch_xy[0] + info->top_xy[0]) * screen_ratio1 / screen_ratio2;
-    xy[1] = (info->xy[1] * info->pitch_xy[1] + info->top_xy[1]) * screen_ratio1 / screen_ratio2;
+    xy[0] = info->x() * screen_ratio1 / screen_ratio2;
+    xy[1] = info->y() * screen_ratio1 / screen_ratio2;
     
     dst_rect.x = xy[0] + 1 + minx;
     if ( !(text[0] & 0x80) && text[1] ) dst_rect.x += info->pitch_xy[0] / 2 * screen_ratio1 / screen_ratio2;
     dst_rect.y = xy[1] + TTF_FontAscent( (TTF_Font*)info->ttf_font ) - maxy;
-    if ( info->display_shadow ){
+    if ( info->is_shadow ){
         color.r = color.g = color.b = 0;
         tmp_surface = TTF_RenderGlyph_Blended( (TTF_Font*)info->ttf_font, unicode, color );
         src_rect.x = src_rect.y = 0;
@@ -165,12 +160,12 @@ void ONScripterLabel::drawChar( char* text, struct FontInfo *info, bool flush_fl
 
 void ONScripterLabel::drawString( char *str, uchar3 color, FontInfo *info, bool flush_flag, SDL_Surface *surface, SDL_Rect *rect, bool buffering_flag, SDL_Rect *clip )
 {
-    int i, current_text_xy[2];
+    int i, tmp_xy[2];
     uchar3 org_color;
     char text[3] = { '\0', '\0', '\0' };
 
-    current_text_xy[0] = info->xy[0];
-    current_text_xy[1] = info->xy[1];
+    tmp_xy[0] = info->xy[0];
+    tmp_xy[1] = info->xy[1];
 
     /* ---------------------------------------- */
     /* Draw selected characters */
@@ -209,16 +204,16 @@ void ONScripterLabel::drawString( char *str, uchar3 color, FontInfo *info, bool 
     /* ---------------------------------------- */
     /* Calculate the area of selection */
     if ( rect ){
-        if ( current_text_xy[1] == info->xy[1] ){
-            rect->x = (info->top_xy[0] + current_text_xy[0] * info->pitch_xy[0]) * screen_ratio1 / screen_ratio2;
-            rect->w = (info->pitch_xy[0] * (info->xy[0] - current_text_xy[0] + 1)) * screen_ratio1 / screen_ratio2;
+        if ( tmp_xy[1] == info->xy[1] ){
+            rect->x = (info->top_xy[0] + tmp_xy[0] * info->pitch_xy[0]) * screen_ratio1 / screen_ratio2;
+            rect->w = (info->pitch_xy[0] * (info->xy[0] - tmp_xy[0] + 1)) * screen_ratio1 / screen_ratio2;
         }
         else{
             rect->x = info->top_xy[0] * screen_ratio1 / screen_ratio2;
             rect->w = info->pitch_xy[0] * info->num_xy[0] * screen_ratio1 / screen_ratio2;
         }
-        rect->y = (current_text_xy[1] * info->pitch_xy[1] + info->top_xy[1]) * screen_ratio1 / screen_ratio2;// - info->pitch_xy[1] + 3;
-        rect->h = (info->xy[1] - current_text_xy[1] + 1) * info->pitch_xy[1] * screen_ratio1 / screen_ratio2;
+        rect->y = (tmp_xy[1] * info->pitch_xy[1] + info->top_xy[1]) * screen_ratio1 / screen_ratio2;
+        rect->h = (info->xy[1] - tmp_xy[1] + 1) * info->pitch_xy[1] * screen_ratio1 / screen_ratio2;
     }
 }
 
@@ -245,7 +240,7 @@ void ONScripterLabel::restoreTextBuffer( SDL_Surface *surface )
         drawChar( out_text, &f_info, false, surface );
     }
 
-    sentence_font.font_valid_flag = f_info.font_valid_flag;
+    sentence_font.is_valid = f_info.is_valid;
     sentence_font.ttf_font = f_info.ttf_font;
     
     if ( sentence_font.xy[0] == 0 ) text_char_flag = false;

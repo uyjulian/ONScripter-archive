@@ -273,7 +273,6 @@ int ONScripterLabel::setwindowCommand()
 {
     char *p_string_buffer = string_buffer + string_buffer_offset + 9;
 
-    sentence_font.font_valid_flag = false;
     sentence_font.top_xy[0] = readInt( &p_string_buffer );
     sentence_font.top_xy[1] = readInt( &p_string_buffer );
     sentence_font.num_xy[0] = readInt( &p_string_buffer );
@@ -283,17 +282,14 @@ int ONScripterLabel::setwindowCommand()
     sentence_font.pitch_xy[0] = readInt( &p_string_buffer ) + sentence_font.font_size_xy[0];
     sentence_font.pitch_xy[1] = readInt( &p_string_buffer ) + sentence_font.font_size_xy[1];
     sentence_font.wait_time = readInt( &p_string_buffer );
-    sentence_font.display_bold = readInt( &p_string_buffer )?true:false;
-    sentence_font.display_shadow = readInt( &p_string_buffer )?true:false;
+    sentence_font.is_bold = readInt( &p_string_buffer )?true:false;
+    sentence_font.is_shadow = readInt( &p_string_buffer )?true:false;
 
-    if ( sentence_font.ttf_font ) TTF_CloseFont( (TTF_Font*)sentence_font.ttf_font );
-    int font_size = (sentence_font.font_size_xy[0] < sentence_font.font_size_xy[1])?
-        sentence_font.font_size_xy[0]:sentence_font.font_size_xy[1];
-    sentence_font.ttf_font = (void*)TTF_OpenFont( font_file, font_size * screen_ratio1 / screen_ratio2 );
+    sentence_font.openFont( font_file, screen_ratio1, screen_ratio2 );
 
     readStr( &p_string_buffer, tmp_string_buffer );
     if ( tmp_string_buffer[0] == '#' ){
-        sentence_font.display_transparency = true;
+        sentence_font.is_transparent = true;
         if ( strlen( tmp_string_buffer ) != 7 ) errorAndExit( string_buffer + string_buffer_offset );
         readColor( &sentence_font.window_color, tmp_string_buffer + 1 );
 
@@ -303,7 +299,7 @@ int ONScripterLabel::setwindowCommand()
         sentence_font_info.pos.h = readInt( &p_string_buffer ) * screen_ratio1 / screen_ratio2 - sentence_font_info.pos.y + 1;
     }
     else{
-        sentence_font.display_transparency = false;
+        sentence_font.is_transparent = false;
         sentence_font_info.setImageName( tmp_string_buffer );
         parseTaggedString( &sentence_font_info );
         setupAnimationInfo( &sentence_font_info );
@@ -1200,10 +1196,10 @@ int ONScripterLabel::getcursorposCommand()
     char *p_buf = p_string_buffer;
 
     readInt( &p_string_buffer );
-    setInt( p_buf, sentence_font.xy[0] * sentence_font.pitch_xy[0] + sentence_font.top_xy[0] );
+    setInt( p_buf, sentence_font.x() );
     
     p_buf = p_string_buffer;
-    setInt( p_buf, sentence_font.xy[1] * sentence_font.pitch_xy[1] + sentence_font.top_xy[1] );
+    setInt( p_buf, sentence_font.y() );
     
     return RET_CONTINUE;
 }
@@ -1252,7 +1248,6 @@ int ONScripterLabel::gameCommand()
     /* Initialize local variables */
     for ( i=0 ; i<200 ; i++ ){
         num_variables[i] = 0;
-        num_limit_flag[i] = false;
         delete[] str_variables[i];
         str_variables[i] = new char[1];
         str_variables[i][0] = '\0';
@@ -1429,8 +1424,7 @@ int ONScripterLabel::cselbtnCommand()
     int csel_no   = readInt( &p_string_buffer );
     int button_no = readInt( &p_string_buffer );
 
-    FontInfo csel_info;
-    csel_info = sentence_font;
+    FontInfo csel_info = sentence_font;
     csel_info.top_xy[0] = readInt( &p_string_buffer );
     csel_info.top_xy[1] = readInt( &p_string_buffer );
     csel_info.xy[0] = csel_info.xy[1] = 0;
@@ -1450,7 +1444,7 @@ int ONScripterLabel::cselbtnCommand()
     last_button_link->no          = button_no;
     last_button_link->sprite_no   = csel_no;
 
-    sentence_font.font_valid_flag = csel_info.font_valid_flag;
+    sentence_font.is_valid = csel_info.is_valid;
     sentence_font.ttf_font = csel_info.ttf_font;
 
     SDL_BlitSurface( text_surface, &last_button_link->select_rect, select_surface, NULL );
@@ -1712,7 +1706,7 @@ int ONScripterLabel::btnwaitCommand()
             p_button_link = p_button_link->next;
         }
     
-        sentence_font.font_valid_flag = f_info.font_valid_flag;
+        sentence_font.is_valid = f_info.is_valid;
         sentence_font.ttf_font = f_info.ttf_font;
         
         SDL_BlitSurface( text_surface, NULL, select_surface, NULL );

@@ -245,9 +245,6 @@ ScriptParser::ScriptParser()
 
     /* ---------------------------------------- */
     /* Menu related variables */
-    menu_font.ttf_font  = system_font.ttf_font  = NULL;
-    menu_font.color[0] = menu_font.color[1] = menu_font.color[2] = 0xff;
-    system_font.color[0] = system_font.color[1] = system_font.color[2] = 0xff;
     menu_font.font_size_xy[0] = system_font.font_size_xy[0] = 18;
     menu_font.font_size_xy[1] = system_font.font_size_xy[1] = 18;
     menu_font.top_xy[0] = system_font.top_xy[0] = 0;
@@ -256,21 +253,9 @@ ScriptParser::ScriptParser()
     menu_font.num_xy[1] = system_font.num_xy[1] = 23;
     menu_font.pitch_xy[0] = system_font.pitch_xy[0] = 2 + system_font.font_size_xy[0];
     menu_font.pitch_xy[1] = system_font.pitch_xy[1] = 2 + system_font.font_size_xy[1];
-    menu_font.display_bold = system_font.display_bold = true;
-    menu_font.display_shadow = system_font.display_shadow = true;
-    menu_font.display_transparency = system_font.display_transparency = true;
     system_font.window_color[0] = system_font.window_color[1] = system_font.window_color[2] = 0xcc;
     menu_font.window_color[0] = menu_font.window_color[1] = menu_font.window_color[2] = 0xcc;
 
-    for ( i=0 ; i<3 ; i++ ){
-        menu_font.on_color[i] = 0xff;
-        menu_font.off_color[i] = 0x80;
-        menu_font.nofile_color[i] = 0x80;
-        system_font.on_color[i] = 0xff;
-        system_font.off_color[i] = 0x80;
-        system_font.nofile_color[i] = 0x80;
-    }
-    
     root_menu_link.next = NULL;
     root_menu_link.label = NULL;
     menu_link_num = 0;

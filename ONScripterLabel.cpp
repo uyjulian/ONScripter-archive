@@ -584,6 +584,7 @@ void ONScripterLabel::executeLabel()
     current_link_label_info->label_info = lookupLabelNext( current_link_label_info->label_info.name );
     current_link_label_info->current_line = 0;
     current_link_label_info->offset = 0;
+    line_cache = -1;
 
     if ( current_link_label_info->label_info.start_address != NULL ) goto executeLabelTop;
     else fprintf( stderr, " ***** End *****\n");

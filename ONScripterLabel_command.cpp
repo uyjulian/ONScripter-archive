@@ -1923,23 +1923,11 @@ int ONScripterLabel::amspCommand()
 int ONScripterLabel::allspresumeCommand()
 {
     all_sprite_hide_flag = false;
-    refreshSurface( accumulation_surface,
-                                NULL,
-                                ( erase_text_window_mode == 0 && text_on_flag)?REFRESH_SHADOW_MODE:REFRESH_NORMAL_MODE );
-    SDL_BlitSurface( accumulation_surface, NULL, text_surface, NULL );
-    flush();
-
     return RET_CONTINUE;
 }
 
 int ONScripterLabel::allsphideCommand()
 {
     all_sprite_hide_flag = true;
-    refreshSurface( accumulation_surface,
-                                NULL,
-                                ( erase_text_window_mode == 0 && text_on_flag)?REFRESH_SHADOW_MODE:REFRESH_NORMAL_MODE );
-    SDL_BlitSurface( accumulation_surface, NULL, text_surface, NULL );
-    flush();
-    
     return RET_CONTINUE;
 }

@@ -126,6 +126,7 @@ public:
     int captionCommand();
     int btnwait2Command();
     int btnwaitCommand();
+    int btntimeCommand();
     int btndefCommand();
     int btnCommand();
     int brCommand();
@@ -187,6 +188,7 @@ private:
 
     FILE *tmp_save_fp;
     bool saveon_flag;
+    bool shelter_soveon_flag; // used by csel
 
     bool monocro_flag;
     uchar3 monocro_color;
@@ -199,6 +201,10 @@ private:
     char wm_edit_string[256];
 
     Uint32 rmask, gmask, bmask, amask;
+
+    long btntime_value;
+    long internal_button_timer;
+    long btnwait_time;
 
     /* ---------------------------------------- */
     /* Script related variables */

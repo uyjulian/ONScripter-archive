@@ -317,7 +317,7 @@ int ONScripterLabel::loadSaveFile( int no )
     restoreTextBuffer();
     flush();
     display_mode = TEXT_DISPLAY_MODE;
-    
+
     event_mode = tmp_event_mode;
     if ( event_mode & WAIT_BUTTON_MODE ) event_mode = WAIT_SLEEP_MODE; // Re-execute the selectCommand, etc.
 

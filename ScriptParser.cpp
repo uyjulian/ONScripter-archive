@@ -46,6 +46,7 @@ static struct FuncLUT{
     {"windoweffect",      &ScriptParser::effectCommand},
     {"windowback",      &ScriptParser::windowbackCommand},
     {"versionstr",      &ScriptParser::versionstrCommand},
+    {"usewheel", &ScriptParser::usewheelCommand},
     {"underline", &ScriptParser::underlineCommand},
     {"transmode", &ScriptParser::transmodeCommand},
     {"time", &ScriptParser::timeCommand},
@@ -130,6 +131,7 @@ ScriptParser::ScriptParser()
     underline_value = 479;
     rmode_flag = true;
     windowback_flag = false;
+    usewheel_flag = false;
     text_line_flag = false;
     
     num_of_labels = 0;
@@ -767,7 +769,9 @@ bool ScriptParser::readToken( char **src_buf, char *dst_buf, bool skip_space_fla
                             !(**src_buf & 0x80) ) ) &&
             ( quat_flag || skip_space_flag || ( **src_buf != ' ' &&
                                                 **src_buf != '\t' ) ) &&
-            ( quat_flag || first_flag || **src_buf != '#' )
+            ( quat_flag || first_flag || (**src_buf != '#' &&
+                                          **src_buf != '-' &&
+                                          **src_buf != '*' ) )
             ){
         if ( **src_buf & 0x80 ) {
             *dst_buf++ = *(*src_buf)++;

@@ -114,6 +114,7 @@ static struct FuncLUT{
     {"getreg", &ONScripterLabel::getregCommand},
     {"getcursorpos", &ONScripterLabel::getcursorposCommand},
     {"getcselnum", &ONScripterLabel::getcselnumCommand},
+    {"getbtntimer", &ONScripterLabel::gettimerCommand},
     {"game", &ONScripterLabel::gameCommand},
     {"exbtn_d", &ONScripterLabel::exbtnCommand},
     {"exbtn", &ONScripterLabel::exbtnCommand},
@@ -133,6 +134,7 @@ static struct FuncLUT{
     {"caption", &ONScripterLabel::captionCommand},
     {"btnwait2", &ONScripterLabel::btnwaitCommand},
     {"btnwait", &ONScripterLabel::btnwaitCommand},
+    {"btntime", &ONScripterLabel::btntimeCommand},
     {"btndef",  &ONScripterLabel::btndefCommand},
     {"btn",     &ONScripterLabel::btnCommand},
     {"br",      &ONScripterLabel::brCommand},
@@ -250,6 +252,8 @@ ONScripterLabel::ONScripterLabel( bool cdaudio_flag, char *default_font, char *d
 
     internal_timer = SDL_GetTicks();
     autoclick_timer = 0;
+    btntime_value = 0;
+    btnwait_time = 0;
 
     tmp_save_fp = NULL;
     saveon_flag = true;

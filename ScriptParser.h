@@ -115,6 +115,7 @@ public:
     /* Command */
     int windowbackCommand();
     int versionstrCommand();
+    int usewheelCommand();
     int underlineCommand();
     int transmodeCommand();
     int timeCommand();
@@ -184,7 +185,8 @@ protected:
     int z_order;
     bool rmode_flag;
     bool windowback_flag;
-
+    bool usewheel_flag;
+    
     BaseReader *cBR;
 
     int string_buffer_length, string_buffer_offset;

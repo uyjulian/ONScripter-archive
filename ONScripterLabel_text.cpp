@@ -148,6 +148,10 @@ void ONScripterLabel::drawString( char *str, uchar3 color, FontInfo *info, bool 
     for ( i=0 ; i<3 ; i++ ) info->color[i] = color[i];
 
     while( *str ){
+        if ( *str == ' ' ){
+            str++;
+            continue;
+        }
         if ( *str & 0x80 ){
             /* Kinsoku process */
             if ( info->xy[0] + 1 == info->num_xy[0] &&

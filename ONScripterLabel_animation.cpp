@@ -201,6 +201,13 @@ void ONScripterLabel::drawTaggedSurface( SDL_Surface *dst_surface, AnimationInfo
 {
     if ( anim->trans_mode == AnimationInfo::TRANS_STRING ){
 
+        if ( clip ){
+            if ( anim->pos.x + anim->pos.w <= clip->x ||
+                 clip->x + clip->w <= anim->pos.x ||
+                 anim->pos.y + anim->pos.h <= clip->y ||
+                 clip->y + clip->h <= anim->pos.y )
+                return;
+        }
         FontInfo f_info = sentence_font;
         f_info.xy[0] = f_info.xy[1] = 0;
         f_info.top_xy[0] = anim->pos.x;

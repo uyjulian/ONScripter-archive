@@ -121,8 +121,6 @@ int ONScripterLabel::trapCommand()
         printf("[%s] is not supported\n", string_buffer + string_buffer_offset );
     }
               
-    printf("trapCommand %s\n", tmp_string_buffer );
-    
     return RET_CONTINUE;
 }
 
@@ -419,6 +417,10 @@ int ONScripterLabel::selectCommand()
         return ret;
     }
     else{
+        if ( select_mode == SELECT_CSEL_MODE ){
+            shelter_soveon_flag = saveon_flag;
+            saveoffCommand();
+        }
         SelectLink *link;
         shortcut_mouse_line = -1;
         flush();
@@ -533,8 +535,10 @@ int ONScripterLabel::savegameCommand()
     int no = readInt( &p_string_buffer );
     if ( no < 0 )
         errorAndExit( string_buffer + string_buffer_offset );
-    else
+    else{
+        shelter_event_mode = event_mode;
         saveSaveFile( no );
+    }
 
     return RET_CONTINUE;
 }
@@ -970,9 +974,16 @@ int ONScripterLabel::getversionCommand()
 
 int ONScripterLabel::gettimerCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 8; // strlen("gettimer") = 8 
+    char *p_string_buffer; 
  
-    setInt( p_string_buffer, SDL_GetTicks() - internal_timer ); 
+    if ( !strncmp( string_buffer + string_buffer_offset, "gettimer", 8 ) ){ 
+        p_string_buffer = string_buffer + string_buffer_offset + 8; // strlen("gettimer") = 8 
+        setInt( p_string_buffer, SDL_GetTicks() - internal_timer );
+    }
+    else if ( !strncmp( string_buffer + string_buffer_offset, "getbtntimer", 11 ) ){ 
+        p_string_buffer = string_buffer + string_buffer_offset + 11; // strlen("getbtntimer") = 11
+        setInt( p_string_buffer, btnwait_time );
+    }
  
     return RET_CONTINUE; 
 }
@@ -1239,6 +1250,7 @@ int ONScripterLabel::cselgotoCommand()
     current_link_label_info->label_info   = lookupLabel( link->label );
     current_link_label_info->current_line = 0;
     current_link_label_info->offset       = 0;
+    saveon_flag = shelter_soveon_flag;
 
     deleteSelectLink();
     newPage( true );
@@ -1467,8 +1479,12 @@ int ONScripterLabel::btnwaitCommand()
         del_flag = false;
         selectbtn_flag = true;
     }
-    
+
     if ( event_mode & WAIT_BUTTON_MODE ){
+        btnwait_time = SDL_GetTicks() - internal_button_timer;
+        btntime_value = 0;
+
+        if ( textbtn_flag && skip_flag ) current_button_state.button = 0;
         setInt( p_string_buffer, current_button_state.button );
 
         if ( del_flag ){
@@ -1484,6 +1500,7 @@ int ONScripterLabel::btnwaitCommand()
         return RET_CONTINUE;
     }
     else{
+        shortcut_mouse_line = 0;
         skip_flag = false;
         event_mode = WAIT_BUTTON_MODE;
         if ( textbtn_flag ) event_mode |= WAIT_TEXTBTN_MODE;
@@ -1544,8 +1561,25 @@ int ONScripterLabel::btnwaitCommand()
 
         refreshMouseOverButton();
 
+        if ( btntime_value > 0 ){
+            event_mode |= WAIT_SLEEP_MODE;
+            startTimer( btntime_value );
+            if ( usewheel_flag ) current_button_state.button = -5;
+            else                 current_button_state.button = -2;
+        }
+        internal_button_timer = SDL_GetTicks();
+
         return RET_WAIT;
     }
+}
+
+int ONScripterLabel::btntimeCommand()
+{
+    char *p_string_buffer = string_buffer + string_buffer_offset + 7; // strlen("btntime") = 7
+
+    btntime_value = readInt( &p_string_buffer );
+    
+    return RET_CONTINUE;
 }
 
 int ONScripterLabel::brCommand()

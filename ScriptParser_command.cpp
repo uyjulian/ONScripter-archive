@@ -56,6 +56,13 @@ int ScriptParser::versionstrCommand()
     return RET_CONTINUE;
 }
 
+int ScriptParser::usewheelCommand()
+{
+    usewheel_flag = true;
+
+    return RET_CONTINUE;
+}
+
 int ScriptParser::underlineCommand()
 {
     if ( current_mode != DEFINE_MODE ) errorAndExit( string_buffer + string_buffer_offset, "not in the define section" );

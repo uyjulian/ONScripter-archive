@@ -24,7 +24,7 @@
 #include "ONScripterLabel.h"
 
 #define DEFAULT_WAVE_CHANNEL 1
-#define ONSCRIPTER_VERSION 196
+#define ONSCRIPTER_VERSION 198
 
 #define DEFAULT_CURSOR_WAIT    ":l/3,160,2;cursor0.bmp"
 #define DEFAULT_CURSOR_NEWPAGE ":l/3,160,2;cursor1.bmp"
@@ -1080,6 +1080,8 @@ int ONScripterLabel::gameCommand()
     current_link_label_info->offset = 0;
     current_mode = NORMAL_MODE;
 
+    sentence_font.wait_time = default_text_speed[text_speed_no];
+
     /* ---------------------------------------- */
     /* Load default cursor */
     loadCursor( CURSOR_WAIT_NO, DEFAULT_CURSOR_WAIT, 0, 0 );
@@ -1401,15 +1403,12 @@ int ONScripterLabel::btndefCommand()
     readStr( &p_string_buffer, tmp_string_buffer );
 
     if ( strcmp( tmp_string_buffer, "clear" ) ){
-        if ( btndef_surface ) SDL_FreeSurface( btndef_surface );
-        btndef_surface = NULL;
-
-        unsigned long length = cBR->getFileLength( tmp_string_buffer );
-        if ( length ){
-            unsigned char *buffer = new unsigned char[length];
-            cBR->getFile( tmp_string_buffer, buffer );
-            btndef_surface = IMG_Load_RW(SDL_RWFromMem( buffer, length ),1);
-            delete[] buffer;
+        btndef_info.remove();
+        if ( tmp_string_buffer[0] != '\0' ){
+            btndef_info.setImageName( tmp_string_buffer );
+            parseTaggedString( &btndef_info );
+            setupAnimationInfo( &btndef_info );
+            SDL_SetAlpha( btndef_info.image_surface, DEFAULT_BLIT_FLAG, SDL_ALPHA_OPAQUE );
         }
     }
     
@@ -1438,20 +1437,10 @@ int ONScripterLabel::btnCommand()
     src_rect.y = readInt( &p_string_buffer );
     src_rect.w = last_button_link->image_rect.w;
     src_rect.h = last_button_link->image_rect.h;
-#if 0
-    printf("ONScripterLabel::btnCommand %d,%d,%d,%d,%d,%d,%d\n",
-           last_button_link->no,
-           last_button_link->image_rect.x,
-           last_button_link->image_rect.y,
-           last_button_link->image_rect.w,
-           last_button_link->image_rect.h,
-           src_rect.x,
-           src_rect.y );
-#endif
 
     last_button_link->image_surface = SDL_CreateRGBSurface( DEFAULT_SURFACE_FLAG, last_button_link->image_rect.w, last_button_link->image_rect.h, 32, rmask, gmask, bmask, amask );
 
-    SDL_BlitSurface( btndef_surface, &src_rect, last_button_link->image_surface, NULL );
+    SDL_BlitSurface( btndef_info.image_surface, &src_rect, last_button_link->image_surface, NULL );
 
     return RET_CONTINUE;
 }
@@ -1607,8 +1596,8 @@ int ONScripterLabel::bltCommand()
     src_rect.y = readInt( &p_string_buffer );
     src_rect.w = readInt( &p_string_buffer );
     src_rect.h = readInt( &p_string_buffer );
-    
-    SDL_BlitSurface( btndef_surface, &src_rect, screen_surface, &dst_rect );
+
+    SDL_BlitSurface( btndef_info.image_surface, &src_rect, screen_surface, &dst_rect );
     SDL_UpdateRect( screen_surface, dst_rect.x, dst_rect.y, dst_rect.w, dst_rect.h );
     
     return RET_CONTINUE;

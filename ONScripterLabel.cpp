@@ -38,10 +38,6 @@ extern bool midi_play_once_flag;
 #define REGISTRY_FILE "registry.txt"
 #define TMP_MIDI_FILE "tmp.mid"
 
-#define DEFAULT_TEXT_SPEED1 40 // Low speed
-#define DEFAULT_TEXT_SPEED2 20 // Middle speed
-#define DEFAULT_TEXT_SPEED3 10 // High speed
-
 extern void mp3callback( void *userdata, Uint8 *stream, int len );
 extern Uint32 cdaudioCallback( Uint32 interval, void *param );
 extern void midiCallback( int sig );
@@ -272,7 +268,6 @@ ONScripterLabel::ONScripterLabel( bool cdaudio_flag, char *default_font, char *d
     all_sprite_hide_flag = false;
     
     last_button_link = &root_button_link;
-    btndef_surface = NULL;
     current_over_button = 0;
 
     this->edit_flag = edit_flag;
@@ -315,9 +310,6 @@ ONScripterLabel::ONScripterLabel( bool cdaudio_flag, char *default_font, char *d
     else                setStr( &font_file, FONT_FILE );
     
     text_char_flag = false;
-    default_text_speed[0] = DEFAULT_TEXT_SPEED1;
-    default_text_speed[1] = DEFAULT_TEXT_SPEED2;
-    default_text_speed[2] = DEFAULT_TEXT_SPEED3;
     text_speed_no = 1;
     
     new_line_skip_flag = false;

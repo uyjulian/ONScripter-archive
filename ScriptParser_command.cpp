@@ -898,6 +898,16 @@ int ScriptParser::defmp3volCommand()
     return RET_CONTINUE;
 }
 
+int ScriptParser::defaultspeedCommand()
+{
+    if ( current_mode != DEFINE_MODE ) errorAndExit( string_buffer + string_buffer_offset, "not in the define section" );
+    char *p_string_buffer = string_buffer + string_buffer_offset + 12; // strlen("defaultspeed") = 12
+
+    for ( int i=0 ; i<3 ; i++ ) default_text_speed[i] = readInt( &p_string_buffer );
+
+    return RET_CONTINUE;
+}
+
 int ScriptParser::decCommand()
 {
     char *p_string_buffer = string_buffer + string_buffer_offset + 3; // strlen("dec") = 3

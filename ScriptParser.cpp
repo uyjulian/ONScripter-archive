@@ -36,6 +36,10 @@
 #define DEFAULT_LOOKBACK_NAME2 "doncur.bmp"
 #define DEFAULT_LOOKBACK_NAME3 "doffcur.bmp"
 
+#define DEFAULT_TEXT_SPEED_LOW    40
+#define DEFAULT_TEXT_SPEED_MIDDLE 20
+#define DEFAULT_TEXT_SPEED_HIGHT  10
+
 #define DEFAULT_VOLUME 100
 
 typedef int (ScriptParser::*FuncList)();
@@ -103,6 +107,7 @@ static struct FuncLUT{
     {"defvoicevol",   &ScriptParser::defvoicevolCommand},
     {"defsevol",   &ScriptParser::defsevolCommand},
     {"defmp3vol",   &ScriptParser::defmp3volCommand},
+    {"defaultspeed", &ScriptParser::defaultspeedCommand},
     {"dec",   &ScriptParser::decCommand},
     {"date",   &ScriptParser::dateCommand},
     {"cmp",      &ScriptParser::cmpCommand},
@@ -209,6 +214,9 @@ ScriptParser::ScriptParser()
 
     /* ---------------------------------------- */
     /* Text related variables */
+    default_text_speed[0] = DEFAULT_TEXT_SPEED_LOW;
+    default_text_speed[1] = DEFAULT_TEXT_SPEED_MIDDLE;
+    default_text_speed[2] = DEFAULT_TEXT_SPEED_HIGHT;
     text_history_num = MAX_TEXT_BUFFER;
     for ( i=0 ; i<MAX_TEXT_BUFFER-1 ; i++ ){
         text_buffer[i].next = &text_buffer[i+1];

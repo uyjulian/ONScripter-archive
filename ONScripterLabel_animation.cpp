@@ -89,7 +89,6 @@ void ONScripterLabel::setupAnimationInfo( AnimationInfo *anim )
 
 void ONScripterLabel::parseTaggedString( AnimationInfo *anim )
 {
-    //printf(" parseTaggeString %s\n", buffer);
     anim->removeTag();
     
     int i;

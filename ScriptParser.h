@@ -160,6 +160,7 @@ public:
     int defvoicevolCommand();
     int defsevolCommand();
     int defmp3volCommand();
+    int defaultspeedCommand();
     int decCommand();
     int dateCommand();
     int cmpCommand();
@@ -307,6 +308,7 @@ protected:
 
     /* ---------------------------------------- */
     /* Text related variables */
+    int default_text_speed[3];
     struct TextBuffer{
         struct TextBuffer *next, *previous;
         char *buffer;

@@ -215,7 +215,6 @@ private:
     
     int display_mode;
     int event_mode;
-    SDL_Surface *btndef_surface;
     SDL_Surface *background_surface; // Backgroud image
     SDL_Surface *accumulation_surface; // Text window + Sprite + Tachi image + background
     SDL_Surface *select_surface; // Select_image + Tachi image + background
@@ -228,6 +227,8 @@ private:
 
     /* ---------------------------------------- */
     /* Button related variables */
+    AnimationInfo btndef_info;
+
     struct ButtonState{
         int x, y, button;
     } current_button_state, volatile_button_state, last_mouse_state, shelter_mouse_state;
@@ -385,7 +386,6 @@ private:
     TTF_Font *text_font;
     bool new_line_skip_flag;
     int text_speed_no;
-    int default_text_speed[3];
 
     void shadowTextDisplay( SDL_Surface *dst_surface, SDL_Surface *src_surface, SDL_Rect *clip=NULL, FontInfo *info=NULL );
     void clearCurrentTextBuffer();

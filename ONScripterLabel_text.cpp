@@ -237,6 +237,7 @@ int ONScripterLabel::clickWait( char *out_text )
     else{
         clickstr_state = CLICK_WAIT;
         key_pressed_flag = false;
+        if ( sentence_font.wait_time == 0 ) flush();
         if ( out_text ) drawChar( out_text, &sentence_font, true, text_surface );
         if ( textgosub_label ){
             saveoffCommand();
@@ -263,7 +264,7 @@ int ONScripterLabel::clickNewPage( char *out_text )
 {
     clickstr_state = CLICK_NEWPAGE;
     if ( out_text ) drawChar( out_text, &sentence_font, false, text_surface );
-    if ( skip_flag || draw_one_page_flag ) flush();
+    if ( skip_flag || draw_one_page_flag || sentence_font.wait_time == 0 ) flush();
     
     if ( skip_flag ){
         event_mode = WAIT_SLEEP_MODE;

@@ -226,8 +226,8 @@ int ONScripterLabel::loadSaveFile( int no )
         
         loadInt( fp, &current_link_label_info->current_line );
         loadInt( fp, &current_link_label_info->offset );
-        loadInt( fp, &j );
         if ( file_version >= 102 ){
+            loadInt( fp, &j );
             current_link_label_info->end_of_line_flag = (j==1)?true:false;
         }
         loadInt( fp, &address );

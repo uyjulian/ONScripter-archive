@@ -29,7 +29,6 @@ typedef unsigned char uchar3[3];
 class FontInfo{
 public:
     void *ttf_font;
-    bool is_valid;
     uchar3 color;
     uchar3 on_color, off_color, nofile_color;
     int font_size_xy[2];

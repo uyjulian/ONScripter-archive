@@ -305,8 +305,6 @@ int ONScripterLabel::setwindowCommand()
     sentence_font.is_bold = script_h.readInt()?true:false;
     sentence_font.is_shadow = script_h.readInt()?true:false;
 
-    sentence_font.openFont( font_file, screen_ratio1, screen_ratio2 );
-
     const char *buf = script_h.readStr();
     if ( buf[0] == '#' ){
         sentence_font.is_transparent = true;
@@ -653,11 +651,7 @@ int ONScripterLabel::resetCommand()
     sentence_font.xy[0] = 0;
     sentence_font.xy[1] = 0;
     resetSentenceFont();
-    if ( sentence_font.openFont( font_file, screen_ratio1, screen_ratio2 ) == NULL ){
-        fprintf( stderr, "can't open font file: %s\n", font_file );
-        SDL_Quit();
-        exit(-1);
-    }
+    sentence_font.closeFont();
     
     text_char_flag = false;
     skip_flag      = false;
@@ -1458,7 +1452,6 @@ int ONScripterLabel::cselbtnCommand()
     last_button_link->no          = button_no;
     last_button_link->sprite_no   = csel_no;
 
-    sentence_font.is_valid = csel_info.is_valid;
     sentence_font.ttf_font = csel_info.ttf_font;
 
     return RET_CONTINUE;
@@ -1657,7 +1650,6 @@ int ONScripterLabel::btnwaitCommand()
             p_button_link = p_button_link->next;
         }
     
-        sentence_font.is_valid = f_info.is_valid;
         sentence_font.ttf_font = f_info.ttf_font;
 
         flush();

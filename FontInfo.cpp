@@ -28,7 +28,6 @@
 FontInfo::FontInfo()
 {
     ttf_font = NULL;
-    is_valid = false;
 
     reset();
 }
@@ -59,7 +58,6 @@ void *FontInfo::openFont( char *font_file, int ratio1, int ratio2 )
         font_size = font_size_xy[1];
 
     ttf_font = (void*)TTF_OpenFont( font_file, font_size * ratio1 / ratio2 );
-    is_valid = (ttf_font)?true:false;
 
     return ttf_font;
 }

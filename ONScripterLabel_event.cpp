@@ -338,7 +338,9 @@ void ONScripterLabel::keyPressEvent( SDL_KeyboardEvent *event )
             SDL_WM_SetCaption( wm_edit_string, wm_icon_string );
         }
 
-        if ( skip_flag && event->keysym.sym == SDLK_s) skip_flag = false;
+        if ( skip_flag &&
+             ( event->keysym.sym == SDLK_LEFT || event->keysym.sym == SDLK_s ) )
+            skip_flag = false;
     }
 
     if ( trap_flag && (event->keysym.sym == SDLK_RETURN ||
@@ -433,7 +435,7 @@ void ONScripterLabel::keyPressEvent( SDL_KeyboardEvent *event )
     
     if ( event_mode & ( WAIT_INPUT_MODE | WAIT_TEXTBTN_MODE ) && 
          !key_pressed_flag ){
-        if (event->keysym.sym == SDLK_s){
+        if ( event->keysym.sym == SDLK_LEFT || event->keysym.sym == SDLK_s ){
             skip_flag = true;
             printf("toggle skip to true\n");
             key_pressed_flag = true;
@@ -441,7 +443,7 @@ void ONScripterLabel::keyPressEvent( SDL_KeyboardEvent *event )
             if ( (event_mode & (WAIT_BUTTON_MODE | WAIT_TEXTBTN_MODE)) != WAIT_BUTTON_MODE )
                 advancePhase();
         }
-        else if (event->keysym.sym == SDLK_o){
+        else if ( event->keysym.sym == SDLK_RIGHT || event->keysym.sym == SDLK_o ){
             draw_one_page_flag = !draw_one_page_flag;
             printf("toggle draw one page flag to %s\n", (draw_one_page_flag?"true":"false") );
             if ( draw_one_page_flag ){

@@ -23,7 +23,6 @@
 
 #include "ScriptParser.h"
 
-#define READ_LENGTH 4096
 #define VERSION_STR1 "ONScripter"
 #define VERSION_STR2 "Copyright (C) 2001-2002 Studio O.G.A. All Rights Reserved."
 

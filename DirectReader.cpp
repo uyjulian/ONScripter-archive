@@ -200,7 +200,6 @@ size_t DirectReader::getFile( const char *file_name, unsigned char *buffer )
     return total;
 }
 
-#define READ_LENGTH 4096
 size_t DirectReader::decodeNBZ( FILE *fp, size_t offset, unsigned char *buf )
 {
     unsigned int original_length, count;

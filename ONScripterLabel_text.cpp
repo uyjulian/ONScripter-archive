@@ -46,10 +46,13 @@ void ONScripterLabel::drawChar( char* text, FontInfo *info, bool flush_flag, SDL
 
     //printf("draw %x-%x[%s] %d, %d\n", text[0], text[1], text, info->xy[0], info->xy[1] );
 
-    if ( !info->is_valid )
-        info->closeFont();
-    
     if ( info->ttf_font == NULL ){
+#if 0 // defined(PDA)
+        // reduce memory uaage
+        sentence_font.closeFont();
+        system_font.closeFont();
+        menu_font.closeFont();
+#endif        
         if ( info->openFont( font_file, screen_ratio1, screen_ratio2 ) == NULL ){
             fprintf( stderr, "can't open font file: %s\n", font_file );
             SDL_Quit();
@@ -240,7 +243,6 @@ void ONScripterLabel::restoreTextBuffer( SDL_Surface *surface )
         drawChar( out_text, &f_info, false, surface );
     }
 
-    sentence_font.is_valid = f_info.is_valid;
     sentence_font.ttf_font = f_info.ttf_font;
     
     if ( sentence_font.xy[0] == 0 ) text_char_flag = false;

@@ -165,7 +165,7 @@ int ONScripterLabel::loadSaveFile( int no )
     /* ---------------------------------------- */
     /* Load sentence font */
     loadInt( fp, &j );
-    sentence_font.is_valid = (j==1)?true:false;
+    //sentence_font.is_valid = (j==1)?true:false;
     loadInt( fp, &sentence_font.font_size_xy[0] );
     if ( file_version >= 100 ){
         loadInt( fp, &sentence_font.font_size_xy[1] );
@@ -211,7 +211,7 @@ int ONScripterLabel::loadSaveFile( int no )
         setupAnimationInfo( &sentence_font_info );
     }
 
-    sentence_font.openFont( font_file, screen_ratio1, screen_ratio2 );
+    sentence_font.closeFont();
 
     loadInt( fp, &clickstr_state );
     loadInt( fp, &j );
@@ -473,7 +473,8 @@ int ONScripterLabel::saveSaveFile( int no )
 
     /* ---------------------------------------- */
     /* Save sentence font */
-    saveInt( fp, (sentence_font.is_valid?1:0) );
+    //saveInt( fp, (sentence_font.is_valid?1:0) );
+    saveInt( fp, 0 ); // dummy write, must be removed later
     saveInt( fp, sentence_font.font_size_xy[0] );
     saveInt( fp, sentence_font.font_size_xy[1] );
     saveInt( fp, sentence_font.top_xy[0] );

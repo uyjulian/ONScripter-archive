@@ -243,8 +243,7 @@ struct SarReader::FileInfo SarReader::getFileByIndex( int index )
         index -= info->num_of_files;
         info = info->next;
     }
-
-    assert( false );
+    fprintf( stderr, "SarReader::getFileByIndex  Index %d is out of range\n", index );
 
     return archive_info.fi_list[index];
 }

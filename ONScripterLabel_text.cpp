@@ -191,31 +191,31 @@ void ONScripterLabel::drawString( char *str, uchar3 color, FontInfo *info, bool 
 void ONScripterLabel::restoreTextBuffer( SDL_Surface *surface )
 {
     int i, end;
-    int xy[2];
     char out_text[3] = { '\0','\0','\0' };
 
     if ( !surface ) surface = text_surface;
 
-    xy[0] = sentence_font.xy[0];
-    xy[1] = sentence_font.xy[1];
-    sentence_font.xy[0] = 0;
-    sentence_font.xy[1] = 0;
+    FontInfo f_info = sentence_font;
+    f_info.xy[0] = 0;
+    f_info.xy[1] = 0;
     end = current_text_buffer->xy[1] * current_text_buffer->num_xy[0] + current_text_buffer->xy[0];
     for ( i=0 ; i<current_text_buffer->num_xy[1] * current_text_buffer->num_xy[0] ; i++ ){
-        if ( sentence_font.xy[1] * current_text_buffer->num_xy[0] + sentence_font.xy[0] >= end ) break;
+        if ( f_info.xy[1] * current_text_buffer->num_xy[0] + f_info.xy[0] >= end ) break;
         out_text[0] = current_text_buffer->buffer[ i * 2 ];
         if ( !(out_text[0] & 0x80) ){
             out_text[1] = '\0';
-            drawChar( out_text, &sentence_font, false, surface );
-            sentence_font.xy[0]--;
+            drawChar( out_text, &f_info, false, surface );
+            f_info.xy[0]--;
         }
         out_text[1] = current_text_buffer->buffer[ i * 2 + 1];
-        drawChar( out_text, &sentence_font, false, surface );
+        drawChar( out_text, &f_info, false, surface );
     }
-    sentence_font.xy[0] = xy[0];
-    sentence_font.xy[1] = xy[1];
-    if ( xy[0] == 0 ) text_char_flag = false;
-    else              text_char_flag = true;
+
+    sentence_font.font_valid_flag = f_info.font_valid_flag;
+    sentence_font.ttf_font = f_info.ttf_font;
+    
+    if ( sentence_font.xy[0] == 0 ) text_char_flag = false;
+    else                            text_char_flag = true;
 }
 
 int ONScripterLabel::clickWait( char *out_text )
@@ -240,7 +240,8 @@ int ONScripterLabel::clickWait( char *out_text )
             saveoffCommand();
             if ( out_text ) string_buffer_offset += 2;
             else            string_buffer_offset++;
-            gosubReal( textgosub_label );
+            gosubReal( textgosub_label, true );
+            new_line_skip_flag = true;
             return RET_JUMP;
         }
         event_mode = WAIT_INPUT_MODE;
@@ -248,7 +249,7 @@ int ONScripterLabel::clickWait( char *out_text )
             event_mode |= WAIT_SLEEP_MODE;
             startTimer( autoclick_timer );
         }
-        else if ( cursor_info[ CURSOR_WAIT_NO ].tag.num_of_cells > 0 ){
+        else if ( cursor_info[ CURSOR_WAIT_NO ].num_of_cells > 0 ){
             startCursor( CLICK_WAIT );
             startTimer( MINIMUM_TIMER_RESOLUTION );
         }
@@ -272,7 +273,8 @@ int ONScripterLabel::clickNewPage( char *out_text )
             saveoffCommand();
             if ( out_text ) string_buffer_offset += 2;
             else            string_buffer_offset++;
-            gosubReal( textgosub_label );
+            gosubReal( textgosub_label, true );
+            new_line_skip_flag = true;
             return RET_JUMP;
         }
         event_mode = WAIT_INPUT_MODE;
@@ -280,7 +282,7 @@ int ONScripterLabel::clickNewPage( char *out_text )
             event_mode |= WAIT_SLEEP_MODE;
             startTimer( autoclick_timer );
         }
-        else if ( cursor_info[ CURSOR_NEWPAGE_NO ].tag.num_of_cells > 0 ){
+        else if ( cursor_info[ CURSOR_NEWPAGE_NO ].num_of_cells > 0 ){
             startCursor( CLICK_NEWPAGE );
             startTimer( MINIMUM_TIMER_RESOLUTION );
         }
@@ -340,7 +342,7 @@ int ONScripterLabel::textCommand( char *text )
     if ( string_buffer[ string_buffer_offset ] == '\0' ) return RET_CONTINUE;
     new_line_skip_flag = false;
     
-    //printf("*** textCommand %d %d(%d) %s\n", string_buffer_offset, sentence_font.xy[0], sentence_font.pitch_xy[0], string_buffer + string_buffer_offset );
+    //printf("*** textCommand %d (%d,%d) %s\n", string_buffer_offset, sentence_font.xy[0], sentence_font.xy[1], string_buffer + string_buffer_offset );
     
     while( string_buffer[ string_buffer_offset ] == ' ' || string_buffer[ string_buffer_offset ] == '\t' ) string_buffer ++;
     char ch = string_buffer[ string_buffer_offset ];

@@ -67,7 +67,9 @@ int ONScripterLabel::doEffect( int effect_no, AnimationInfo *anim, int effect_im
           case COLOR_EFFECT_IMAGE:
           case BG_EFFECT_IMAGE:
           case TACHI_EFFECT_IMAGE:
-            refreshAccumulationSurface( effect_dst_surface );
+            refreshAccumulationSurface( effect_dst_surface,
+                                        NULL,
+                                        ( !erase_text_window_flag && text_on_flag)?REFRESH_SHADOW_MODE:REFRESH_NORMAL_MODE );
             break;
         }
 
@@ -269,14 +271,14 @@ int ONScripterLabel::doEffect( int effect_no, AnimationInfo *anim, int effect_im
         alphaBlend( text_surface, 0, 0,
                     effect_src_surface, 0, 0, screen_width, screen_height,
                     effect_dst_surface, 0, 0,
-                    0, 0, -TRANS_FADE_MASK, 256 * effect_counter / effect.duration );
+                    0, 0, -AnimationInfo::TRANS_FADE_MASK, 256 * effect_counter / effect.duration );
         break;
         
       case 18: // Cross fade with mask
         alphaBlend( text_surface, 0, 0,
                     effect_src_surface, 0, 0, screen_width, screen_height,
                     effect_dst_surface, 0, 0,
-                    0, 0, -TRANS_CROSSFADE_MASK, 256 * effect_counter * 2 / effect.duration );
+                    0, 0, -AnimationInfo::TRANS_CROSSFADE_MASK, 256 * effect_counter * 2 / effect.duration );
         break;
 
       case (CUSTOM_EFFECT_NO + 0 ):
@@ -309,7 +311,7 @@ int ONScripterLabel::doEffect( int effect_no, AnimationInfo *anim, int effect_im
     if ( effect_counter < effect.duration ){
         if ( effect.effect != 0 ){
             if ( !erase_text_window_flag && text_on_flag ){
-                shadowTextDisplay( NULL, text_surface );
+                //shadowTextDisplay( NULL, text_surface );
                 restoreTextBuffer();
             }
             flush();
@@ -325,8 +327,8 @@ int ONScripterLabel::doEffect( int effect_no, AnimationInfo *anim, int effect_im
             SDL_BlitSurface( effect_dst_surface, NULL, accumulation_surface, NULL );
             SDL_BlitSurface( accumulation_surface, NULL, text_surface, NULL );
         }
+
         if ( !erase_text_window_flag && text_on_flag ){
-            shadowTextDisplay( NULL, text_surface );
             restoreTextBuffer();
             display_mode = TEXT_DISPLAY_MODE;
         }

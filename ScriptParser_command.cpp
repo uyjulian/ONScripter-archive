@@ -72,10 +72,10 @@ int ScriptParser::transmodeCommand()
     char *p_string_buffer = string_buffer + string_buffer_offset + 9; // strlen("transmode") = 9
 
     readStr( &p_string_buffer, tmp_string_buffer );
-    if      ( !strcmp( tmp_string_buffer, "leftup" ) )   trans_mode = TRANS_TOPLEFT;
-    else if ( !strcmp( tmp_string_buffer, "copy" ) )     trans_mode = TRANS_COPY;
-    else if ( !strcmp( tmp_string_buffer, "alpha" ) )    trans_mode = TRANS_ALPHA;
-    else if ( !strcmp( tmp_string_buffer, "righttup" ) ) trans_mode = TRANS_TOPRIGHT;
+    if      ( !strcmp( tmp_string_buffer, "leftup" ) )   trans_mode = AnimationInfo::TRANS_TOPLEFT;
+    else if ( !strcmp( tmp_string_buffer, "copy" ) )     trans_mode = AnimationInfo::TRANS_COPY;
+    else if ( !strcmp( tmp_string_buffer, "alpha" ) )    trans_mode = AnimationInfo::TRANS_ALPHA;
+    else if ( !strcmp( tmp_string_buffer, "righttup" ) ) trans_mode = AnimationInfo::TRANS_TOPRIGHT;
 
     return RET_CONTINUE;
 }
@@ -665,7 +665,7 @@ int ScriptParser::gotoCommand()
     return RET_JUMP;
 }
 
-void ScriptParser::gosubReal( char *label )
+void ScriptParser::gosubReal( char *label, bool textgosub_flag )
 {
     label_stack_depth++;
     
@@ -675,6 +675,7 @@ void ScriptParser::gosubReal( char *label )
     info->label_info = lookupLabel( label );
     info->current_line = 0;
     info->offset = 0;
+    info->textgosub_flag = textgosub_flag;
 
     current_link_label_info->next = info;
 
@@ -1030,7 +1031,7 @@ int ScriptParser::addCommand()
         str_variables[ no ] = new char[ strlen( tmp_buffer ) + strlen( tmp_string_buffer ) + 1 ];
         memcpy( str_variables[ no ], tmp_buffer, strlen( tmp_buffer ) );
         memcpy( str_variables[ no ] + strlen( tmp_buffer ), tmp_string_buffer, strlen( tmp_string_buffer ) + 1 );
-        //printf("addCommand %s = %s + %s\n", str_variables[ no ], tmp_buffer, tmp_string_buffer );
+
         delete[] tmp_buffer;
     }
     else errorAndExit( string_buffer + string_buffer_offset );

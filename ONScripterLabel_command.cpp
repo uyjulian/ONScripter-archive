@@ -139,7 +139,7 @@ int ONScripterLabel::textonCommand()
 {
     text_on_flag = true;
     if ( !(display_mode & TEXT_DISPLAY_MODE) ){
-        shadowTextDisplay();
+        SDL_BlitSurface( accumulation_surface, NULL, text_surface, NULL );
         restoreTextBuffer();
         flush();
         display_mode = TEXT_DISPLAY_MODE;
@@ -168,7 +168,14 @@ int ONScripterLabel::textclearCommand()
 
 int ONScripterLabel::texecCommand()
 {
-    if ( clickstr_state == CLICK_NEWPAGE ) newPage( false );
+    if ( clickstr_state == CLICK_NEWPAGE ){
+        new_line_skip_flag = true;
+        newPage( true );
+    }
+    else{
+        sentence_font.xy[0] = 0;
+        sentence_font.xy[1]++;
+    }
 
     return RET_CONTINUE;
 }
@@ -212,7 +219,7 @@ int ONScripterLabel::spbtnCommand()
     int sprite_no = readInt( &p_string_buffer );
     int no        = readInt( &p_string_buffer );
 
-    if ( sprite_info[ sprite_no ].tag.num_of_cells == 0 ) return RET_CONTINUE;
+    if ( sprite_info[ sprite_no ].num_of_cells == 0 ) return RET_CONTINUE;
 
     last_button_link->next = new ButtonLink();
     last_button_link = last_button_link->next;
@@ -221,7 +228,7 @@ int ONScripterLabel::spbtnCommand()
     last_button_link->sprite_no   = sprite_no;
     last_button_link->no          = no;
 
-    if ( sprite_info[ sprite_no ].image_surface || sprite_info[ sprite_no ].tag.trans_mode == TRANS_STRING ){
+    if ( sprite_info[ sprite_no ].image_surface || sprite_info[ sprite_no ].trans_mode == AnimationInfo::TRANS_STRING ){
         last_button_link->image_rect = last_button_link->select_rect = sprite_info[ last_button_link->sprite_no ].pos;
         sprite_info[ sprite_no ].valid = true;
     }
@@ -291,7 +298,7 @@ int ONScripterLabel::setwindowCommand()
     else{
         sentence_font.display_transparency = false;
         sentence_font_info.setImageName( tmp_string_buffer );
-        parseTaggedString( sentence_font_info.image_name, &sentence_font_info.tag );
+        parseTaggedString( &sentence_font_info );
         setupAnimationInfo( &sentence_font_info );
         sentence_font_info.pos.x = readInt( &p_string_buffer );
         sentence_font_info.pos.y = readInt( &p_string_buffer );
@@ -407,7 +414,6 @@ int ONScripterLabel::selectCommand()
         }
         deleteSelectLink();
 
-        refreshAccumulationSurface( accumulation_surface );
         newPage( true );
 
         return ret;
@@ -629,8 +635,10 @@ int ONScripterLabel::quakeCommand()
     quake_effect.duration = readInt( &p_string_buffer );
 
     if ( event_mode & EFFECT_EVENT_MODE ){
-        if ( effect_counter == 0 )
+        if ( effect_counter == 0 ){
+            SDL_BlitSurface( text_surface, NULL, effect_src_surface, NULL );
             SDL_BlitSurface( text_surface, NULL, effect_dst_surface, NULL );
+        }
         quake_effect.effect = CUSTOM_EFFECT_NO + quake_type;
         return doEffect( QUAKE_EFFECT, NULL, DIRECT_EFFECT_IMAGE );
     }
@@ -828,9 +836,7 @@ int ONScripterLabel::lspCommand()
     sprite_info[ no ].pos.x = readInt( &p_string_buffer );
     sprite_info[ no ].pos.y = readInt( &p_string_buffer );
 
-    parseTaggedString( sprite_info[ no ].image_name, &sprite_info[ no ].tag );
-    sprite_info[ no ].tag.pos.x = sprite_info[ no ].pos.x;
-    sprite_info[ no ].tag.pos.y = sprite_info[ no ].pos.y;
+    parseTaggedString( &sprite_info[ no ] );
     setupAnimationInfo( &sprite_info[ no ] );
 
     if ( *p_string_buffer != '\0' ){
@@ -904,14 +910,13 @@ int ONScripterLabel::ldCommand()
     }
     else{
         int no;
-        TaggedInfo tagged_info;
 
         if ( loc == 'l' )      no = 0;
         else if ( loc == 'c' ) no = 1;
         else if ( loc == 'r' ) no = 2;
         
         tachi_info[ no ].setImageName( tmp_string_buffer );
-        parseTaggedString( tachi_info[ no ].image_name, &tachi_info[ no ].tag );
+        parseTaggedString( &tachi_info[ no ] );
         setupAnimationInfo( &tachi_info[ no ] );
         tachi_info[ no ].pos.x = screen_width * (no+1) / 4 - tachi_info[ no ].pos.w / 2;
         tachi_info[ no ].pos.y = underline_value - tachi_info[ no ].image_surface->h + 1;
@@ -1038,10 +1043,6 @@ int ONScripterLabel::getcursorposCommand()
     p_buf = p_string_buffer;
     setInt( p_buf, sentence_font.xy[1] * sentence_font.pitch_xy[1] + sentence_font.top_xy[1] );
 
-    printf("getcursorpos %d %d\n",
-           sentence_font.xy[0] * sentence_font.pitch_xy[0] + sentence_font.top_xy[0],
-           sentence_font.xy[1] * sentence_font.pitch_xy[1] + sentence_font.top_xy[1] );
-    
     return RET_CONTINUE;
 }
 
@@ -1077,7 +1078,7 @@ int ONScripterLabel::gameCommand()
     /* Lookback related variables */
     for ( int i=0 ; i<4 ; i++ ){
         setStr( &lookback_info[i].image_name, lookback_image_name[i] );
-        parseTaggedString( lookback_info[i].image_name, &lookback_info[i].tag );
+        parseTaggedString( &lookback_info[i] );
         setupAnimationInfo( &lookback_info[i] );
     }
     
@@ -1100,7 +1101,7 @@ int ONScripterLabel::exbtnCommand()
         sprite_no = readInt( &p_string_buffer );
         no = readInt( &p_string_buffer );
 
-        if ( sprite_info[ sprite_no ].tag.num_of_cells == 0 ) return RET_CONTINUE;
+        if ( sprite_info[ sprite_no ].num_of_cells == 0 ) return RET_CONTINUE;
         
         button = new ButtonLink();
         last_button_link->next = button;
@@ -1118,7 +1119,7 @@ int ONScripterLabel::exbtnCommand()
     memcpy( button->exbtn_ctl, tmp_string_buffer, strlen( tmp_string_buffer ) + 1 );
     
     if ( sprite_no >= 0 &&
-         ( sprite_info[ sprite_no ].image_surface || sprite_info[ sprite_no ].tag.trans_mode == TRANS_STRING ) ){
+         ( sprite_info[ sprite_no ].image_surface || sprite_info[ sprite_no ].trans_mode == AnimationInfo::TRANS_STRING ) ){
         button->image_rect = button->select_rect = sprite_info[ button->sprite_no ].pos;
         sprite_info[ sprite_no ].valid = true;
     }
@@ -1131,7 +1132,6 @@ int ONScripterLabel::erasetextwindowCommand()
     char *p_string_buffer = string_buffer + string_buffer_offset + 15; // strlen("erasetextwindow") = 15
 
     erase_text_window_flag = (readInt( &p_string_buffer )==1)?true:false;
-    printf("erase text window %s\n",erase_text_window_flag?"true":"false");
     
     return RET_CONTINUE;
 }
@@ -1241,6 +1241,7 @@ int ONScripterLabel::cselgotoCommand()
     current_link_label_info->offset       = 0;
 
     deleteSelectLink();
+    newPage( true );
     
     return RET_JUMP;
 }
@@ -1271,14 +1272,11 @@ int ONScripterLabel::cselbtnCommand()
     last_button_link = last_button_link->next;
     last_button_link->button_type = CUSTOM_SELECT_BUTTON;
     last_button_link->no          = button_no;
-#if 0
-    printf("ONScripterLabel::cselbtnCommand %d,%d,%d,%d \"%s\"\n",
-           csel_no,
-           last_button_link->no,
-           last_button_link->image_rect.x,
-           last_button_link->image_rect.y,
-           last_select_link->text);
-#endif
+    last_button_link->sprite_no   = csel_no;
+
+    sentence_font.font_valid_flag = csel_info.font_valid_flag;
+    sentence_font.ttf_font = csel_info.ttf_font;
+
     SDL_BlitSurface( text_surface, &last_button_link->select_rect, select_surface, NULL );
 
     return RET_CONTINUE;
@@ -1334,8 +1332,8 @@ int ONScripterLabel::cellCommand()
     int sprite_no = readInt( &p_string_buffer );
     int no        = readInt( &p_string_buffer );
 
-    if ( sprite_info[ sprite_no ].tag.num_of_cells > 0 )
-        sprite_info[ sprite_no ].tag.current_cell = no;
+    if ( sprite_info[ sprite_no ].num_of_cells > 0 )
+        sprite_info[ sprite_no ].current_cell = no;
         
     return RET_CONTINUE;
 }
@@ -1473,11 +1471,16 @@ int ONScripterLabel::btnwaitCommand()
     if ( event_mode & WAIT_BUTTON_MODE ){
         setInt( p_string_buffer, current_button_state.button );
 
-        if ( del_flag && current_button_state.button > 0 ) deleteButtonLink();
-        if ( exbtn_d_button_link.exbtn_ctl ) delete[] exbtn_d_button_link.exbtn_ctl;
-        exbtn_d_button_link.exbtn_ctl = NULL;
+        if ( del_flag ){
+            if ( current_button_state.button > 0 ) deleteButtonLink();
+            if ( exbtn_d_button_link.exbtn_ctl ){
+                delete[] exbtn_d_button_link.exbtn_ctl;
+                exbtn_d_button_link.exbtn_ctl = NULL;
+            }
+        }
 
         event_mode = IDLE_EVENT_MODE;
+
         return RET_CONTINUE;
     }
     else{
@@ -1488,31 +1491,52 @@ int ONScripterLabel::btnwaitCommand()
         ButtonLink *p_button_link = root_button_link.next;
         while( p_button_link ){
             if ( current_button_link.button_type == SPRITE_BUTTON || current_button_link.button_type == EX_SPRITE_BUTTON )
-                sprite_info[ current_button_link.sprite_no ].tag.current_cell = 0;
+                sprite_info[ current_button_link.sprite_no ].current_cell = 0;
             p_button_link = p_button_link->next;
         }
 
-        if ( selectbtn_flag ) SDL_BlitSurface( text_surface, NULL, shelter_text_surface, NULL );
-        refreshAccumulationSurface( accumulation_surface );
+        refreshAccumulationSurface( accumulation_surface,
+                                    NULL,
+                                    ( !erase_text_window_flag && text_on_flag)?REFRESH_SHADOW_MODE:REFRESH_NORMAL_MODE );
         SDL_BlitSurface( accumulation_surface, NULL, text_surface, NULL );
 
-        if ( selectbtn_flag ){
-            p_button_link = root_button_link.next;
-            while( p_button_link ){
-                if ( p_button_link->button_type == CUSTOM_SELECT_BUTTON )
-                    SDL_BlitSurface( shelter_text_surface, &p_button_link->select_rect, text_surface, &p_button_link->select_rect );
-                p_button_link = p_button_link->next;
-            }
-        }
-
         if ( !erase_text_window_flag && text_on_flag ){
-            shadowTextDisplay( NULL, text_surface );
             restoreTextBuffer();
             display_mode = TEXT_DISPLAY_MODE;
         }
         else{
             display_mode = NORMAL_DISPLAY_MODE;
         }
+        
+        /* ---------------------------------------- */
+        /* Resotre csel button */
+        FontInfo f_info = sentence_font;
+        f_info.xy[0] = 0;
+        f_info.xy[1] = 0;
+        
+        p_button_link = root_button_link.next;
+        while ( p_button_link ){
+            if ( p_button_link->button_type == CUSTOM_SELECT_BUTTON ){
+            
+                f_info.xy[0] = f_info.xy[1] = 0;
+                f_info.top_xy[0] = p_button_link->image_rect.x;
+                f_info.top_xy[1] = p_button_link->image_rect.y;
+
+                int counter = 0;
+                SelectLink *s_link = root_select_link.next;
+                while ( s_link ){
+                    if ( p_button_link->sprite_no == counter++ ) break;
+                    s_link = s_link->next;
+                }
+            
+                drawString( s_link->text, f_info.off_color, &f_info, false, text_surface );
+            
+            }
+            p_button_link = p_button_link->next;
+        }
+    
+        sentence_font.font_valid_flag = f_info.font_valid_flag;
+        sentence_font.ttf_font = f_info.ttf_font;
         
         SDL_BlitSurface( text_surface, NULL, select_surface, NULL );
 
@@ -1576,16 +1600,17 @@ int ONScripterLabel::bgCommand()
         bg_effect_image = COLOR_EFFECT_IMAGE;
 
         if ( !strcmp( (const char*)tmp_string_buffer, "white" ) ){
-            bg_info.tag.color[0] = bg_info.tag.color[1] = bg_info.tag.color[2] = 0xff;
+            bg_info.color[0] = bg_info.color[1] = bg_info.color[2] = 0xff;
         }
         else if ( !strcmp( (const char*)tmp_string_buffer, "black" ) ){
-            bg_info.tag.color[0] = bg_info.tag.color[1] = bg_info.tag.color[2] = 0x00;
+            bg_info.color[0] = bg_info.color[1] = bg_info.color[2] = 0x00;
         }
         else if ( tmp_string_buffer[0] == '#' ){
-            readColor( &bg_info.tag.color, tmp_string_buffer + 1 );
+            readColor( &bg_info.color, tmp_string_buffer + 1 );
         }
         else{
-            parseTaggedString( tmp_string_buffer, &bg_info.tag );
+            setStr( &bg_info.image_name, tmp_string_buffer );
+            parseTaggedString( &bg_info );
             setupAnimationInfo( &bg_info );
             bg_effect_image = BG_EFFECT_IMAGE;
             if ( bg_info.image_surface ){
@@ -1602,7 +1627,7 @@ int ONScripterLabel::bgCommand()
         }
 
         if ( bg_effect_image == COLOR_EFFECT_IMAGE ){
-            SDL_FillRect( background_surface, NULL, SDL_MapRGB( effect_dst_surface->format, bg_info.tag.color[0], bg_info.tag.color[1], bg_info.tag.color[2]) );
+            SDL_FillRect( background_surface, NULL, SDL_MapRGB( effect_dst_surface->format, bg_info.color[0], bg_info.color[1], bg_info.color[2]) );
         }
 
         char *buf = new char[ 512 ];
@@ -1632,6 +1657,30 @@ int ONScripterLabel::amspCommand()
     if ( sprite_info[ no ].trans > 255 ) sprite_info[ no ].trans = 255;
     else if ( sprite_info[ no ].trans < 0 ) sprite_info[ no ].trans = 0;
     //printf("amsp [%d] %d %d %d\n",no, sprite_info[ no ].x, sprite_info[ no ].y, sprite_info[ no ].trans );
+    
+    return RET_CONTINUE;
+}
+
+int ONScripterLabel::allspresumeCommand()
+{
+    all_sprite_hide_flag = false;
+    refreshAccumulationSurface( accumulation_surface,
+                                NULL,
+                                ( !erase_text_window_flag && text_on_flag)?REFRESH_SHADOW_MODE:REFRESH_NORMAL_MODE );
+    SDL_BlitSurface( accumulation_surface, NULL, text_surface, NULL );
+    flush();
+
+    return RET_CONTINUE;
+}
+
+int ONScripterLabel::allsphideCommand()
+{
+    all_sprite_hide_flag = true;
+    refreshAccumulationSurface( accumulation_surface,
+                                NULL,
+                                ( !erase_text_window_flag && text_on_flag)?REFRESH_SHADOW_MODE:REFRESH_NORMAL_MODE );
+    SDL_BlitSurface( accumulation_surface, NULL, text_surface, NULL );
+    flush();
     
     return RET_CONTINUE;
 }

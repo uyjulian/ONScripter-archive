@@ -421,8 +421,8 @@ void ONScripterLabel::timerEvent( void )
         else if ( clickstr_state == CLICK_NEWPAGE ) no = CURSOR_NEWPAGE_NO;
 
         showAnimation( &cursor_info[ no ] );
-        if ( cursor_info[ no ].tag.duration_list ){
-            startTimer( cursor_info[ no ].tag.duration_list[ cursor_info[ no ].tag.current_cell ] );
+        if ( cursor_info[ no ].duration_list ){
+            startTimer( cursor_info[ no ].duration_list[ cursor_info[ no ].current_cell ] );
         }
     }
     else if ( event_mode & EFFECT_EVENT_MODE ){
@@ -444,6 +444,7 @@ void ONScripterLabel::timerEvent( void )
         memcpy( string_buffer, effect_command, strlen(effect_command) + 1 );
         ret = this->parseLine();
         if ( ret == RET_CONTINUE ){
+            line_cache = -1;
             delete[] effect_command;
             if ( effect_blank == 0 || effect_counter == 0 ) goto timerEventTop;
             startTimer( effect_blank );
@@ -510,6 +511,7 @@ int ONScripterLabel::eventLoop()
             break;
 
           case ONS_MIDI_EVENT:
+            midi_play_once_flag = true;
             Mix_FreeMusic( midi_info );
             playMIDI();
             break;

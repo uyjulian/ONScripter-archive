@@ -188,7 +188,7 @@ ScriptParser::ScriptParser()
     
     /* ---------------------------------------- */
     /* Transmode related variables */
-    trans_mode = TRANS_TOPLEFT;
+    trans_mode = AnimationInfo::TRANS_TOPLEFT;
     
     /* ---------------------------------------- */
     /* Save/Load related variables */
@@ -318,6 +318,7 @@ int ScriptParser::open()
     root_link_label_info.next = NULL;
     root_link_label_info.current_line = 0;
     root_link_label_info.offset = 0;
+    root_link_label_info.textgosub_flag = false;
     root_link_label_info.label_info = lookupLabel("define");
     current_mode = DEFINE_MODE;
     current_link_label_info = &root_link_label_info;

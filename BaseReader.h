@@ -25,7 +25,6 @@
 #define __BASE_READER_H__
 
 #include <stdio.h>
-#include <assert.h>
 
 #ifndef SEEK_END
 #define SEEK_END 2

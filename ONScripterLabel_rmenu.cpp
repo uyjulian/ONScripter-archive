@@ -167,7 +167,7 @@ int ONScripterLabel::loadSaveFile( int no )
     loadInt( fp, &j ); sentence_font_info.pos.h = j - sentence_font_info.pos.y + 1;
 
     if ( !sentence_font.display_transparency ){
-        parseTaggedString( sentence_font_info.image_name, &sentence_font_info.tag );
+        parseTaggedString( &sentence_font_info );
         setupAnimationInfo( &sentence_font_info );
     }
     
@@ -220,16 +220,16 @@ int ONScripterLabel::loadSaveFile( int no )
     /* ---------------------------------------- */
     /* Load current images */
     bg_info.remove();
-    bg_info.tag.color[0] = (unsigned char)fgetc( fp );
-    bg_info.tag.color[1] = (unsigned char)fgetc( fp );
-    bg_info.tag.color[2] = (unsigned char)fgetc( fp );
-    bg_info.tag.num_of_cells = 1;
-    loadStr( fp, &bg_info.tag.file_name );
+    bg_info.color[0] = (unsigned char)fgetc( fp );
+    bg_info.color[1] = (unsigned char)fgetc( fp );
+    bg_info.color[2] = (unsigned char)fgetc( fp );
+    bg_info.num_of_cells = 1;
+    loadStr( fp, &bg_info.file_name );
     setupAnimationInfo( &bg_info );
     bg_effect_image = (EFFECT_IMAGE)fgetc( fp );
 
     if ( bg_effect_image == COLOR_EFFECT_IMAGE ){
-        SDL_FillRect( background_surface, NULL, SDL_MapRGB( effect_dst_surface->format, bg_info.tag.color[0], bg_info.tag.color[1], bg_info.tag.color[2]) );
+        SDL_FillRect( background_surface, NULL, SDL_MapRGB( effect_dst_surface->format, bg_info.color[0], bg_info.color[1], bg_info.color[2]) );
     }
     else{
         if ( bg_info.image_surface ){
@@ -253,15 +253,12 @@ int ONScripterLabel::loadSaveFile( int no )
         sprite_info[i].remove();
     }
 
-    effect_counter = 0;
-    doEffect( 1, &bg_info, bg_effect_image );
-    
     /* ---------------------------------------- */
     /* Load Tachi image and Sprite */
     for ( i=0 ; i<3 ; i++ ){
         loadStr( fp, &tachi_info[i].image_name );
         if ( tachi_info[i].image_name ){
-            parseTaggedString( tachi_info[i].image_name, &tachi_info[i].tag );
+            parseTaggedString( &tachi_info[i] );
             setupAnimationInfo( &tachi_info[ i ] );
             tachi_info[ i ].pos.x = screen_width * (i+1) / 4 - tachi_info[ i ].pos.w / 2;
             tachi_info[ i ].pos.y = underline_value - tachi_info[ i ].image_surface->h + 1;
@@ -278,19 +275,11 @@ int ONScripterLabel::loadSaveFile( int no )
         loadInt( fp, &sprite_info[i].trans );
         loadStr( fp, &sprite_info[i].image_name );
         if ( sprite_info[i].image_name ){
-            parseTaggedString( sprite_info[i].image_name, &sprite_info[i].tag );
+            parseTaggedString( &sprite_info[i] );
             setupAnimationInfo( &sprite_info[i] );
         }
     }
 
-    effect_counter = 0;
-    doEffect( 1, NULL, TACHI_EFFECT_IMAGE );
-
-    shadowTextDisplay();
-    restoreTextBuffer();
-    flush();
-    display_mode = TEXT_DISPLAY_MODE;
-    
     /* ---------------------------------------- */
     /* Load current playing CD track */
     stopBGM( false );
@@ -323,6 +312,12 @@ int ONScripterLabel::loadSaveFile( int no )
 
     fclose( fp );
 
+    refreshAccumulationSurface( accumulation_surface, NULL, REFRESH_SHADOW_MODE );
+    SDL_BlitSurface( accumulation_surface, NULL, text_surface, NULL );
+    restoreTextBuffer();
+    flush();
+    display_mode = TEXT_DISPLAY_MODE;
+    
     event_mode = tmp_event_mode;
     if ( event_mode & WAIT_BUTTON_MODE ) event_mode = WAIT_SLEEP_MODE; // Re-execute the selectCommand, etc.
 
@@ -447,10 +442,10 @@ int ONScripterLabel::saveSaveFile( int no )
     
     /* ---------------------------------------- */
     /* Save current images */
-    fputc( bg_info.tag.color[0], fp );
-    fputc( bg_info.tag.color[1], fp );
-    fputc( bg_info.tag.color[2], fp );
-    saveStr( fp, bg_info.tag.file_name );
+    fputc( bg_info.color[0], fp );
+    fputc( bg_info.color[1], fp );
+    fputc( bg_info.color[2], fp );
+    saveStr( fp, bg_info.file_name );
     fputc( bg_effect_image, fp );
 
     saveStr( fp, tachi_info[0].image_name );
@@ -598,7 +593,8 @@ void ONScripterLabel::executeSystemMenu()
         startTimer( MINIMUM_TIMER_RESOLUTION );
     }
     else{
-        shadowTextDisplay();
+        refreshAccumulationSurface( text_surface, NULL );
+        shadowTextDisplay( text_surface, text_surface, NULL, &menu_font );
 
         menu_font.num_xy[0] = menu_link_width;
         menu_font.num_xy[1] = menu_link_num;
@@ -649,7 +645,7 @@ void ONScripterLabel::executeWindowErase()
         leaveSystemCall();
     }
     else{
-        SDL_BlitSurface( accumulation_surface, NULL, text_surface, NULL );
+        refreshAccumulationSurface( text_surface, NULL, REFRESH_WINDOW_ERASE_MODE );
         flush();
 
         event_mode = WAIT_INPUT_MODE;
@@ -682,7 +678,8 @@ void ONScripterLabel::executeSystemLoad()
     else{
         searchSaveFiles();
     
-        shadowTextDisplay();
+        refreshAccumulationSurface( text_surface, NULL );
+        shadowTextDisplay( text_surface, text_surface, NULL, &menu_font );
 
         system_font.xy[0] = (system_font.num_xy[0] - strlen( load_menu_name ) / 2) / 2;
         system_font.xy[1] = 0;
@@ -742,7 +739,8 @@ void ONScripterLabel::executeSystemSave()
     else{
         searchSaveFiles();
 
-        shadowTextDisplay();
+        refreshAccumulationSurface( text_surface, NULL );
+        shadowTextDisplay( text_surface, text_surface, NULL, &menu_font );
 
         system_font.xy[0] = (system_font.num_xy[0] - strlen( save_menu_name ) / 2 ) / 2;
         system_font.xy[1] = 0;
@@ -788,6 +786,8 @@ void ONScripterLabel::executeSystemSave()
 
 void ONScripterLabel::setupLookbackButton()
 {
+    deleteButtonLink();
+    
     /* ---------------------------------------- */
     /* Previous button check */
     if ( (current_text_buffer->previous->xy[1] != -1 ) &&
@@ -817,7 +817,7 @@ void ONScripterLabel::setupLookbackButton()
                         text_surface, last_button_link->image_rect.x, last_button_link->image_rect.y,
                         lookback_info[0].pos.w, lookback_info[0].pos.h,
                         lookback_info[0].image_surface, 0, 0,
-                        lookback_info[0].alpha_offset, 0, -lookback_info[1].tag.trans_mode );
+                        lookback_info[0].alpha_offset, 0, -lookback_info[1].trans_mode );
         }
 
         if ( lookback_info[1].image_surface )
@@ -825,7 +825,7 @@ void ONScripterLabel::setupLookbackButton()
                         text_surface, last_button_link->image_rect.x, last_button_link->image_rect.y,
                         lookback_info[1].pos.w, lookback_info[1].pos.h,
                         lookback_info[1].image_surface, 0, 0,
-                        lookback_info[1].alpha_offset, 0, -lookback_info[1].tag.trans_mode );
+                        lookback_info[1].alpha_offset, 0, -lookback_info[1].trans_mode );
     }
 
     /* ---------------------------------------- */
@@ -856,7 +856,7 @@ void ONScripterLabel::setupLookbackButton()
                         text_surface, last_button_link->image_rect.x, last_button_link->image_rect.y,
                         lookback_info[2].pos.w, lookback_info[2].pos.h,
                         lookback_info[2].image_surface, 0, 0,
-                        lookback_info[2].alpha_offset, 0, -lookback_info[2].tag.trans_mode );
+                        lookback_info[2].alpha_offset, 0, -lookback_info[2].trans_mode );
         }
 
         if ( lookback_info[3].image_surface )
@@ -864,7 +864,7 @@ void ONScripterLabel::setupLookbackButton()
                         text_surface, last_button_link->image_rect.x, last_button_link->image_rect.y,
                         lookback_info[3].pos.w, lookback_info[3].pos.h,
                         lookback_info[3].image_surface, 0, 0,
-                        lookback_info[3].alpha_offset, 0, -lookback_info[3].tag.trans_mode );
+                        lookback_info[3].alpha_offset, 0, -lookback_info[3].trans_mode );
     }
 }
 
@@ -877,10 +877,10 @@ void ONScripterLabel::executeSystemLookback()
         if ( current_button_state.button == 0 ) return;
         if ( current_button_state.button < 0 ){
             event_mode = IDLE_EVENT_MODE;
+            deleteButtonLink();
             leaveSystemCall();
+            return;
         }
-        
-        deleteButtonLink();
         
         if ( current_button_state.button == 1 )
             current_text_buffer = current_text_buffer->previous;
@@ -898,7 +898,7 @@ void ONScripterLabel::executeSystemLookback()
         system_menu_mode = SYSTEM_LOOKBACK;
     }
 
-    shadowTextDisplay();
+    shadowTextDisplay( text_surface, accumulation_surface, NULL, &menu_font );
     for ( i=0 ; i<3 ; i++ ){
         color[i] = sentence_font.color[i];
         sentence_font.color[i] = lookback_color[i];

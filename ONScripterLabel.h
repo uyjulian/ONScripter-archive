@@ -132,6 +132,8 @@ public:
     int bgCommand();
     int bltCommand();
     int autoclickCommand();
+    int allspresumeCommand();
+    int allsphideCommand();
     int amspCommand();
     
 protected:
@@ -176,56 +178,6 @@ private:
             TACHI_EFFECT_IMAGE        = 3
             } EFFECT_IMAGE;
 
-    struct TaggedInfo{
-        int trans_mode;
-        char direct_color[8];
-        int pallet_number;
-        uchar3 color;
-        SDL_Rect pos; // pose and size of the current cell
-
-        int num_of_cells;
-        int current_cell;
-        int direction;
-        int *duration_list;
-        uchar3 *color_list;
-        int loop_mode;
-        
-        char *file_name;
-        char *mask_file_name;
-
-        TaggedInfo(){
-            current_cell = 0;
-            num_of_cells = 0;
-            direction = 1;
-            duration_list = NULL;
-            color_list = NULL;
-            file_name = NULL;
-            mask_file_name = NULL;
-        }
-        void remove(){
-            if ( duration_list ){
-                delete[] duration_list;
-                duration_list = NULL;
-            }
-            if ( color_list ){
-                delete[] color_list;
-                color_list = NULL;
-            }
-            if ( file_name ){
-                delete[] file_name;
-                file_name = NULL;
-            }
-            if ( mask_file_name ){
-                delete[] mask_file_name;
-                mask_file_name = NULL;
-            }
-            num_of_cells = 0;
-        }
-        ~TaggedInfo(){
-            remove();
-        }
-    };
-
     /* ---------------------------------------- */
     /* Global definitions */
     bool edit_flag;
@@ -250,11 +202,16 @@ private:
 
     /* ---------------------------------------- */
     /* Script related variables */
+    typedef enum{ REFRESH_NORMAL_MODE = 0,
+                      REFRESH_WINDOW_ERASE_MODE = 1,
+                      REFRESH_SHADOW_MODE = 2
+                      } REFRESH_MODE;
+    
     int display_mode;
     int event_mode;
     SDL_Surface *btndef_surface;
     SDL_Surface *background_surface; // Backgroud image
-    SDL_Surface *accumulation_surface; // Tachi image + background
+    SDL_Surface *accumulation_surface; // Text window + Sprite + Tachi image + background
     SDL_Surface *select_surface; // Select_image + Tachi image + background
     SDL_Surface *text_surface; // Text + Select_image + Tachi image + background
     SDL_Surface *screen_surface; // Text + Select_image + Tachi image + background
@@ -292,6 +249,7 @@ private:
         };
         ~ButtonLink(){
             if ( image_surface ) SDL_FreeSurface( image_surface );
+            if ( exbtn_ctl ) delete[] exbtn_ctl;
         };
     } root_button_link, *last_button_link, current_button_link, *shelter_button_link, exbtn_d_button_link;
 
@@ -303,51 +261,6 @@ private:
     int decodeExbtnControl( SDL_Surface *surface, char *ctl_str, bool draw_flag );
     void drawExbtn( SDL_Surface *surface, char *ctl_str );
     
-    /* ---------------------------------------- */
-    /* Animation related variables */
-    struct AnimationInfo{
-        bool valid;
-        bool abs_flag;
-        SDL_Rect pos;
-        int alpha_offset;
-        int trans;
-        struct TaggedInfo tag;
-        char *image_name;
-        SDL_Surface *image_surface;
-        SDL_Surface *preserve_surface;
-        SDL_Surface *mask_surface;
-
-        AnimationInfo(){
-            valid = false;
-            image_name = NULL;
-            image_surface = NULL;
-            preserve_surface = NULL;
-            mask_surface = NULL;
-            trans = 255;
-        }
-        void deleteImageName(){
-            if ( image_name ) delete[] image_name;
-            image_name = NULL;
-        }
-        void setImageName( char *name ){
-            deleteImageName();
-            image_name = new char[ strlen(name) + 1 ];
-            memcpy( image_name, name, strlen(name) + 1 );
-        }
-        void deleteSurface(){
-            if ( image_surface ) SDL_FreeSurface( image_surface );
-            image_surface = NULL;
-            if ( preserve_surface ) SDL_FreeSurface( preserve_surface );
-            preserve_surface = NULL;
-        }
-        void remove(){
-            valid = false;
-            deleteImageName();
-            deleteSurface();
-            tag.remove();
-        }
-    };
-
     /* ---------------------------------------- */
     /* Background related variables */
     AnimationInfo bg_info;
@@ -361,6 +274,7 @@ private:
     /* ---------------------------------------- */
     /* Sprite related variables */
     AnimationInfo sprite_info[MAX_SPRITE_NUM];
+    bool all_sprite_hide_flag;
     
     /* ---------------------------------------- */
     /* Cursor related variables */
@@ -467,7 +381,7 @@ private:
     int text_speed_no;
     int default_text_speed[3];
 
-    void shadowTextDisplay( SDL_Surface *dst_surface=NULL, SDL_Surface *src_surface=NULL, SDL_Rect *clip=NULL );
+    void shadowTextDisplay( SDL_Surface *dst_surface, SDL_Surface *src_surface, SDL_Rect *clip=NULL, FontInfo *info=NULL );
     void clearCurrentTextBuffer();
     void newPage( bool next_flag );
     
@@ -476,18 +390,17 @@ private:
     void flush( int x, int y, int w, int h );
     void executeLabel();
     int parseLine();
-    void parseTaggedString( char *buffer, struct TaggedInfo *tag );
-    void setupAnimationInfo( struct AnimationInfo *anim );
+    void parseTaggedString( AnimationInfo *anim );
+    void setupAnimationInfo( AnimationInfo *anim );
     void alphaBlend( SDL_Surface *dst_surface, int x, int y,
                      SDL_Surface *src1_surface, int x1, int y1, int wx, int wy,
                      SDL_Surface *src2_surface, int x2, int y2,
                      int x3, int y3, int mask_value, unsigned int effect_value=0, SDL_Rect *clip=NULL );
     int enterTextDisplayMode();
     SDL_Surface *loadImage( char *file_name );
-    SDL_Surface *loadTaggedImage( struct TaggedInfo *tag );
     void drawTaggedSurface( SDL_Surface *dst_surface, AnimationInfo *anim, SDL_Rect *clip );
-    void makeMonochromeSurface( SDL_Surface *surface, SDL_Rect *dst_rect=NULL, bool one_color_flag = true );
-    void refreshAccumulationSurface( SDL_Surface *surface, SDL_Rect *clip=NULL, bool shadow_flag = false );
+    void makeMonochromeSurface( SDL_Surface *surface, SDL_Rect *dst_rect=NULL, FontInfo *info=NULL );
+    void refreshAccumulationSurface( SDL_Surface *surface, SDL_Rect *clip=NULL, int refresh_mode = REFRESH_NORMAL_MODE );
     void mouseOverCheck( int x, int y );
     
     /* ---------------------------------------- */

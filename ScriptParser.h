@@ -29,10 +29,10 @@
 #include <string.h>
 #include <math.h>
 #include <time.h>
-#include <assert.h>
 
 #include "NsaReader.h"
 #include "DirectReader.h"
+#include "AnimationInfo.h"
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
@@ -64,6 +64,7 @@ public:
         struct LabelInfo label_info;
         int current_line;
         int offset;
+        bool textgosub_flag;
         char *current_script;
     };
     
@@ -223,7 +224,7 @@ protected:
     void setNumVariable( int no, int val );
     void setStr( char **dst, char *src );
     
-    void gosubReal( char *label );
+    void gosubReal( char *label, bool textgosub_flag = false );
 
     /* ---------------------------------------- */
     /* Effect related variables */
@@ -285,19 +286,6 @@ protected:
     
     /* ---------------------------------------- */
     /* Transmode related variables */
-    typedef enum{
-        TRANS_CLEAR = 0,
-            TRANS_ALPHA = 1,
-            TRANS_TOPLEFT = 2,
-            TRANS_COPY = 3,
-            TRANS_STRING = 4,
-            TRANS_DIRECT = 5,
-            TRANS_PALLET = 6,
-            TRANS_TOPRIGHT = 7,
-            TRANS_MASK = 8,
-            TRANS_FADE_MASK = 9,
-            TRANS_CROSSFADE_MASK = 10
-            } TRANS_MODE;
     int trans_mode;
     
     /* ---------------------------------------- */

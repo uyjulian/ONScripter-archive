@@ -189,7 +189,7 @@ struct NsaReader::FileInfo NsaReader::getFileByIndex( int index )
         if ( index < archive_info2[i].num_of_files ) return archive_info2[i].fi_list[index];
         index -= archive_info2[i].num_of_files;
     }
-    assert( false );
+    fprintf( stderr, "NsaReader::getFileByIndex  Index %d is out of range\n", index );
 
     return archive_info.fi_list[0];
 }

@@ -197,6 +197,7 @@ int ONScripterLabel::tablegotoCommand()
             current_link_label_info->label_info = script_h.lookupLabel( buf+1 );
             current_link_label_info->current_line = 0;
             script_h.setCurrent( current_link_label_info->label_info.start_address );
+            string_buffer_offset = 0;
     
             return RET_JUMP;
         }
@@ -404,11 +405,15 @@ int ONScripterLabel::selectCommand()
             current_link_label_info->label_info = script_h.lookupLabel( last_select_link->label );
             current_link_label_info->current_line = 0;
             script_h.setCurrent( current_link_label_info->label_info.start_address );
+            string_buffer_offset = 0;
+
             ret = RET_JUMP;
         }
         else if ( select_mode == SELECT_GOSUB_MODE ){
             current_link_label_info->current_line = select_label_info.current_line;
+            string_buffer_offset = 0;
             gosubReal( last_select_link->label, false, select_label_info.current_script );
+
             ret = RET_JUMP;
         }
         else{
@@ -507,6 +512,7 @@ int ONScripterLabel::selectCommand()
                 current_link_label_info->label_info = script_h.lookupLabel( "customsel" );
                 current_link_label_info->current_line = 0;
                 script_h.setCurrent( current_link_label_info->label_info.start_address );
+                string_buffer_offset = 0;
 
                 return RET_JUMP;
             }
@@ -1077,6 +1083,7 @@ int ONScripterLabel::jumpbCommand()
     current_link_label_info->current_line = last_tilde.current_line;
 
     script_h.setCurrent( last_tilde.current_script );
+    string_buffer_offset = 0;
 
     return RET_JUMP;
 }
@@ -1244,6 +1251,7 @@ int ONScripterLabel::gameCommand()
     current_link_label_info->label_info = script_h.lookupLabel( "start" );
     current_link_label_info->current_line = 0;
     script_h.setCurrent( current_link_label_info->label_info.start_address );
+    string_buffer_offset = 0;
     current_mode = NORMAL_MODE;
 
     sentence_font.wait_time = default_text_speed[text_speed_no];
@@ -1423,6 +1431,7 @@ int ONScripterLabel::cselgotoCommand()
     current_link_label_info->label_info   = script_h.lookupLabel( link->label );
     current_link_label_info->current_line = 0;
     script_h.setCurrent( current_link_label_info->label_info.start_address );
+    string_buffer_offset = 0;
     
     saveon_flag = shelter_soveon_flag;
 

@@ -367,10 +367,10 @@ int ScriptParser::parseLine()
 {
     int ret, lut_counter = 0;
 
+    if ( debug_level > 0 ) printf("ScriptParser::Parseline %s\n", script_h.getStringBuffer() );
+
     if ( script_h.getStringBuffer()[0] == ';' ) return RET_COMMENT;
     else if ( script_h.isText() ) return RET_NOMATCH;
-
-    if ( debug_level > 0 ) printf("ScriptParser::Parseline %s\n", script_h.getStringBuffer() );
 
     while( func_lut[ lut_counter ].method ){
         if ( !strcmp( func_lut[ lut_counter ].command, script_h.getStringBuffer() ) ){

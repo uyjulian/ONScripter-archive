@@ -280,7 +280,11 @@ int ONScripterLabel::clickWait( char *out_text )
             saveoffCommand();
             if ( out_text ) string_buffer_offset += 2;
             else            string_buffer_offset++;
-            gosubReal( textgosub_label, true, script_h.next_script );
+            if ( script_h.getStringBuffer()[string_buffer_offset] == '\0' ){
+                script_h.readToken();
+                string_buffer_offset = 0;
+            }
+            gosubReal( textgosub_label, true, script_h.getCurrent() );
             new_line_skip_flag = true;
             return RET_JUMP;
         }
@@ -313,7 +317,11 @@ int ONScripterLabel::clickNewPage( char *out_text )
             saveoffCommand();
             if ( out_text ) string_buffer_offset += 2;
             else            string_buffer_offset++;
-            gosubReal( textgosub_label, false, script_h.next_script );
+            if ( script_h.getStringBuffer()[string_buffer_offset] == '\0' ){
+                script_h.readToken();
+                string_buffer_offset = 0;
+            }
+            gosubReal( textgosub_label, false, script_h.getCurrent() );
             new_line_skip_flag = true;
             return RET_JUMP;
         }

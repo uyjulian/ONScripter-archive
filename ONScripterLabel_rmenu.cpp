@@ -263,7 +263,7 @@ int ONScripterLabel::loadSaveFile( int no )
     }
     
     int tmp_event_mode = fgetc( fp );
-    
+
     /* ---------------------------------------- */
     /* Load variables */
     loadVariables( fp, 0, 200 );
@@ -501,11 +501,7 @@ int ONScripterLabel::saveSaveFile( int no )
     
     /* ---------------------------------------- */
     /* Save link label info */
-    if ( script_h.isQuat() ) // for puttext
-        current_link_label_info->current_script = script_h.getCurrent();
-    else
-        current_link_label_info->current_script = script_h.next_script;
-
+    current_link_label_info->current_script = script_h.getCurrent();
     LinkLabelInfo *info = &root_link_label_info;
 
     while( info ){
@@ -518,9 +514,7 @@ int ONScripterLabel::saveSaveFile( int no )
         saveInt( fp, info->current_script - script_h.getCurrent() );
         script_h.popCurrent();
         saveInt( fp, string_buffer_offset );
-        //saveInt( fp, info->offset );
-        //saveInt( fp, info->end_of_line_flag?1:0 );
-        //saveInt( fp, info->current_script - info->label_info.start_address );
+
         if ( info->next ) fputc( 1, fp );
         info = info->next;
     }

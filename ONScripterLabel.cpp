@@ -539,7 +539,6 @@ void ONScripterLabel::executeLabel()
             continue;
         }
         else if ( ret == RET_JUMP ){
-            string_buffer_offset = 0;
             goto executeLabelTop;
         }
         else if ( ret == RET_CONTINUE || ret == RET_CONTINUE_NOREAD ){

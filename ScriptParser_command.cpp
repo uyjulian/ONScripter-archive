@@ -147,6 +147,7 @@ int ScriptParser::skipCommand()
     
     script_h.setCurrent( current_link_label_info->label_info.start_address );
     script_h.skipLine( current_link_label_info->current_line );
+    string_buffer_offset = 0;
 
     return RET_JUMP;
 }
@@ -257,20 +258,19 @@ int ScriptParser::returnCommand()
     
     current_link_label_info = current_link_label_info->previous;
 
+    script_h.setCurrent( current_link_label_info->current_script );
+    string_buffer_offset = current_link_label_info->next->string_buffer_offset;
+
     if ( current_link_label_info->next->textgosub_flag ){
         script_h.next_text_line_flag = false;
+        
+        if ( script_h.getStringBuffer()[string_buffer_offset] == 0x0a )
+            script_h.text_line_flag = true;
     }
-    script_h.setCurrent( current_link_label_info->current_script );
-    if ( current_link_label_info->next->textgosub_flag &&
-         script_h.getStringBuffer()[0] == 0x0a ){
-        script_h.text_line_flag = true;
-    }
-
-    string_buffer_offset = current_link_label_info->next->string_buffer_offset;
 
     delete current_link_label_info->next;
     current_link_label_info->next = NULL;
-
+    
     return RET_JUMP;
 }
 
@@ -342,6 +342,7 @@ int ScriptParser::nextCommand()
         current_link_label_info->label_info   = current_for_link->label_info;
         current_link_label_info->current_line = current_for_link->current_line;
         script_h.setCurrent( current_for_link->current_script );
+        string_buffer_offset = 0;
         
         return RET_JUMP;
     }
@@ -701,6 +702,7 @@ int ScriptParser::gotoCommand()
     current_link_label_info->label_info = script_h.lookupLabel( buf+1 );
     current_link_label_info->current_line = 0;
     script_h.setCurrent( current_link_label_info->label_info.start_address );
+    string_buffer_offset = 0;
     
     return RET_JUMP;
 }
@@ -718,7 +720,9 @@ void ScriptParser::gosubReal( const char *label, bool textgosub_flag, char *curr
     info->current_line = 0;
     info->textgosub_flag = textgosub_flag;
     info->string_buffer_offset = string_buffer_offset;
+
     script_h.setCurrent( info->label_info.start_address );
+    string_buffer_offset = 0;
     
     current_link_label_info->next = info;
     current_link_label_info = current_link_label_info->next;
@@ -727,6 +731,7 @@ void ScriptParser::gosubReal( const char *label, bool textgosub_flag, char *curr
 int ScriptParser::gosubCommand()
 {
     const char *buf = script_h.readStr();
+    string_buffer_offset = 0;
     gosubReal( buf+1, false, script_h.next_script );
 
     return RET_JUMP;
@@ -975,6 +980,7 @@ int ScriptParser::breakCommand()
         current_link_label_info->label_info = script_h.lookupLabel( buf+1 );
         current_link_label_info->current_line = 0;
         script_h.setCurrent( current_link_label_info->label_info.start_address );
+        string_buffer_offset = 0;
         
         return RET_JUMP;
     }

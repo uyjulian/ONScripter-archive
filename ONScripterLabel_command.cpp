@@ -128,13 +128,7 @@ int ONScripterLabel::trapCommand()
 
 int ONScripterLabel::textclearCommand()
 {
-     clearCurrentTextBuffer();
-
-    /* ---------------------------------------- */
-    /* Clear the screen */
-    shadowTextDisplay();
-    flush();
-
+    newPage( false );
     return RET_CONTINUE;
 }
 
@@ -213,7 +207,6 @@ int ONScripterLabel::setwindowCommand()
     sentence_font.pitch_xy[0] = readInt( &p_string_buffer ) + sentence_font.font_size;
     sentence_font.pitch_xy[1] = readInt( &p_string_buffer ) + sentence_font.font_size;
     sentence_font.wait_time = readInt( &p_string_buffer );
-    //if ( sentence_font.wait_time == 0 ) sentence_font.wait_time = 10;
     sentence_font.display_bold = readInt( &p_string_buffer )?true:false;
     sentence_font.display_shadow = readInt( &p_string_buffer )?true:false;
 
@@ -301,6 +294,7 @@ int ONScripterLabel::selectCommand()
     char *p_script_buffer = current_link_label_info->current_script;
     readLine( &p_script_buffer );
     int select_mode;
+    SelectLink *last_select_link;
     char *p_string_buffer, *p_buf;
 
     if ( !strncmp( string_buffer + string_buffer_offset, "selnum", 6 ) ){
@@ -318,7 +312,6 @@ int ONScripterLabel::selectCommand()
         select_mode = 0;
         p_string_buffer = string_buffer + string_buffer_offset + 6; // strlen("select") = 6
     }
-    SelectLink *tmp_select_link = NULL;
     bool comma_flag, first_token_flag = true;
     int count = 0;
 
@@ -329,16 +322,13 @@ int ONScripterLabel::selectCommand()
         if ( current_button_state.button == 0 ) return RET_WAIT;
         
         event_mode = IDLE_EVENT_MODE;
-        int counter = 1;
 
         deleteButtonLink();
 
+        int counter = 1;
         last_select_link = root_select_link.next;
         while ( last_select_link ){
-            if ( current_button_state.button == counter++ ){
-                //printf("button %d label %s is selected \n",current_button_state.button, last_select_link->label);
-                break;
-            }
+            if ( current_button_state.button == counter++ ) break;
             last_select_link = last_select_link->next;
         }
 
@@ -362,17 +352,19 @@ int ONScripterLabel::selectCommand()
 
         refreshAccumulationSurface( accumulation_surface );
         //SDL_BlitSurface( background_surface, NULL, accumulation_surface, NULL );
-        enterNewPage();
+        newPage( true );
 
         return ret;
     }
     else{
+        SelectLink *link;
         shortcut_mouse_line = -1;
         flush();
         skip_flag = false;
         xy[0] = sentence_font.xy[0];
         xy[1] = sentence_font.xy[1];
-        
+
+        last_select_link = &root_select_link;
         select_label_info.current_line = current_link_label_info->current_line;
         while(1){
             comma_flag = readStr( &p_string_buffer, tmp_string_buffer );
@@ -385,15 +377,12 @@ int ONScripterLabel::selectCommand()
                 }
                 count++;
                 if ( select_mode == 2 || count % 2 ){
-                    tmp_select_link = new SelectLink();
-                    tmp_select_link->next = NULL;
-                    tmp_select_link->text = new char[ strlen(tmp_string_buffer) + 1 ];
-                    memcpy( tmp_select_link->text, tmp_string_buffer, strlen(tmp_string_buffer) + 1 );
+                    link = new SelectLink();
+                    setStr( &link->text, tmp_string_buffer );
                 }
                 if ( select_mode == 2 || !(count % 2) ){
-                    tmp_select_link->label = new char[ strlen(tmp_string_buffer+1) + 1 ];
-                    memcpy( tmp_select_link->label, tmp_string_buffer+1, strlen(tmp_string_buffer+1) + 1 );
-                    last_select_link->next = tmp_select_link;
+                    setStr( &link->label, tmp_string_buffer+1 );
+                    last_select_link->next = link;
                     last_select_link = last_select_link->next;
                 }
             }
@@ -411,9 +400,8 @@ int ONScripterLabel::selectCommand()
                 select_label_info.current_line++;
                 //printf("after readline %s\n",string_buffer);
                 
-                while( string_buffer[ string_buffer_offset ] == ' ' ||
-                       string_buffer[ string_buffer_offset ] == '\t' ) string_buffer_offset++;
                 p_string_buffer = string_buffer + string_buffer_offset;
+                SKIP_SPACE( p_string_buffer );
                 assert ( !comma_flag || string_buffer[ string_buffer_offset ] != ',' );
                 if ( !comma_flag && string_buffer[ string_buffer_offset ] != ',' ) break;
 
@@ -422,20 +410,17 @@ int ONScripterLabel::selectCommand()
             }
             
             if ( first_token_flag ) first_token_flag = false;
-
         }
         select_label_info.offset = string_buffer_offset;
         //printf("select end\n");
 
-        tmp_select_link = root_select_link.next;
+        last_select_link = root_select_link.next;
         int counter = 1;
-        while( tmp_select_link ){
-            last_button_link->next = getSelectableSentence( tmp_select_link->text, &sentence_font );
+        while( last_select_link ){
+            last_button_link->next = getSelectableSentence( last_select_link->text, &sentence_font );
             last_button_link = last_button_link->next;
             last_button_link->no = counter++;
-
-            //printf(" link text %s label %s\n", tmp_select_link->text, tmp_select_link->label );
-            tmp_select_link = tmp_select_link->next;
+            last_select_link = last_select_link->next;
         }
         SDL_BlitSurface( text_surface, NULL, select_surface, NULL );
 
@@ -535,6 +520,40 @@ int ONScripterLabel::resetCommand()
     SDL_BlitSurface( accumulation_surface, NULL, text_surface, NULL );
 
     return RET_JUMP;
+}
+
+int ONScripterLabel::quakeCommand()
+{
+    char *p_string_buffer;
+    int quake_type;
+
+    if ( !strncmp( string_buffer + string_buffer_offset, "quakey", 6 ) ){
+        quake_type = 0;
+        p_string_buffer = string_buffer + string_buffer_offset + 6; // strlen("quakey") = 6
+    }
+    else if ( !strncmp( string_buffer + string_buffer_offset, "quakex", 6 ) ){
+        quake_type = 1;
+        p_string_buffer = string_buffer + string_buffer_offset + 6; // strlen("quakex") = 6
+    }
+    else{
+        quake_type = 2;
+        p_string_buffer = string_buffer + string_buffer_offset + 5; // strlen("quake") = 5
+    }
+
+    quake_effect.num      = readInt( &p_string_buffer );
+    quake_effect.duration = readInt( &p_string_buffer );
+
+    if ( event_mode & EFFECT_EVENT_MODE ){
+        quake_effect.effect = CUSTOM_EFFECT_NO + quake_type;
+        return doEffect( QUAKE_EFFECT, NULL, DIRECT_EFFECT_IMAGE );
+    }
+    else{
+        char *buf = new char[512];
+        if ( quake_type == 0 )      sprintf( buf, "quakey %d, %d", quake_effect.num, quake_effect.duration );
+        else if ( quake_type == 1 ) sprintf( buf, "quakex %d, %d", quake_effect.num, quake_effect.duration );
+        else if ( quake_type == 2 ) sprintf( buf, "quake %d, %d",  quake_effect.num, quake_effect.duration );
+        return setEffect( RET_WAIT_NEXT, buf );
+    }
 }
 
 int ONScripterLabel::puttextCommand()

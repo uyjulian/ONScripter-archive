@@ -41,6 +41,8 @@
 
 #define MAX_SPRITE_NUM 256
 
+#define CUSTOM_EFFECT_NO 100
+
 class ONScripterLabel : public ScriptParser
 {
 public:
@@ -76,6 +78,7 @@ public:
     int resetCommand();
     int rndCommand();
     int rmodeCommand();
+    int quakeCommand();
     int puttextCommand();
     int printCommand();
     int playstopCommand();
@@ -355,7 +358,12 @@ private:
         struct SelectLink *next;
         char *text;
         char *label;
-    } root_select_link, *last_select_link;
+
+        SelectLink(){
+            next = NULL;
+            text = label = NULL;
+        };
+    } root_select_link;
     struct LinkLabelInfo select_label_info;
     int shortcut_mouse_line;
 
@@ -394,7 +402,7 @@ private:
 
     void shadowTextDisplay( SDL_Surface *dst_surface=NULL, SDL_Surface *src_surface=NULL );
     void clearCurrentTextBuffer();
-    void enterNewPage();
+    void newPage( bool next_flag );
     
     void deleteLabelLink();
     void flush( SDL_Rect *rect=NULL );
@@ -422,7 +430,6 @@ private:
     int  system_menu_mode;
 
     int shelter_event_mode;
-    //uchar3 shelter_sentence_color;
     struct TextBuffer *shelter_text_buffer;
     
     void searchSaveFiles();

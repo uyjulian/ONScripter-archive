@@ -4,7 +4,7 @@
 #
 
 INCS = `sdl-config --cflags` `smpeg-config --cflags`
-LIBS = `sdl-config --libs` `smpeg-config --libs` -lSDL_ttf -lSDL_image -lSDL_mixer -lbz2
+LIBS = `sdl-config --libs` `smpeg-config --libs` -lSDL_ttf -lSDL_image -lSDL_mixer -lbz2 -lm
 
 EXESUFFIX =
 OBJSUFFIX = .o

@@ -25,11 +25,10 @@
 
 #define EFFECT_STRIPE_WIDTH 16
 #define EFFECT_STRIPE_CURTAIN_WIDTH 24
+#define EFFECT_QUAKE_AMP 12
 
 int ONScripterLabel::setEffect( int immediate_flag, char *buf )
 {
-    //printf("setEffect %d\n",immediate_flag);
-
     if ( immediate_flag == RET_WAIT || immediate_flag == RET_WAIT_NEXT ){
         effect_counter = 0;
         effect_command = buf;
@@ -68,26 +67,7 @@ int ONScripterLabel::doEffect( int effect_no, AnimationInfo *anim, int effect_im
             break;
             
           case COLOR_EFFECT_IMAGE:
-            //SDL_FillRect( background_surface, NULL, SDL_MapRGB( effect_dst_surface->format, anim->tag.color[0], anim->tag.color[1], anim->tag.color[2]) );
-            refreshAccumulationSurface( effect_dst_surface );
-            break;
-
           case BG_EFFECT_IMAGE:
-#if 0            
-            if ( anim->image_surface ){
-                src_rect.x = 0;
-                src_rect.y = 0;
-                src_rect.w = anim->image_surface->w;
-                src_rect.h = anim->image_surface->h;
-                dst_rect.x = (screen_width - anim->image_surface->w) / 2;
-                dst_rect.y = (screen_height - anim->image_surface->h) / 2;
-
-                SDL_BlitSurface( anim->image_surface, &src_rect, background_surface, &dst_rect );
-            }
-#endif            
-            refreshAccumulationSurface( effect_dst_surface );
-            break;
-            
           case TACHI_EFFECT_IMAGE:
             refreshAccumulationSurface( effect_dst_surface );
             break;
@@ -299,6 +279,29 @@ int ONScripterLabel::doEffect( int effect_no, AnimationInfo *anim, int effect_im
                     effect_src_surface, 0, 0, screen_width, screen_height,
                     effect_dst_surface, 0, 0,
                     0, 0, -TRANS_CROSSFADE_MASK, 256 * effect_counter * 2 / effect.duration );
+        break;
+
+      case (CUSTOM_EFFECT_NO + 0 ):
+        dst_rect.x = 0;
+        dst_rect.y = (Sint16)(sin(M_PI * 2.0 * effect.num * effect_counter / effect.duration) *
+                              EFFECT_QUAKE_AMP * effect.num * (effect.duration -  effect_counter) / effect.duration);
+        SDL_FillRect( text_surface, NULL, SDL_MapRGBA( background_surface->format, 0, 0, 0, 0 ) );
+        SDL_BlitSurface( effect_dst_surface, NULL, text_surface, &dst_rect );
+        break;
+        
+      case (CUSTOM_EFFECT_NO + 1 ):
+        dst_rect.x = (Sint16)(sin(M_PI * 2.0 * effect.num * effect_counter / effect.duration) *
+                              EFFECT_QUAKE_AMP * effect.num * (effect.duration -  effect_counter) / effect.duration);
+        dst_rect.y = 0;
+        SDL_FillRect( text_surface, NULL, SDL_MapRGBA( background_surface->format, 0, 0, 0, 0 ) );
+        SDL_BlitSurface( effect_dst_surface, NULL, text_surface, &dst_rect );
+        break;
+        
+      case (CUSTOM_EFFECT_NO + 2 ):
+        dst_rect.x = effect.num*((int)(3.0*rand()/(RAND_MAX+1.0)) - 1) * 2;
+        dst_rect.y = effect.num*((int)(3.0*rand()/(RAND_MAX+1.0)) - 1) * 2;
+        SDL_FillRect( text_surface, NULL, SDL_MapRGBA( background_surface->format, 0, 0, 0, 0 ) );
+        SDL_BlitSurface( effect_dst_surface, NULL, text_surface, &dst_rect );
         break;
     }
 

@@ -268,14 +268,8 @@ ScriptParser::ScriptParser()
     last_str_alias = &root_str_alias;
     last_str_alias->next = NULL;
 
-    window_effect.effect = 10;
-    window_effect.duration = 1000;
-    window_effect.image = NULL;
-    print_effect.effect = 10;
-    print_effect.duration = 1000;
-    print_effect.image = NULL;
-    tmp_effect.image = NULL;
-    
+    /* ---------------------------------------- */
+    /* Effect related variables */
     root_effect_link.num = 0;
     root_effect_link.effect = 0;
     root_effect_link.duration = 0;
@@ -964,10 +958,11 @@ void ScriptParser::skipToken()
 
 struct ScriptParser::EffectLink ScriptParser::getEffect( int effect_no )
 {
-    if ( effect_no == WINDOW_EFFECT )    return window_effect;
-    else if (effect_no == PRINT_EFFECT ) return print_effect;
-    else if (effect_no == TMP_EFFECT )   return tmp_effect;
-    
+    if ( effect_no == WINDOW_EFFECT )     return window_effect;
+    else if (effect_no == PRINT_EFFECT )  return print_effect;
+    else if (effect_no == TMP_EFFECT )    return tmp_effect;
+    else if (effect_no == QUAKE_EFFECT )  return quake_effect;
+
     struct EffectLink *p_effect_link = &root_effect_link;
     while( p_effect_link ){
         if ( p_effect_link->num == effect_no ) return *p_effect_link;

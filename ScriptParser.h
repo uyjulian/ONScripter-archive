@@ -27,11 +27,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 #include <time.h>
 #include <assert.h>
 
 #include "NsaReader.h"
 #include "DirectReader.h"
+
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
 
 #define MINIMUM_TIMER_RESOLUTION 10
 
@@ -71,13 +76,6 @@ public:
         struct StringAlias *next;
         char *alias;
         char *str;
-    };
-    struct EffectLink{
-        struct EffectLink *next;
-        int num;
-        int effect;
-        int duration;
-        char *image;
     };
 
     typedef enum{ SYSTEM_NULL = 0, SYSTEM_SKIP = 1, SYSTEM_RESET = 2, SYSTEM_SAVE = 3, SYSTEM_LOAD = 4, SYSTEM_LOOKBACK = 5, SYSTEM_WINDOWERASE = 6, SYSTEM_MENU = 7  } SYSTEM_CALLS;
@@ -179,8 +177,6 @@ protected:
     char *string_buffer, *tmp_string_buffer;
 
     struct LinkLabelInfo root_link_label_info, *current_link_label_info;
-    struct EffectLink getEffect( int effect_no );
-    int readEffect( char **buf, struct EffectLink *effect );
 
     /* ---------------------------------------- */
     /* Global definitions */
@@ -213,12 +209,32 @@ protected:
     void setNumVariable( int no, int val );
     void setStr( char **dst, char *src );
     
-    int effect_blank;
-
     void gosubReal( char *label );
 
-    typedef enum{ WINDOW_EFFECT = -1, PRINT_EFFECT = -2, TMP_EFFECT = -3  } EFFECT_MODE;
-    struct EffectLink window_effect, print_effect, tmp_effect;
+    /* ---------------------------------------- */
+    /* Effect related variables */
+    typedef enum{ WINDOW_EFFECT = -1, PRINT_EFFECT = -2, TMP_EFFECT = -3, QUAKE_EFFECT = -4  } EFFECT_MODE;
+    struct EffectLink{
+        struct EffectLink *next;
+        int num;
+        int effect;
+        int duration;
+        char *image;
+
+        EffectLink(){
+            next = NULL;
+            effect = 10;
+            duration = 1000;
+            image = NULL;
+        };
+    };
+    
+    struct EffectLink root_effect_link, *last_effect_link, window_effect, print_effect, tmp_effect, quake_effect;
+    
+    int effect_blank;
+
+    struct EffectLink getEffect( int effect_no );
+    int readEffect( char **buf, struct EffectLink *effect );
 
     /* ---------------------------------------- */
     /* Lookback related variables */
@@ -251,7 +267,7 @@ protected:
     /* Transmode related variables */
     typedef enum{
         TRANS_CLEAR = 0,
-        TRANS_ALPHA = 1,
+            TRANS_ALPHA = 1,
             TRANS_TOPLEFT = 2,
             TRANS_COPY = 3,
             TRANS_STRING = 4,
@@ -353,7 +369,6 @@ private:
 
     struct NameAlias root_name_alias, *last_name_alias;
     struct StringAlias root_str_alias, *last_str_alias;
-    struct EffectLink root_effect_link, *last_effect_link;
 
     int parseNumAlias( char **buf );
 

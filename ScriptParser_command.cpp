@@ -846,8 +846,6 @@ int ScriptParser::effectCommand()
 
         last_effect_link->next = new EffectLink();
         last_effect_link = last_effect_link->next;
-        last_effect_link->next = NULL;
-        last_effect_link->image = NULL;
         p_string_buffer = string_buffer + string_buffer_offset + 6; // strlen("effect") = 6
         elink = last_effect_link;
     }

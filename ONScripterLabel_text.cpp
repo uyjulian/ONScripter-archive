@@ -270,7 +270,7 @@ int ONScripterLabel::textCommand( char *text )
             event_mode = IDLE_EVENT_MODE;
             if ( string_buffer[ string_buffer_offset ] != '\\' ) current_link_label_info->offset = ++string_buffer_offset;
             current_link_label_info->offset = ++string_buffer_offset;
-            enterNewPage();
+            newPage( true );
             new_line_skip_flag = true;
             clickstr_state = CLICK_NONE;
             return RET_CONTINUE;

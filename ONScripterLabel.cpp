@@ -22,6 +22,9 @@
  */
 
 #include "ONScripterLabel.h"
+#if defined(LINUX)
+#include <signal.h>
+#endif
 
 extern void initSJIS2UTF16();
 
@@ -32,6 +35,7 @@ extern void initSJIS2UTF16();
 
 #define FONT_FILE "default.ttf"
 #define REGISTRY_FILE "registry.txt"
+#define TMP_MIDI_FILE "tmp.mid"
 
 #define DEFAULT_TEXT_SPEED1 40 // Low speed
 #define DEFAULT_TEXT_SPEED2 20 // Middle speed
@@ -39,6 +43,7 @@ extern void initSJIS2UTF16();
 
 extern void mp3callback( void *userdata, Uint8 *stream, int len );
 extern Uint32 cdaudioCallback( Uint32 interval, void *param );
+extern void midiCallback( int sig );
 extern SDL_TimerID timer_cdaudio_id;
 
 typedef int (ONScripterLabel::*FuncList)();
@@ -282,8 +287,9 @@ ONScripterLabel::ONScripterLabel( bool cdaudio_flag, char *default_font, char *d
     }
 
     mp3_sample = NULL;
-    mp3_file_name = NULL;
+    music_file_name = NULL;
     mp3_buffer = NULL;
+    midi_info = NULL;
     current_cd_track = -1;
     for ( i=0 ; i<MIX_CHANNELS ; i++ ) wave_sample[i] = NULL;
     
@@ -1107,7 +1113,6 @@ void ONScripterLabel::shadowTextDisplay( SDL_Surface *dst_surface, SDL_Surface *
                 rect.h = clip->y + clip->h - rect.y;
             }
         }
-    
         makeMonochromeSurface( dst_surface, &rect, false );
     }
     else{
@@ -1139,11 +1144,64 @@ void ONScripterLabel::newPage( bool next_flag )
     flush();
 }
 
+int ONScripterLabel::playMIDIFile()
+{
+    if ( !audio_open_flag ) return -1;
+
+    FILE *fp;
+
+    printf( "playMIDI %s once %d\n", music_file_name, music_play_once_flag );
+    
+    if ( (fp = fopen( TMP_MIDI_FILE, "wb" )) == NULL ){
+        fprintf( stderr, "can't open temporaly MIDI file\n" );
+        return -1;
+    }
+
+    unsigned long length = cBR->getFileLength( music_file_name );
+    if ( length == 0 ){
+        fprintf( stderr, " *** can't find file [%s] ***\n", music_file_name );
+        return -1;
+    }
+    unsigned char *buffer = new unsigned char[length];
+    cBR->getFile( music_file_name, buffer );
+    fwrite( buffer, 1, length, fp );
+    delete[] buffer;
+
+    fclose( fp );
+
+    return playMIDI();
+}
+
+int ONScripterLabel::playMIDI()
+{
+    int midi_looping = music_play_once_flag ? 0 : -1;
+
+    char *music_cmd = getenv( "MUSIC_CMD" );
+
+#if defined(LINUX)
+    signal( SIGCHLD, midiCallback );
+    if ( music_cmd ) midi_looping = 0;
+#endif
+
+    Mix_SetMusicCMD( music_cmd );
+
+    if ( (midi_info = Mix_LoadMUS( TMP_MIDI_FILE )) == NULL ) {
+        printf( "can't load MIDI file\n" );
+        return -1;
+    }
+
+    Mix_VolumeMusic( mp3_volume );
+    Mix_PlayMusic( midi_info, midi_looping );
+    current_cd_track = -2; 
+    
+    return 0;
+}
+
 int ONScripterLabel::playMP3( int cd_no )
 {
     if ( !audio_open_flag ) return -1;
 
-    if ( mp3_file_name == NULL ){
+    if ( music_file_name == NULL ){
         char file_name[128];
         
         sprintf( file_name, "cd%ctrack%2.2d.mp3", DELIMITER, cd_no );
@@ -1153,11 +1211,11 @@ int ONScripterLabel::playMP3( int cd_no )
     else{
         unsigned long length;
     
-        length = cBR->getFileLength( mp3_file_name );
-        printf(" ... loading %s length %ld\n",mp3_file_name, length );
-        printf("playMP3 %s", mp3_file_name );
+        length = cBR->getFileLength( music_file_name );
+        printf(" ... loading %s length %ld\n",music_file_name, length );
+        printf("playMP3 %s", music_file_name );
         mp3_buffer = new unsigned char[length];
-        cBR->getFile( mp3_file_name, mp3_buffer );
+        cBR->getFile( music_file_name, mp3_buffer );
         mp3_sample = SMPEG_new_rwops( SDL_RWFromMem( mp3_buffer, length ), &mp3_info, 0 );
     }
 
@@ -1171,10 +1229,10 @@ int ONScripterLabel::playMP3( int cd_no )
         SMPEG_enableaudio( mp3_sample, 0 );
         SMPEG_actualSpec( mp3_sample, &audio_format );
 
-        printf(" at vol %d once %d\n", mp3_volume, mp3_play_once_flag );
+        printf(" at vol %d once %d\n", mp3_volume, music_play_once_flag );
         Mix_HookMusic( mp3callback, mp3_sample );
         SMPEG_enableaudio( mp3_sample, 1 );
-        //SMPEG_loop( mp3_sample, mp3_play_once_flag?0:1 );
+        //SMPEG_loop( mp3_sample, music_play_once_flag?0:1 );
         SMPEG_play( mp3_sample );
 
         SMPEG_setvolume( mp3_sample, mp3_volume );
@@ -1248,7 +1306,16 @@ void ONScripterLabel::stopBGM( bool continue_flag )
             delete[] mp3_buffer;
             mp3_buffer = NULL;
         }
-        if ( !continue_flag ) setStr( &mp3_file_name, NULL );
+        if ( !continue_flag ) setStr( &music_file_name, NULL );
+    }
+
+    if ( midi_info ){
+        music_play_once_flag = true;
+        Mix_HaltMusic();
+        SDL_Delay(500);
+        Mix_FreeMusic( midi_info );
+        midi_info = NULL;
+        setStr( &music_file_name, NULL );
     }
 
     if ( !continue_flag ) current_cd_track = -1;
@@ -1330,12 +1397,14 @@ void ONScripterLabel::makeMonochromeSurface( SDL_Surface *surface, SDL_Rect *dst
     int i, j;
     SDL_Rect rect;
     Uint32 *buf, c;
-    
+
     if ( dst_rect ){
         rect.x = dst_rect->x;
         rect.y = dst_rect->y;
         rect.w = dst_rect->w;
         rect.h = dst_rect->h;
+        if ( rect.x + rect.w > surface->w ) rect.w = surface->w - rect.x;
+        if ( rect.y + rect.h > surface->h ) rect.h = surface->h - rect.y;
     }
     else{
         rect.x = rect.y = 0;
@@ -1365,6 +1434,7 @@ void ONScripterLabel::makeMonochromeSurface( SDL_Surface *surface, SDL_Rect *dst
         }
         buf += surface->w - rect.w;
     }
+
     SDL_UnlockSurface( surface );
 }
 

@@ -12,7 +12,7 @@
 </CENTER>
 
 Created: Feb. 6, 2002<br>
-Last updated: Apr. 3, 2002
+Last updated: Apr. 4, 2002
 
 <HR>
 
@@ -27,9 +27,9 @@ href="http://www2.osk.3web.ne.jp/~naokikun/index.htm">高橋直樹</a>氏が開発したゲ
 
 <p>ONScripter で何ができるのかについてはαβεさんの[<A HREF="http://abe.platina.sakura.ne.jp/onscripter/">ONScripter のスゝメ</A>]を参照してください。</p>
 
-<p>現在はベータ版<A HREF="onscripter-beta-20020403.tar.gz">onscripter-beta-20020403.tar.gz</A>を配布しております。<br>
+<p>現在はベータ版<A HREF="onscripter-beta-20020404.tar.gz">onscripter-beta-20020404.tar.gz</A>を配布しております。<br>
 ベータ版ゆえデバッグ出力・assert 等が有効になっていますが、正式版になったら取り除きます。<br>
-(一つ前のベータ版<A HREF="onscripter-beta-20020331a.tar.gz">onscripter-beta-20020331a.tar.gz</A>)</p>
+(一つ前のベータ版<A HREF="onscripter-beta-20020403.tar.gz">onscripter-beta-20020403.tar.gz</A>)</p>
 
 <p>更新内容については[<A HREF="onscripter_devel.html">開発日誌</A>]を参照して下さい。</p>
 
@@ -63,6 +63,7 @@ href="http://www2.osk.3web.ne.jp/~naokikun/index.htm">高橋直樹</a>氏が開発したゲ
 	 <LI> <A HREF="#音量及び変数編集モードについて">音量及び変数編集モードについて</A>
 	 <LI> <A HREF="#TrueType font による漢字表示について">TrueType font による漢字表示について</A>
 	 <LI> <A HREF="#CD audio 演奏の振り替えについて">CD audio 演奏の振り替えについて</A>
+	 <LI> <A HREF="#MIDI 演奏機能について">MIDI 演奏機能について</A>
 	 <LI> <A HREF="#Windows 上で MP3 の音がぶつぶつとぎれる問題について">Windows 上で MP3 の音がぶつぶつとぎれる問題について</A>
        </UL>
 </UL>
@@ -95,7 +96,7 @@ href="http://www2.osk.3web.ne.jp/~naokikun/index.htm">高橋直樹</a>氏が開発したゲ
   <LI> セーブ・ロードができます(ただし、save?.dat は独自形式)。<BR>
   <LI> sar, nsa (nbz lzss を含む) アーカイブのデコードを実装しています。<BR>
   <LI> よく使われる画面効果（quake 系, 効果番号 1 - 15, 18）を実装しています。<BR>
-  <LI> wav ファイル・MP3 ファイル・CD Audio 演奏を実装しています。ただし、MIDI は演奏できません。<BR>
+  <LI> wav ファイル・MP3 ファイル・CD Audio・MIDI 演奏を実装しています。<BR>
   <LI> 右クリックメニュー（セーブ・ロード・回想・ウィンドウを消す・リセット・スキップ）を実装しています。<BR>
   <LI> カーソルのアニメーションを実装しています。<BR>
 </OL>
@@ -161,7 +162,7 @@ href="http://www2.osk.3web.ne.jp/~naokikun/index.htm">高橋直樹</a>氏が開発したゲ
 <OL>
   <LI> (<FONT color="#ff0000">高</FONT>)windowback の実装。
   <LI> (<FONT color="#ff0000">高</FONT>)textgosub 時に、\@ の直後の同じ行に命令文があると、テキスト文としてデコードされたものを命令文として解釈しようとして破綻する。困った。大分書き換えないといけないかも。仕様書がないものを作ろうとすると往々にしてこうなる…。
-  <LI> (<FONT color="#ff0000">中</FONT>)csel 系のセーブに関する不具合の解消。
+  <LI> (<FONT color="#ff8800">中</FONT>)csel 系のセーブに関する不具合の解消。
   <LI> (<FONT color="#ff8800">中</FONT>)sprite の透明度サポート
   <LI> (<FONT color="#ff8800">中</FONT>)blt の拡大縮小に対応。
   <LI> (<FONT color="#ff8800">中</FONT>)雪をスムーズに降らせる
@@ -329,6 +330,23 @@ registry.txt を一カ所にまとめておくことができます。--registry を指定し
 <p> まとめると、UNICODE で記述されておりかつ embedded bitmap を使っていないフォント(上の例では HG ゴシック)が一番問題がなく、大きなフォントしか使わないゲームでは embedded bitmap が使用されていても使える(上の例では ＭＳゴシックや東風ゴシック)といったところです。</p>
 
 <p> ONScripter を起動する前に、使用する TreuType font ファイルを、<STRONG>default.ttf</STRONG> という名前にしてゲームのスクリプトがある場所のコピーしておいてください。</p>
+
+</td></tr><tr><td>
+
+<A NAME="MIDI 演奏機能について"></A>
+<h3>MIDI 演奏機能について</h3>
+
+<p>MIDI は SDL_mixer の機能を使って演奏します。<br>
+この時、現在のディレクトリに tmp.mid という一時ファイルを作ります。美しくないですが、SDL_mixer の MIDI 読み込み部がファイルからの読み込みしかサポートしていないためやむをえません。</p>
+
+<DL>
+  <DT> Windows もしくは MacOS X の場合。（MacOS X については当方未確認）
+  <DD> OS の機能を使用して演奏するようなので、特に準備することはありません。
+  <DT> Unix系(動作確認は Linux)でソフトウェア音源で演奏する場合（デフォルト）。
+  <DD> SDL_mixer に取り込まれている timidity を使用してソフトウェア音源で演奏します。この場合、MIDIの音色データ<A HREF="http://www.libsdl.org/projects/SDL_mixer/timidity/timidity.tar.gz">timidity.tar.gz</A>をダウンロードして /usr/local/lib/ 以下に展開してください。
+  <DT> Unix系(動作確認は Linux)で外部 MIDI 音源を利用して演奏する場合。（現在当方未確認）
+  <DD> playmidi 等の外部音源を使用できる MIDI player をインストールし、環境変数 MUSIC_CMD を設定してください。（例 set MUSIC_CMD=/usr/bin/playmidi）
+</DL>
 
 </td></tr><tr><td>
 

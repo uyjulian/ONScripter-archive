@@ -678,11 +678,11 @@ int ONScripterLabel::playCommand()
     char *p_string_buffer;
 
     if ( !strncmp( string_buffer + string_buffer_offset, "playonce", 8 ) ){
-        mp3_play_once_flag = true;
+        music_play_once_flag = true;
         p_string_buffer = string_buffer + string_buffer_offset + 8; // strlen("playonce") = 8
     }
     else{
-        mp3_play_once_flag = false;
+        music_play_once_flag = false;
         p_string_buffer = string_buffer + string_buffer_offset + 4; // strlen("play") = 4
     }
 
@@ -707,6 +707,8 @@ int ONScripterLabel::playCommand()
 #endif
     }
     else{ // play MIDI
+        setStr( &music_file_name, tmp_string_buffer );
+        playMIDIFile();
     }
 
     return RET_CONTINUE;
@@ -744,22 +746,22 @@ int ONScripterLabel::mp3Command()
     char *p_string_buffer;
     
     if ( !strncmp( string_buffer + string_buffer_offset, "mp3save", 7 ) ){
-        mp3_play_once_flag = true;
+        music_play_once_flag = true;
         p_string_buffer = string_buffer + string_buffer_offset + 7; // strlen("mp3save") = 7
     }
     else if ( !strncmp( string_buffer + string_buffer_offset, "mp3loop", 7 ) ){
-        mp3_play_once_flag = false;
+        music_play_once_flag = false;
         p_string_buffer = string_buffer + string_buffer_offset + 7; // strlen("mp3loop") = 7
     }
     else{
-        mp3_play_once_flag = true;
+        music_play_once_flag = true;
         p_string_buffer = string_buffer + string_buffer_offset + 3; // strlen("mp3") = 3
     }
 
     stopBGM( false );
     
     readStr( &p_string_buffer, tmp_string_buffer );
-    setStr( &mp3_file_name, tmp_string_buffer );
+    setStr( &music_file_name, tmp_string_buffer );
 
     playMP3( 0 );
         
@@ -1127,6 +1129,15 @@ int ONScripterLabel::endCommand()
     saveGlovalData();
     saveFileLog();
     saveLabelLog();
+    if ( cdrom_info ){
+        SDL_CDStop( cdrom_info );
+        SDL_CDClose( cdrom_info );
+    }
+    if ( midi_info ){
+        Mix_HaltMusic();
+        SDL_Delay(500);
+        Mix_FreeMusic( midi_info );
+    }
     SDL_Quit();
     exit(0);
 }

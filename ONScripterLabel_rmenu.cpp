@@ -23,7 +23,7 @@
 
 #include "ONScripterLabel.h"
 
-#if defined(LINUX)
+#if defined(LINUX) || defined(MACOSX)
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -43,7 +43,7 @@ void ONScripterLabel::searchSaveFiles()
     for ( i=0 ; i<num_save_file ; i++ ){
         sprintf( file_name, "save%d.dat", i+1 );
 
-#if defined(LINUX)
+#if defined(LINUX) || defined(MACOSX)
         struct stat buf;
         struct tm *tm;
         if ( stat( file_name, &buf ) != 0 ){
@@ -295,16 +295,22 @@ int ONScripterLabel::loadSaveFile( int no )
     /* Load current playing CD track */
     stopBGM( false );
     current_cd_track = (Sint8)fgetc( fp );
-    mp3_play_once_flag = (fgetc( fp )==1)?true:false;
-    loadStr( fp, &mp3_file_name );
+    music_play_once_flag = (fgetc( fp )==1)?true:false;
+    loadStr( fp, &music_file_name );
 
-    if ( current_cd_track >= 0 || mp3_file_name ){
+    if ( current_cd_track >= 0 ){
         if ( cdaudio_flag ){
-            if ( cdrom_info && current_cd_track >= 0 ) playCDAudio( current_cd_track );
+            if ( cdrom_info ) playCDAudio( current_cd_track );
         }
         else{
             playMP3( current_cd_track );
         }
+    }
+    else if ( music_file_name ){
+        if ( current_cd_track == -2 )
+            playMIDIFile();
+        else
+            playMP3( current_cd_track );
     }
 
     /* ---------------------------------------- */
@@ -464,8 +470,8 @@ int ONScripterLabel::saveSaveFile( int no )
     /* ---------------------------------------- */
     /* Save current playing CD track */
     fputc( (Sint8)current_cd_track, fp );
-    mp3_play_once_flag?fputc(1,fp):fputc(0,fp);
-    saveStr( fp, mp3_file_name );
+    music_play_once_flag?fputc(1,fp):fputc(0,fp);
+    saveStr( fp, music_file_name );
     
     /* ---------------------------------------- */
     /* Save rmode flag */

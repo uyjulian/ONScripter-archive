@@ -441,15 +441,18 @@ private:
     
     SDL_CD *cdrom_info;
     int current_cd_track;
-    bool mp3_play_once_flag;
-    char *mp3_file_name;
+    bool music_play_once_flag;
+    char *music_file_name;
     unsigned char *mp3_buffer;
     SMPEG_Info mp3_info;
     SMPEG *mp3_sample;
+    Mix_Music *midi_info;
     
     Mix_Chunk *wave_sample[MIX_CHANNELS];
     bool wave_play_once_flag;
 
+    int playMIDIFile();
+    int playMIDI();
     int playMP3( int cd_no );
     int playCDAudio( int cd_no );
     int playWave( char *file_name, bool loop_flag, int channel );

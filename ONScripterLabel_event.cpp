@@ -22,10 +22,14 @@
  */
 
 #include "ONScripterLabel.h"
+#if defined(LINUX)
+#include <wait.h>
+#endif
 
 #define ONS_TIMER_EVENT   (SDL_USEREVENT)
 #define ONS_SOUND_EVENT   (SDL_USEREVENT+1)
 #define ONS_CDAUDIO_EVENT (SDL_USEREVENT+2)
+#define ONS_MIDI_EVENT    (SDL_USEREVENT+3)
 
 #define EDIT_MODE_PREFIX "[EDIT MODE]  "
 #define EDIT_SELECT_STRING "MP3 vol (m)  SE vol (s)  Voice vol (v)  Numeric variable (n)"
@@ -78,6 +82,20 @@ void ONScripterLabel::startTimer( int count )
         timer_id = SDL_AddTimer( count, timerCallback, NULL );
     else
         timer_id = SDL_AddTimer( MINIMUM_TIMER_RESOLUTION, timerCallback, NULL );
+}
+
+void midiCallback( int sig )
+{
+    printf("waiting for Ext MIDI player terminating\n");
+#if defined(LINUX)
+    int status;
+    wait( &status );
+#endif
+    SDL_Event event;
+    event.type = ONS_MIDI_EVENT;
+    SDL_PushEvent(&event);
+
+    printf("Ext MIDI player terminated\n");
 }
 
 /* **************************************** *
@@ -472,7 +490,7 @@ int ONScripterLabel::eventLoop()
             break;
                 
           case ONS_SOUND_EVENT:
-            if ( !mp3_play_once_flag ){
+            if ( !music_play_once_flag ){
                 stopBGM( true );
                 playMP3( current_cd_track );
             }
@@ -482,9 +500,19 @@ int ONScripterLabel::eventLoop()
             break;
                 
           case ONS_CDAUDIO_EVENT:
-            if ( !mp3_play_once_flag ){
+            if ( !music_play_once_flag ){
                 stopBGM( true );
                 playCDAudio( current_cd_track );
+            }
+            else{
+                stopBGM( false );
+            }
+            break;
+
+          case ONS_MIDI_EVENT:
+            if ( !music_play_once_flag ){
+                stopBGM( true );
+                playMIDI( );
             }
             else{
                 stopBGM( false );
@@ -498,6 +526,11 @@ int ONScripterLabel::eventLoop()
             if ( cdrom_info ){
                 SDL_CDStop( cdrom_info );
                 SDL_CDClose( cdrom_info );
+            }
+            if ( midi_info ){
+                Mix_HaltMusic();
+                SDL_Delay(500);
+                Mix_FreeMusic( midi_info );
             }
             return(0);
             

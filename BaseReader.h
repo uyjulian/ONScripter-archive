@@ -31,7 +31,7 @@
 #define SEEK_END 2
 #endif
 
-#if defined(LINUX)
+#if defined(LINUX) || defined(MACOSX)
 #define DELIMITER '/'
 #elif defined(WIN32)
 #define DELIMITER '\\'

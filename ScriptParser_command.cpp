@@ -124,8 +124,6 @@ int ScriptParser::straliasCommand()
     last_str_alias = last_str_alias->next;
     last_str_alias->next = NULL;
 
-    //printf("straliasCommand [%s] [%s]\n", last_str_alias->alias, last_str_alias->str );
-
     return RET_CONTINUE;
 }
 
@@ -136,9 +134,10 @@ int ScriptParser::skipCommand()
     int skip_offset = current_link_label_info->current_line + skip_num;
 
     while ( skip_offset >= current_link_label_info->label_info.num_of_lines ){ 
-        skip_offset -= current_link_label_info->label_info.num_of_lines;
+        skip_offset -= current_link_label_info->label_info.num_of_lines + 1;
         current_link_label_info->label_info = lookupLabelNext( current_link_label_info->label_info.name );
     }
+    if ( skip_offset == -1 ) skip_offset = 0; // -1 indicates a label line
     current_link_label_info->current_line = skip_offset;
     current_link_label_info->offset = 0;
 
@@ -316,11 +315,11 @@ int ScriptParser::movCommand()
     char *p_string_buffer = string_buffer + string_buffer_offset + 3; // strlen("mov") = 3
     int no;
 
-    if ( *p_string_buffer == ' ' || *p_string_buffer == '\t' ) p_string_buffer++;
+    while( *p_string_buffer == ' ' || *p_string_buffer == '\t' ) p_string_buffer++;
     
     if ( p_string_buffer[0] == '%' || p_string_buffer[0] == '?' ){
         char *p_buf = p_string_buffer;
-        readInt( &p_string_buffer );
+        no = readInt( &p_string_buffer );
         setInt( p_buf, readInt( &p_string_buffer ) );
     }
     else if ( p_string_buffer[0] == '$'){
@@ -355,7 +354,7 @@ int ScriptParser::midCommand()
     char *p_string_buffer = string_buffer + string_buffer_offset + 3; // strlen("mid") = 3
     int no, start, len;
     
-    if ( *p_string_buffer == ' ' || *p_string_buffer == '\t' ) p_string_buffer++;
+    while ( *p_string_buffer == ' ' || *p_string_buffer == '\t' ) p_string_buffer++;
 
     if ( p_string_buffer[0] == '$'){
         p_string_buffer++;
@@ -591,7 +590,7 @@ int ScriptParser::itoaCommand()
     char val_str[20], *tmp_buffer;
     char *p_string_buffer = string_buffer + string_buffer_offset + 4; // strlen("itoa") = 4
     
-    if ( *p_string_buffer == ' ' || *p_string_buffer == '\t' ) p_string_buffer++;
+    while ( *p_string_buffer == ' ' || *p_string_buffer == '\t' ) p_string_buffer++;
 
     if ( p_string_buffer[0] != '$' ) errorAndExit( string_buffer + string_buffer_offset );
 
@@ -998,7 +997,7 @@ int ScriptParser::addCommand()
     char *tmp_buffer;
     int no;
     
-    if ( *p_string_buffer == ' ' || *p_string_buffer == '\t' ) p_string_buffer++;
+    while ( *p_string_buffer == ' ' || *p_string_buffer == '\t' ) p_string_buffer++;
 
     if ( p_string_buffer[0] == '%' || p_string_buffer[0] == '?' ){
         char *p_buf = p_string_buffer;

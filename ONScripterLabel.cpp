@@ -3280,19 +3280,21 @@ int ONScripterLabel::clCommand()
 
 int ONScripterLabel::btndefCommand()
 {
-    //printf("ONScripterLabel::btndefCommand %d\n", event_mode);
-    
-    char *p_string_buffer;
-    
-    p_string_buffer = string_buffer + string_buffer_offset + 6; // strlen("btndef") = 6
+    char *p_string_buffer = string_buffer + string_buffer_offset + 6; // strlen("btndef") = 6
     readStr( &p_string_buffer, tmp_string_buffer );
 
-    unsigned long length = cBR->getFileLength( tmp_string_buffer );
-    unsigned char *buffer = new unsigned char[length];
-    cBR->getFile( tmp_string_buffer, buffer );
-    if ( btndef_surface ) SDL_FreeSurface( btndef_surface );
-    btndef_surface = IMG_Load_RW(SDL_RWFromMem( buffer, length ),1);
-    delete[] buffer;
+    if ( strcmp( tmp_string_buffer, "clear" ) ){
+        if ( btndef_surface ) SDL_FreeSurface( btndef_surface );
+        btndef_surface = NULL;
+
+        unsigned long length = cBR->getFileLength( tmp_string_buffer );
+        if ( length ){
+            unsigned char *buffer = new unsigned char[length];
+            cBR->getFile( tmp_string_buffer, buffer );
+            btndef_surface = IMG_Load_RW(SDL_RWFromMem( buffer, length ),1);
+            delete[] buffer;
+        }
+    }
     
     deleteButtonLink();
     
@@ -3321,10 +3323,10 @@ int ONScripterLabel::btnCommand()
 #if 0
     printf("ONScripterLabel::btnCommand %d,%d,%d,%d,%d,%d,%d\n",
            last_button_link->no,
-           last_button_link->x,
-           last_button_link->y,
-           last_button_link->wx,
-           last_button_link->wy,
+           last_button_link->image_rect.x,
+           last_button_link->image_rect.y,
+           last_button_link->image_rect.w,
+           last_button_link->image_rect.h,
            x3,
            y3 );
 #endif

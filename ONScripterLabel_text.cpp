@@ -157,12 +157,18 @@ void ONScripterLabel::drawString( char *str, uchar3 color, FontInfo *info, bool 
             }
             text[0] = *str++;
             text[1] = *str++;
+            drawChar( text, info, flush_flag, surface, buffering_flag );
         }
         else{
             text[0] = *str++;
             text[1] = '\0';
+            drawChar( text, info, flush_flag, surface, buffering_flag );
+            info->xy[0]--;
+            if ( *str ){
+                text[1] = *str++;
+                drawChar( text, info, flush_flag, surface, buffering_flag );
+            }
         }
-        drawChar( text, info, flush_flag, surface, buffering_flag );
     }
     for ( i=0 ; i<3 ; i++ ) info->color[i] = org_color[i];
 
@@ -229,6 +235,12 @@ int ONScripterLabel::clickWait( char *out_text )
     else{
         clickstr_state = CLICK_WAIT;
         if ( out_text ) drawChar( out_text, &sentence_font, true, text_surface );
+        if ( textgosub_label ){
+            if ( out_text ) string_buffer_offset += 2;
+            else            string_buffer_offset++;
+            gosubReal( textgosub_label );
+            return RET_JUMP;
+        }
         event_mode = WAIT_INPUT_MODE;
         key_pressed_flag = false;
         if ( autoclick_timer > 0 ){
@@ -254,6 +266,12 @@ int ONScripterLabel::clickNewPage( char *out_text )
         startTimer( MINIMUM_TIMER_RESOLUTION );
     }
     else{
+        if ( textgosub_label ){
+            if ( out_text ) string_buffer_offset += 2;
+            else            string_buffer_offset++;
+            gosubReal( textgosub_label );
+            return RET_JUMP;
+        }
         event_mode = WAIT_INPUT_MODE;
         key_pressed_flag = false;
         if ( autoclick_timer > 0 ){

@@ -283,9 +283,7 @@ void ONScripterLabel::keyPressEvent( SDL_KeyboardEvent *event )
         variable_edit_mode = EDIT_SELECT_MODE;
         variable_edit_sign = 1;
         variable_edit_num = 0;
-        strcpy( wm_edit_string, EDIT_MODE_PREFIX );
-        strcat( wm_edit_string,
-               "MP3 vol (m)  SE vol (s)  Voice vol (v)  Numeric variable (n)");
+        sprintf( wm_edit_string, "%s%s", EDIT_MODE_PREFIX, EDIT_SELECT_STRING );
         SDL_WM_SetCaption( wm_edit_string, wm_icon_string );
     }
 
@@ -353,7 +351,10 @@ void ONScripterLabel::keyPressEvent( SDL_KeyboardEvent *event )
             endCursor( clickstr_state );
             startTimer( MINIMUM_TIMER_RESOLUTION );
         }
-        else if (event->keysym.sym == SDLK_s){
+    }
+    
+    if ( event_mode & ( WAIT_INPUT_MODE | WAIT_TEXTBTN_MODE ) && !key_pressed_flag ){
+        if (event->keysym.sym == SDLK_s){
             skip_flag = true;
             printf("toggle skip to true\n");
             key_pressed_flag = true;

@@ -70,6 +70,7 @@ public:
     int textonCommand();
     int textoffCommand();
     int textclearCommand();
+    int texecCommand();
     int systemcallCommand();
     int stopCommand();
     int spstrCommand();
@@ -100,9 +101,11 @@ public:
     int ldCommand();
     int jumpfCommand();
     int jumpbCommand();
+    int ispageCommand();
     int getversionCommand();
     int gettimerCommand();
     int getregCommand();
+    int getcursorposCommand();
     int gameCommand();
     int exbtnCommand();
     int erasetextwindowCommand();
@@ -157,7 +160,8 @@ private:
                       WAIT_BUTTON_MODE  = 2, // For select and btnwait.
                       WAIT_INPUT_MODE   = (4|8),  // For select and text wait. It allows the right click menu.
                       WAIT_SLEEP_MODE   = 16,
-                      WAIT_ANIMATION_MODE  = 32
+                      WAIT_ANIMATION_MODE  = 32,
+                      WAIT_TEXTBTN_MODE = 64
                       } EVENT_MODE;
     typedef enum{
         COLOR_EFFECT_IMAGE            = 0,
@@ -398,7 +402,7 @@ private:
             next = NULL;
             text = label = NULL;
         };
-    } root_select_link;
+    } root_select_link, *shelter_select_link;
     struct LinkLabelInfo select_label_info;
     int shortcut_mouse_line;
 
@@ -472,6 +476,7 @@ private:
     int saveSaveFile( int no );
     void setupLookbackButton();
 
+    void enterSystemCall();
     void leaveSystemCall( bool restore_flag = true );
     void executeSystemCall();
     void executeSystemMenu();

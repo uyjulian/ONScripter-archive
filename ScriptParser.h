@@ -105,6 +105,7 @@ public:
     int underlineCommand();
     int transmodeCommand();
     int timeCommand();
+    int textgosubCommand();
     int subCommand();
     int straliasCommand();
     int skipCommand();
@@ -125,6 +126,7 @@ public:
     int menuselectcolorCommand();
     int lookbackcolorCommand();
     int lookbackbuttonCommand();
+    int lenCommand();
     int labellogCommand();
     int itoaCommand();
     int intlimitCommand();
@@ -358,6 +360,10 @@ protected:
     void loadStr( FILE *fp, char **str );
     void saveVariables( FILE *fp, int from, int to );
     void loadVariables( FILE *fp, int from, int to );
+
+    /* ---------------------------------------- */
+    /* System customize related variables */
+    char *textgosub_label;
     
 private:
     char *script_buffer;

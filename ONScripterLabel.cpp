@@ -58,6 +58,8 @@ static struct FuncLUT{
     {"texton",   &ONScripterLabel::textonCommand},
     {"textoff",   &ONScripterLabel::textoffCommand},
     {"textclear",   &ONScripterLabel::textclearCommand},
+    {"textbtnwait",   &ONScripterLabel::btnwaitCommand},
+    {"texec",   &ONScripterLabel::texecCommand},
     {"systemcall",   &ONScripterLabel::systemcallCommand},
     {"stop",   &ONScripterLabel::stopCommand},
     {"spstr",   &ONScripterLabel::spstrCommand},
@@ -96,9 +98,11 @@ static struct FuncLUT{
     {"ld", &ONScripterLabel::ldCommand},
     {"jumpf", &ONScripterLabel::jumpfCommand},
     {"jumpb", &ONScripterLabel::jumpbCommand},
+    {"ispage", &ONScripterLabel::ispageCommand},
     {"getversion", &ONScripterLabel::getversionCommand},
     {"gettimer", &ONScripterLabel::gettimerCommand},
     {"getreg", &ONScripterLabel::getregCommand},
+    {"getcursorpos", &ONScripterLabel::getcursorposCommand},
     {"game", &ONScripterLabel::gameCommand},
     {"exbtn_d", &ONScripterLabel::exbtnCommand},
     {"exbtn", &ONScripterLabel::exbtnCommand},
@@ -1493,6 +1497,8 @@ void ONScripterLabel::startCursor( int click )
     SDL_Rect src_rect;
     int no;
     
+    if ( textgosub_label ) return;
+
     if ( click == CLICK_WAIT ) no = CURSOR_WAIT_NO;
     else if ( click == CLICK_NEWPAGE ) no = CURSOR_NEWPAGE_NO;
     else return;
@@ -1518,7 +1524,7 @@ void ONScripterLabel::endCursor( int click )
     SDL_Rect dst_rect;
     int no;
 
-    if ( autoclick_timer > 0 ) return;
+    if ( textgosub_label || autoclick_timer > 0 ) return;
     
     if ( click == CLICK_WAIT ) no = CURSOR_WAIT_NO;
     else if ( click == CLICK_NEWPAGE ) no = CURSOR_NEWPAGE_NO;

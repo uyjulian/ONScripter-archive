@@ -94,6 +94,17 @@ int ScriptParser::timeCommand()
     return RET_CONTINUE;
 }
 
+int ScriptParser::textgosubCommand()
+{
+    char *p_string_buffer = string_buffer + string_buffer_offset + 9; // strlen("textgosub") = 9
+    if ( current_mode != DEFINE_MODE ) errorAndExit( string_buffer + string_buffer_offset, "not in the define section" );
+
+    readStr( &p_string_buffer, tmp_string_buffer );
+    setStr( &textgosub_label, tmp_string_buffer+1 );
+    
+    return RET_CONTINUE;
+}
+
 int ScriptParser::subCommand()
 {
     char *p_string_buffer = string_buffer + string_buffer_offset + 3; // strlen("sub") = 3
@@ -485,6 +496,19 @@ int ScriptParser::lookbackbuttonCommand()
         lookback_image_name[i] = new char[ strlen( tmp_string_buffer ) + 1 ];
         memcpy( lookback_image_name[i], tmp_string_buffer, strlen( tmp_string_buffer ) + 1 );
     }
+    return RET_CONTINUE;
+}
+
+int ScriptParser::lenCommand()
+{
+    char *p_string_buffer = string_buffer + string_buffer_offset + 3; // strlen("len") = 3
+    char *p_buf = p_string_buffer;
+    
+    readInt( &p_string_buffer );
+    readStr( &p_string_buffer, tmp_string_buffer );
+
+    setInt( p_buf, strlen( tmp_string_buffer ) );
+
     return RET_CONTINUE;
 }
 
@@ -1003,7 +1027,7 @@ int ScriptParser::atoiCommand()
 {
     char *p_string_buffer = string_buffer + string_buffer_offset + 4; // strlen("atoi") = 4
     char *p_buf = p_string_buffer;
-
+    
     readInt( &p_string_buffer );
     readStr( &p_string_buffer, tmp_string_buffer );
         

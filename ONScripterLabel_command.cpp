@@ -89,7 +89,7 @@ int ONScripterLabel::vspCommand()
     int no = readInt( &p_string_buffer );
     int v  = readInt( &p_string_buffer );
     sprite_info[ no ].valid = (v==1)?true:false;
-     
+    
     return RET_CONTINUE;
 }
 
@@ -166,6 +166,16 @@ int ONScripterLabel::textclearCommand()
     return RET_CONTINUE;
 }
 
+int ONScripterLabel::texecCommand()
+{
+    printf("texecCommand %d\n", clickstr_state);
+    
+    if ( clickstr_state == CLICK_NEWPAGE ){
+        newPage( false );
+    }
+    return RET_CONTINUE;
+}
+
 int ONScripterLabel::systemcallCommand()
 {
     char *p_string_buffer = string_buffer + string_buffer_offset + 10; // strlen("systemcall") = 10
@@ -173,6 +183,8 @@ int ONScripterLabel::systemcallCommand()
     readStr( &p_string_buffer, tmp_string_buffer );
     system_menu_mode = getSystemCallNo( tmp_string_buffer );
     event_mode = WAIT_SLEEP_MODE;
+
+    enterSystemCall();
     
     startTimer( MINIMUM_TIMER_RESOLUTION );
     return RET_WAIT_NEXT;
@@ -210,8 +222,10 @@ int ONScripterLabel::spbtnCommand()
     last_button_link->sprite_no   = sprite_no;
     last_button_link->no          = no;
     
-    if ( sprite_info[ sprite_no ].image_surface || sprite_info[ sprite_no ].tag.trans_mode == TRANS_STRING )
+    if ( sprite_info[ sprite_no ].image_surface || sprite_info[ sprite_no ].tag.trans_mode == TRANS_STRING ){
         last_button_link->image_rect = last_button_link->select_rect = sprite_info[ last_button_link->sprite_no ].pos;
+        sprite_info[ sprite_no ].valid = true;
+    }
 
     return RET_CONTINUE;
 }
@@ -333,7 +347,6 @@ int ONScripterLabel::selectCommand()
     if ( !strncmp( string_buffer + string_buffer_offset, "selnum", 6 ) ){
         p_string_buffer = string_buffer + string_buffer_offset + 6; // strlen("selnum") = 6
         select_mode = SELECT_NUM_MODE;
-        SKIP_SPACE( p_string_buffer );
         p_buf = p_string_buffer;
         readInt( &p_string_buffer );
     }
@@ -871,6 +884,22 @@ int ONScripterLabel::jumpbCommand()
     return RET_JUMP;
 }
 
+int ONScripterLabel::ispageCommand()
+{
+    char *p_string_buffer = string_buffer + string_buffer_offset + 6; // strlen("ispage") = 6
+    char *p_buf = p_string_buffer;
+
+    if ( clickstr_state == CLICK_NEWPAGE ){
+        setInt( p_buf, 1 );
+    }
+    else{
+        setInt( p_buf, 0 );
+    }
+    
+    return RET_CONTINUE;
+    
+}
+
 int ONScripterLabel::getversionCommand()
 {
     char *p_string_buffer = string_buffer + string_buffer_offset + 10; // strlen("getversion") = 10
@@ -944,6 +973,24 @@ int ONScripterLabel::getregCommand()
     return RET_CONTINUE;
 }
 
+int ONScripterLabel::getcursorposCommand()
+{
+    char *p_string_buffer = string_buffer + string_buffer_offset + 12; // strlen("getcursorpos") = 12
+    char *p_buf = p_string_buffer;
+
+    readInt( &p_string_buffer );
+    setInt( p_buf, sentence_font.xy[0] * sentence_font.pitch_xy[0] + sentence_font.top_xy[0] );
+
+    p_buf = p_string_buffer;
+    setInt( p_buf, sentence_font.xy[1] * sentence_font.pitch_xy[1] + sentence_font.top_xy[1] );
+
+    printf("getcursorpos %d %d\n",
+           sentence_font.xy[0] * sentence_font.pitch_xy[0] + sentence_font.top_xy[0],
+           sentence_font.xy[1] * sentence_font.pitch_xy[1] + sentence_font.top_xy[1] );
+    
+    return RET_CONTINUE;
+}
+
 int ONScripterLabel::gameCommand()
 {
     current_link_label_info->label_info = lookupLabel( "start" );
@@ -986,7 +1033,7 @@ int ONScripterLabel::exbtnCommand()
         last_button_link->next = button;
         last_button_link = last_button_link->next;
     }
-    printf("exbtnCommand %s\n",string_buffer + string_buffer_offset);
+    //printf("exbtnCommand %s\n",string_buffer + string_buffer_offset);
     readStr( &p_string_buffer, tmp_string_buffer );
 
     //if ( !sprite_info[ sprite_no ].valid ) return RET_CONTINUE;
@@ -997,8 +1044,11 @@ int ONScripterLabel::exbtnCommand()
     button->exbtn_ctl   = new char[ strlen( tmp_string_buffer ) + 1 ];
     memcpy( button->exbtn_ctl, tmp_string_buffer, strlen( tmp_string_buffer ) + 1 );
     
-    if ( sprite_no >= 0 && sprite_info[ sprite_no ].image_surface )
+    if ( sprite_no >= 0 &&
+         ( sprite_info[ sprite_no ].image_surface || sprite_info[ sprite_no ].tag.trans_mode == TRANS_STRING ) ){
         button->image_rect = button->select_rect = sprite_info[ button->sprite_no ].pos;
+        sprite_info[ sprite_no ].valid = true;
+    }
 
     return RET_CONTINUE;
 }
@@ -1260,15 +1310,21 @@ int ONScripterLabel::btnCommand()
 int ONScripterLabel::btnwaitCommand()
 {
     char *p_string_buffer;
-    bool del_flag;
+    bool del_flag, textbtn_flag = false;
 
     if ( !strncmp( string_buffer + string_buffer_offset, "btnwait2", 8 ) ){
         p_string_buffer = string_buffer + string_buffer_offset + 8; // strlen("btnwait2") = 8
         del_flag = false;
     }
-    else{
+    else if ( !strncmp( string_buffer + string_buffer_offset, "btnwait", 7 ) ){
         p_string_buffer = string_buffer + string_buffer_offset + 7; // strlen("btnwait") = 7
         del_flag = true;
+    }
+    else if ( !strncmp( string_buffer + string_buffer_offset, "textbtnwait", 11 ) ){
+        printf("textbtnwait\n");
+        p_string_buffer = string_buffer + string_buffer_offset + 11; // strlen("textbtnwait") = 11
+        del_flag = false;
+        textbtn_flag = true;
     }
     
     if ( event_mode & WAIT_BUTTON_MODE ){
@@ -1298,6 +1354,7 @@ int ONScripterLabel::btnwaitCommand()
     else{
         skip_flag = false;
         event_mode = WAIT_BUTTON_MODE;
+        if ( textbtn_flag ) event_mode |= WAIT_BUTTON_MODE;
 
         ButtonLink *p_button_link = root_button_link.next;
         while( p_button_link ){

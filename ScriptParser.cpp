@@ -48,6 +48,7 @@ static struct FuncLUT{
     {"underline", &ScriptParser::underlineCommand},
     {"transmode", &ScriptParser::transmodeCommand},
     {"time", &ScriptParser::timeCommand},
+    {"textgosub", &ScriptParser::textgosubCommand},
     {"sub", &ScriptParser::subCommand},
     {"stralias", &ScriptParser::straliasCommand},
     {"skip",     &ScriptParser::skipCommand},
@@ -80,6 +81,7 @@ static struct FuncLUT{
     {"menuselectcolor",      &ScriptParser::menuselectcolorCommand},
     {"lookbackcolor",      &ScriptParser::lookbackcolorCommand},
     {"lookbackbutton",      &ScriptParser::lookbackbuttonCommand},
+    {"len",      &ScriptParser::lenCommand},
     {"labellog",      &ScriptParser::labellogCommand},
     {"itoa", &ScriptParser::itoaCommand},
     {"intlimit", &ScriptParser::intlimitCommand},
@@ -253,6 +255,10 @@ ScriptParser::ScriptParser()
     menu_link_num = 0;
     menu_link_width = 0;
     
+    /* ---------------------------------------- */
+    /* System customize related variables */
+    textgosub_label = NULL;
+
     /* ---------------------------------------- */
     for ( i=0 ; i<VARIABLE_RANGE ; i++ ){
         num_variables[i] = 0;

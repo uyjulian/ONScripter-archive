@@ -443,6 +443,23 @@ int ONScripterLabel::saveSaveFile( int no )
     return 0;
 }
 
+void ONScripterLabel::enterSystemCall()
+{
+    shelter_button_link = root_button_link.next;
+    last_button_link = &root_button_link;
+    last_button_link->next = NULL;
+    shelter_select_link = root_select_link.next;
+    root_select_link.next = NULL;
+    SDL_BlitSurface( select_surface, NULL, shelter_select_surface, NULL );
+    SDL_BlitSurface( text_surface, NULL, shelter_text_surface, NULL );
+    shelter_event_mode = event_mode;
+    shelter_mouse_state.x = last_mouse_state.x;
+    shelter_mouse_state.y = last_mouse_state.y;
+    shelter_text_buffer = current_text_buffer;
+    event_mode = IDLE_EVENT_MODE;
+    system_menu_enter_flag = true;
+}
+
 void ONScripterLabel::leaveSystemCall( bool restore_flag )
 {
     if ( restore_flag ){
@@ -451,6 +468,7 @@ void ONScripterLabel::leaveSystemCall( bool restore_flag )
 
         flush();
         root_button_link.next = shelter_button_link;
+        root_select_link.next = shelter_select_link;
         event_mode = shelter_event_mode;
         if ( event_mode & WAIT_BUTTON_MODE ) SDL_WarpMouse( shelter_mouse_state.x, shelter_mouse_state.y );
         current_text_buffer = shelter_text_buffer;
@@ -460,7 +478,7 @@ void ONScripterLabel::leaveSystemCall( bool restore_flag )
     system_menu_enter_flag = false;
     key_pressed_flag = false;
 
-    //printf("leaveSystemCall %d %d\n",event_mode, clickstr_state);
+    printf("leaveSystemCall %d %d\n",event_mode, clickstr_state);
 
     if ( event_mode & WAIT_SLEEP_MODE ){
         event_mode &= ~WAIT_SLEEP_MODE;
@@ -477,17 +495,7 @@ void ONScripterLabel::executeSystemCall()
     //printf("*****  executeSystemCall %d %d*****\n", system_menu_enter_flag, volatile_button_state.button );
     
     if ( !system_menu_enter_flag ){
-        shelter_button_link = root_button_link.next;
-        last_button_link = &root_button_link;
-        last_button_link->next = NULL;
-        SDL_BlitSurface( select_surface, NULL, shelter_select_surface, NULL );
-        SDL_BlitSurface( text_surface, NULL, shelter_text_surface, NULL );
-        shelter_event_mode = event_mode;
-        shelter_mouse_state.x = last_mouse_state.x;
-        shelter_mouse_state.y = last_mouse_state.y;
-        shelter_text_buffer = current_text_buffer;
-        event_mode = IDLE_EVENT_MODE;
-        system_menu_enter_flag = true;
+        enterSystemCall();
     }
     
     switch( system_menu_mode ){
@@ -611,16 +619,19 @@ void ONScripterLabel::executeSystemLoad()
         if ( current_button_state.button == 0 ) return;
         event_mode = IDLE_EVENT_MODE;
 
-        if ( loadSaveFile( current_button_state.button ) ){
-            event_mode  = WAIT_INPUT_MODE | WAIT_BUTTON_MODE;
-            refreshMouseOverButton();
-            return;
-        }
-        
         deleteButtonLink();
         deleteSelectLink();
 
-        leaveSystemCall( false );
+        if ( current_button_state.button > 0 ){
+            if ( loadSaveFile( current_button_state.button ) ){
+                event_mode  = WAIT_INPUT_MODE | WAIT_BUTTON_MODE;
+                refreshMouseOverButton();
+                return;
+            }
+            leaveSystemCall( false );
+        }
+        else
+            leaveSystemCall();
     }
     else{
         searchSaveFiles();
@@ -678,7 +689,8 @@ void ONScripterLabel::executeSystemSave()
 
         deleteButtonLink();
 
-        saveSaveFile( current_button_state.button );
+        if ( current_button_state.button > 0 )
+            saveSaveFile( current_button_state.button );
         leaveSystemCall();
     }
     else{
@@ -817,6 +829,10 @@ void ONScripterLabel::executeSystemLookback()
     
     if ( event_mode & (WAIT_INPUT_MODE | WAIT_BUTTON_MODE) ){
         if ( current_button_state.button == 0 ) return;
+        if ( current_button_state.button < 0 ){
+            event_mode = IDLE_EVENT_MODE;
+            leaveSystemCall();
+        }
         
         deleteButtonLink();
         

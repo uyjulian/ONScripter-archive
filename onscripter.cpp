@@ -27,8 +27,9 @@ void optionHelp()
 {
     printf( "Usage: onscripter [option ...]\n" );
     printf( "      --cdaudio\t\tuse CD audio if available\n");
-    printf( "      --font font_file\t\tuse font_file as a default font\n");
-    printf( "      --registry registry_file\t\tuse registry_file as a default registry file\n");
+    printf( "      --font file\tuse file as a default font\n");
+    printf( "      --registry file\tuse file as a default registry file\n");
+    printf( "      --edit\t\tedit volumes and variables when 'z' is pressed\n");
     printf( "  -h, --help\t\tdisplay this help and exit\n");
     printf( "  -v, --version\t\toutput version information and exit\n");
     exit(0);
@@ -48,6 +49,7 @@ int main( int argc, char **argv )
     bool cdaudio_flag = false;
     char *default_font = NULL;
     char *default_registry = NULL;
+    bool edit_flag = false;
     
     /* ---------------------------------------- */
     /* Parse options */
@@ -77,6 +79,9 @@ int main( int argc, char **argv )
                 default_registry = new char[ strlen( argv[0] ) + 1 ];
                 memcpy( default_registry, argv[0], strlen( argv[0] ) + 1 );
             }
+            else if ( !strcmp( argv[0]+1, "-edit" ) ){
+                edit_flag = true;
+            }
             else{
                 optionHelp();
             }
@@ -90,7 +95,7 @@ int main( int argc, char **argv )
     
     /* ---------------------------------------- */
     /* Run ONScripter */
-    ONScripterLabel *ons = new ONScripterLabel( cdaudio_flag, default_font, default_registry );
+    ONScripterLabel *ons = new ONScripterLabel( cdaudio_flag, default_font, default_registry, edit_flag );
     ons->eventLoop();
     
     exit(0);

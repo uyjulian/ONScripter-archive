@@ -1119,11 +1119,8 @@ int ONScripterLabel::cellCommand()
 int ONScripterLabel::captionCommand()
 {
     char *p_string_buffer = string_buffer + string_buffer_offset + 7; // strlen("caption") = 7
-    char *caption_string;
 
     readStr( &p_string_buffer, tmp_string_buffer );
-
-    caption_string = new char[ strlen( tmp_string_buffer ) + 1 ];
 
 #if defined(LINUX) /* convert sjis to euc */
     int i = 0;
@@ -1146,24 +1143,19 @@ int ONScripterLabel::captionCommand()
                 c2 -= 0x1f;
             }
 
-            caption_string[i]   = c1 | 0x80;
-            caption_string[i+1] = c2 | 0x80;
-            i += 2;
-        }
-        else {
-            caption_string[i] = tmp_string_buffer[i];
+            tmp_string_buffer[i]   = c1 | 0x80;
+            tmp_string_buffer[i+1] = c2 | 0x80;
             i++;
         }
+        i++;
     }
-    caption_string[i] = '\0';
-#elif defined(WIN32)
-    strcpy( caption_string, tmp_string_buffer );
 #endif
 
-    printf("caption \"%s\"\n", caption_string);
-    SDL_WM_SetCaption( caption_string, caption_string );
+    setStr( &wm_title_string, tmp_string_buffer );
+    setStr( &wm_icon_string,  tmp_string_buffer );
 
-    delete[] caption_string;
+    printf("caption \"%s\"\n", wm_title_string );
+    SDL_WM_SetCaption( wm_title_string, wm_icon_string );
 
     return RET_CONTINUE;
 }

@@ -27,6 +27,9 @@
 #define ONS_SOUND_EVENT   (SDL_USEREVENT+1)
 #define ONS_CDAUDIO_EVENT (SDL_USEREVENT+2)
 
+#define EDIT_MODE_PREFIX "[EDIT MODE]  "
+#define EDIT_SELECT_STRING "MP3 vol (m)  SE vol (s)  Voice vol (v)  Numeric variable (n)"
+
 static SDL_TimerID timer_id = NULL;
 SDL_TimerID timer_cdaudio_id = NULL;
 
@@ -87,6 +90,8 @@ void ONScripterLabel::mouseMoveEvent( SDL_MouseMotionEvent *event )
 
 void ONScripterLabel::mousePressEvent( SDL_MouseButtonEvent *event )
 {
+    if ( variable_edit_mode ) return;
+    
     current_button_state.x = event->x;
     current_button_state.y = event->y;
     
@@ -125,9 +130,164 @@ void ONScripterLabel::mousePressEvent( SDL_MouseButtonEvent *event )
     }
 }
 
+void ONScripterLabel::variableEditMode( SDL_KeyboardEvent *event )
+{
+    int  p;
+    char *var_name, var_index[12];
+
+    switch ( event->keysym.sym ) {
+      case SDLK_m:
+        if ( variable_edit_mode != EDIT_SELECT_MODE ) return;
+        variable_edit_mode = EDIT_MP3_VOLUME_MODE;
+        variable_edit_num = mp3_volume;
+        break;
+
+      case SDLK_s:
+        if ( variable_edit_mode != EDIT_SELECT_MODE ) return;
+        variable_edit_mode = EDIT_SE_VOLUME_MODE;
+        variable_edit_num = se_volume;
+        break;
+
+      case SDLK_v:
+        if ( variable_edit_mode != EDIT_SELECT_MODE ) return;
+        variable_edit_mode = EDIT_VOICE_VOLUME_MODE;
+        variable_edit_num = voice_volume;
+        break;
+
+      case SDLK_n:
+        if ( variable_edit_mode != EDIT_SELECT_MODE ) return;
+        variable_edit_mode = EDIT_VARIABLE_INDEX_MODE;
+        variable_edit_num = 0;
+        break;
+
+      case SDLK_9: case SDLK_KP9: variable_edit_num = variable_edit_num * 10 + 9; break;
+      case SDLK_8: case SDLK_KP8: variable_edit_num = variable_edit_num * 10 + 8; break;
+      case SDLK_7: case SDLK_KP7: variable_edit_num = variable_edit_num * 10 + 7; break;
+      case SDLK_6: case SDLK_KP6: variable_edit_num = variable_edit_num * 10 + 6; break;
+      case SDLK_5: case SDLK_KP5: variable_edit_num = variable_edit_num * 10 + 5; break;
+      case SDLK_4: case SDLK_KP4: variable_edit_num = variable_edit_num * 10 + 4; break;
+      case SDLK_3: case SDLK_KP3: variable_edit_num = variable_edit_num * 10 + 3; break;
+      case SDLK_2: case SDLK_KP2: variable_edit_num = variable_edit_num * 10 + 2; break;
+      case SDLK_1: case SDLK_KP1: variable_edit_num = variable_edit_num * 10 + 1; break;
+      case SDLK_0: case SDLK_KP0: variable_edit_num = variable_edit_num * 10 + 0; break;
+
+      case SDLK_MINUS: case SDLK_KP_MINUS:
+        if ( variable_edit_mode == EDIT_VARIABLE_NUM_MODE && variable_edit_num == 0 ) variable_edit_sign = -1;
+        break;
+
+      case SDLK_BACKSPACE:
+        if ( variable_edit_num ) variable_edit_num /= 10;
+        else if ( variable_edit_sign == -1 ) variable_edit_sign = 1;
+        break;
+
+      case SDLK_RETURN: case SDLK_KP_ENTER:
+        switch( variable_edit_mode ){
+
+          case EDIT_VARIABLE_INDEX_MODE:
+            variable_edit_index = variable_edit_num;
+            variable_edit_num = num_variables[ variable_edit_index ];
+            if ( variable_edit_num < 0 ){
+                variable_edit_num = -variable_edit_num;
+                variable_edit_sign = -1;
+            }
+            else{
+                variable_edit_sign = 1;
+            }
+            break;
+
+          case EDIT_VARIABLE_NUM_MODE:
+            setNumVariable( variable_edit_index, variable_edit_sign * variable_edit_num );
+            break;
+
+          case EDIT_MP3_VOLUME_MODE:
+            mp3_volume = variable_edit_num;
+            if ( mp3_sample ) SMPEG_setvolume( mp3_sample, mp3_volume );
+            break;
+
+          case EDIT_SE_VOLUME_MODE:
+            se_volume = variable_edit_num;
+            for ( int i=1 ; i<MIX_CHANNELS ; i++ )
+                if ( wave_sample[i] ) Mix_Volume( i, se_volume * 128 / 100 );
+            break;
+
+          case EDIT_VOICE_VOLUME_MODE:
+            voice_volume = variable_edit_num;
+            if ( wave_sample[0] ) Mix_Volume( 0, se_volume * 128 / 100 );
+
+          default:
+            break;
+        }
+        if ( variable_edit_mode == EDIT_VARIABLE_INDEX_MODE )
+            variable_edit_mode = EDIT_VARIABLE_NUM_MODE;
+        else
+            variable_edit_mode = EDIT_SELECT_MODE;
+        break;
+
+      case SDLK_ESCAPE:
+        if ( variable_edit_mode == EDIT_SELECT_MODE ){
+            variable_edit_mode = NOT_EDIT_MODE;
+            SDL_WM_SetCaption( DEFAULT_WM_TITLE, DEFAULT_WM_ICON );
+            SDL_Delay( 100 );
+            SDL_WM_SetCaption( wm_title_string, wm_icon_string );
+            return;
+        }
+        variable_edit_mode = EDIT_SELECT_MODE;
+
+      default:
+        break;
+    }
+
+    if ( variable_edit_mode == EDIT_SELECT_MODE ){
+        sprintf( wm_edit_string, "%s%s", EDIT_MODE_PREFIX, EDIT_SELECT_STRING );
+    }
+    else if ( variable_edit_mode == EDIT_VARIABLE_INDEX_MODE ) {
+        sprintf( wm_edit_string, "%s%s%d", EDIT_MODE_PREFIX, "Variable Index?  %", variable_edit_sign * variable_edit_num );
+    }
+    else if ( variable_edit_mode >= EDIT_VARIABLE_NUM_MODE ){
+        switch( variable_edit_mode ){
+
+          case EDIT_VARIABLE_NUM_MODE:
+            sprintf( var_index, "%%%d", variable_edit_index );
+            var_name = var_index; p = num_variables[ variable_edit_index ]; break;
+
+          case EDIT_MP3_VOLUME_MODE:
+            var_name = "MP3 Volume"; p = mp3_volume; break;
+
+          case EDIT_VOICE_VOLUME_MODE:
+            var_name = "Voice Volume"; p = voice_volume; break;
+
+          case EDIT_SE_VOLUME_MODE:
+            var_name = "Sound effect Volume"; p = se_volume; break;
+
+          default:
+            var_name = "";
+        }
+        sprintf( wm_edit_string, "%sCurrent %s=%d  New value? %s%d",
+                 EDIT_MODE_PREFIX, var_name, p, (variable_edit_sign==1)?"":"-", variable_edit_num );
+    }
+
+    SDL_WM_SetCaption( wm_edit_string, wm_icon_string );
+}
+
+
 void ONScripterLabel::keyPressEvent( SDL_KeyboardEvent *event )
 {
     int i;
+
+    if ( variable_edit_mode ){
+        variableEditMode( event );
+        return;
+    }
+
+    if ( edit_flag && event->keysym.sym == SDLK_z ){
+        variable_edit_mode = EDIT_SELECT_MODE;
+        variable_edit_sign = 1;
+        variable_edit_num = 0;
+        strcpy( wm_edit_string, EDIT_MODE_PREFIX );
+        strcat( wm_edit_string,
+               "MP3 vol (m)  SE vol (s)  Voice vol (v)  Numeric variable (n)");
+        SDL_WM_SetCaption( wm_edit_string, wm_icon_string );
+    }
 
     if ( skip_flag && event->keysym.sym == SDLK_s) skip_flag = false;
 

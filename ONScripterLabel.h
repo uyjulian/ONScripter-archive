@@ -40,13 +40,15 @@
 //#define DEFAULT_BLIT_FLAG (SDL_RLEACCEL)
 
 #define MAX_SPRITE_NUM 256
-
 #define CUSTOM_EFFECT_NO 100
+
+#define DEFAULT_WM_TITLE "ONScripter"
+#define DEFAULT_WM_ICON  "ONScripter"
 
 class ONScripterLabel : public ScriptParser
 {
 public:
-    ONScripterLabel( bool cdaudio_flag, char *default_font, char *default_registry );
+    ONScripterLabel( bool cdaudio_flag, char *default_font, char *default_registry, bool edit_flag );
     ~ONScripterLabel();
 
     bool skip_flag;
@@ -121,6 +123,23 @@ public:
     int amspCommand();
     
 protected:
+    /* ---------------------------------------- */
+    /* Event related variables */
+    typedef enum{ NOT_EDIT_MODE=0,
+                      EDIT_SELECT_MODE=1,
+                      EDIT_VARIABLE_INDEX_MODE=2,
+                      EDIT_VARIABLE_NUM_MODE=3,
+                      EDIT_MP3_VOLUME_MODE=4,
+                      EDIT_VOICE_VOLUME_MODE=5,
+                      EDIT_SE_VOLUME_MODE=6
+                      } VARIABLE_EDIT_MODE;
+    
+    int variable_edit_mode;
+    int variable_edit_index;
+    int variable_edit_num;
+    int variable_edit_sign;
+    
+    void variableEditMode( SDL_KeyboardEvent *event );
     void keyPressEvent( SDL_KeyboardEvent *event );
     void mousePressEvent( SDL_MouseButtonEvent *event );
     void mouseMoveEvent( SDL_MouseMotionEvent *event );
@@ -196,6 +215,9 @@ private:
 
     /* ---------------------------------------- */
     /* Global definitions */
+    bool debug_flag;
+    bool edit_flag;
+    
     long internal_timer;
     long autoclick_timer;
 
@@ -205,9 +227,12 @@ private:
 
     bool trap_flag;
     char *trap_dist;
+    char *wm_title_string;
+    char *wm_icon_string;
+    char wm_edit_string[256];
 
     Uint32 rmask, gmask, bmask, amask;
-    
+
     /* ---------------------------------------- */
     /* Script related variables */
     int display_mode;

@@ -143,10 +143,16 @@ int ONScripterLabel::SetVideoMode()
 
     initSJIS2UTF16();
     
+    wm_title_string = new char[ strlen(DEFAULT_WM_TITLE) + 1 ];
+    memcpy( wm_title_string, DEFAULT_WM_TITLE, strlen(DEFAULT_WM_TITLE) + 1 );
+    wm_icon_string = new char[ strlen(DEFAULT_WM_ICON) + 1 ];
+    memcpy( wm_icon_string, DEFAULT_WM_TITLE, strlen(DEFAULT_WM_ICON) + 1 );
+    SDL_WM_SetCaption( wm_title_string, wm_icon_string );
+    
 	return(0);
 }
 
-ONScripterLabel::ONScripterLabel( bool cdaudio_flag, char *default_font, char *default_registry )
+ONScripterLabel::ONScripterLabel( bool cdaudio_flag, char *default_font, char *default_registry, bool edit_flag )
 {
     int i;
 
@@ -162,7 +168,6 @@ ONScripterLabel::ONScripterLabel( bool cdaudio_flag, char *default_font, char *d
 	atexit(SDL_Quit);
 
     SetVideoMode();
-    SDL_WM_SetCaption( "ONScripter", "ONScripter" );
 
     if ( Mix_OpenAudio( 44100, MIX_DEFAULT_FORMAT, MIX_DEFAULT_CHANNELS, DEFAULT_AUDIOBUF ) < 0 ){
         fprintf(stderr, "Couldn't open audio device!\n"
@@ -214,6 +219,7 @@ ONScripterLabel::ONScripterLabel( bool cdaudio_flag, char *default_font, char *d
     shelter_text_surface = SDL_CreateRGBSurface( DEFAULT_SURFACE_FLAG, screen_width, screen_height, 32, rmask, gmask, bmask, amask );
     SDL_SetAlpha( shelter_text_surface, DEFAULT_BLIT_FLAG, SDL_ALPHA_OPAQUE );
 
+    debug_flag = false;
     internal_timer = SDL_GetTicks();
     autoclick_timer = 0;
 
@@ -232,6 +238,8 @@ ONScripterLabel::ONScripterLabel( bool cdaudio_flag, char *default_font, char *d
     last_button_link = &root_button_link;
     btndef_surface = NULL;
     current_over_button = 0;
+
+    this->edit_flag = edit_flag;
 
     /* ---------------------------------------- */
     /* Sound related variables */

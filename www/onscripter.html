@@ -12,7 +12,7 @@
 </CENTER>
 
 Created: Feb. 6, 2002<br>
-Last updated: Mar. 19, 2002
+Last updated: Mar. 20, 2002
 
 <HR>
 
@@ -27,22 +27,53 @@ href="http://www2.osk.3web.ne.jp/~naokikun/index.htm">高橋直樹</a>氏が開発したゲ
 
 <p>ONScripter で何ができるのかについてはαβεさんの[<A HREF="http://abe.platina.sakura.ne.jp/onscripter/">ONScripter のスゝメ</A>]を参照してください。</p>
 
-<p>現在はベータ版<A HREF="onscripter-beta-20020319.tar.gz">onscripter-beta-20020319.tar.gz</A>を配布しております。<br>
+<p>現在はベータ版<A HREF="onscripter-beta-20020320.tar.gz">onscripter-beta-20020320.tar.gz</A>を配布しております。<br>
 ベータ版ゆえデバッグ出力・assert 等が有効になっていますが、正式版になったら取り除きます。<br>
-(一つ前のベータ版<A HREF="onscripter-beta-20020318a.tar.gz">onscripter-beta-20020318a.tar.gz</A>)</p>
+(一つ前のベータ版<A HREF="onscripter-beta-20020319.tar.gz">onscripter-beta-20020319.tar.gz</A>)</p>
 
 <p>更新内容については[<A HREF="onscripter_devel.html">開発日誌</A>]を参照して下さい。</p>
 
 <p>動作報告・バグ報告・機能追加要望・パッチは随時受け付けますので、[<a href="mailto:ogapee@aqua.dti2.ne.jp">ogapee@aqua.dti2.ne.jp</a>]までお願いします。Windows/Linux 以外の OS での動作報告も。</p>
 
+</td></tr><tr><td>
+<P>
+目次
+
+<UL>
+  <LI> <A HREF="#特徴"> 特徴 </A>
+       <UL>
+	 <LI> <A HREF="#NScripter と比較した特徴">NScripter と比較した特徴</A>
+	 <LI> <A HREF="#実行環境としての特徴">実行環境としての特徴</A>
+       </UL>
+  <LI> <A HREF="#実行方法">実行方法</A>
+       <UL>
+	 <LI> <A HREF="#動作環境">動作環境</A>
+	 <LI> <A HREF="#コンパイル">コンパイル</A>
+	 <LI> <A HREF="#実行">実行</A>
+       </UL>
+  <LI> <A HREF="#TODO">TODO</A>
+  <LI> <A HREF="#リンク">リンク</A>
+  <LI> <A HREF="#雑多なこと">雑多なこと</A>
+       <UL>
+	 <LI> <A HREF="#キーボードショートカットについて">キーボードショートカットについて</A>
+	 <LI> <A HREF="#起動オプションについて">起動オプションについて</A>
+	 <LI> <A HREF="#レジストリ読み込みについて">レジストリ読み込みについて</A>
+	 <LI> <A HREF="#音量及び変数編集モードについて">音量及び変数編集モードについて</A>
+	 <LI> <A HREF="#TrueType font による漢字表示について">TrueType font による漢字表示について</A>
+	 <LI> <A HREF="#CD audio 演奏の振り替えについて">CD audio 演奏の振り替えについて</A>
+	 <LI> <A HREF="#Windows 上で MP3 の音がぶつぶつとぎれる問題について">Windows 上で MP3 の音がぶつぶつとぎれる問題について</A>
+       </UL>
+</UL>
 </td></tr>
 </table>
 
 
+<A NAME="特徴"></A>
 <table>
 <tr><th> 特徴 </th></tr>
 <tr><td>
 
+<A NAME="NScripter と比較した特徴"></A>
 <h3>NScripter と比較した特徴</h3>
 
 <OL>
@@ -55,24 +86,27 @@ href="http://www2.osk.3web.ne.jp/~naokikun/index.htm">高橋直樹</a>氏が開発したゲ
 </td></tr>
 <tr><td>
 
+<A NAME="実行環境としての特徴"></A>
 <h3>実行環境としての特徴</h3>
 
 <OL>
   <LI> セーブ・ロード機能があります(ただし、save?.dat は独自形式)。<BR>
   <LI> Nsa 及び Nbz のデコードを実装しています。<BR>
   <LI> よく使われる画面効果（効果番号 1 - 15, 18）を実装しています。<BR>
-  <LI> wave 演奏と MP3 演奏を実装しています。<BR>
+  <LI> wave 演奏と MP3 演奏を実装しています。ただし、MIDI は演奏できません。<BR>
   <LI> 右クリックメニューを実装しています。<BR>
 </OL>
 
 </td></tr>
 </table>
 
+<A NAME="実行方法"></A>
 <table>
 <tr><th>実行方法</th></tr>
 <tr><td>
 
-<h3> 動作環境 </h3>
+<A NAME="動作環境"></A>
+<h3>動作環境</h3>
 <p> 下記のライブラリと処理系が必要です。バージョンは最新である必要はないかもしれませんが、他のバージョンでは確認していません。</p>
 
 <DL>
@@ -94,10 +128,12 @@ href="http://www2.osk.3web.ne.jp/~naokikun/index.htm">高橋直樹</a>氏が開発したゲ
 
 その他の多くの Unix 系 OS, BeOS, MacOS については bzip2 と SDL と SMPEG が対応しているため適切な Makefile を書けばコンパイル・実行できると思いますが、当方では確認できないので誰かやって下さい。</p>
 
-<h3> コンパイル </h3>
+<A NAME="コンパイル"></A>
+<h3>コンパイル</h3>
 <p>適当な場所に ONScripter を展開し、Linux の場合は make -f Makefile.Linux, Windows の場合は、nmake -f Makefile.Win とやって下さい。Windows の場合は、bzip2 と SDL と SMPEG のヘッダファイルとライブラリのある場所を Makefile.Win で指定しているので、自身の環境に合わせて適宜修正してください。</p>
 
-<h3> 実行 </h3>
+<A NAME="実行"></A>
+<h3>実行</h3>
 <p><FONT color="#ff0000">[必須]</FONT>まずゲームのアーカイブを一カ所にまとめます。通常は、スクリプト(0.txt もしくは nscript.dat)とアーカイブ(arc.sar もしくは arc.nsa)の２つのファイルがあれば十分なはずです。arc1.nsa 〜 arc9.nsa がある場合は、それも置いてください。またゲームによっては、アーカイブの外に一部の画像ファイルを置いていたりします。その場合は、それらのファイルも元と同じように置いてください。一番確実なのは、ディレクトリ毎全てのファイルをコピーしてくることです。</p>
 
 <p><FONT color="#ff0000">[必須]</FONT>下記の&quot;TrueType font による漢字表示について&quot;を参考に、日本語 TrueType font を用意し、&quot;default.ttf&quot; という名前で置いてください。</p>
@@ -109,8 +145,9 @@ href="http://www2.osk.3web.ne.jp/~naokikun/index.htm">高橋直樹</a>氏が開発したゲ
 </td></tr>
 </table>
 
+<A NAME="TODO"></A>
 <table>
-<tr><th> TODO </th></tr>
+<tr><th>TODO</th></tr>
 <tr><td>
 
 <p>現在把握しており直す予定のバグ・未実装機能。先頭の文字は優先度。</p>
@@ -138,8 +175,9 @@ href="http://www2.osk.3web.ne.jp/~naokikun/index.htm">高橋直樹</a>氏が開発したゲ
 </td></tr>
 </table>
 
+<A NAME="リンク"></A>
 <table>
-<tr><th> リンク </th></tr>
+<tr><th>リンク</th></tr>
 <tr><td>
 
 <p>お世話になっているページ、よく利用させていただいているページへのリンクです。</p>
@@ -156,11 +194,13 @@ href="http://www2.osk.3web.ne.jp/~naokikun/index.htm">高橋直樹</a>氏が開発したゲ
 </td></tr>
 </table>
 
+<A NAME="雑多なこと"></A>
 <table>
 <tr><th>雑多なこと</th></tr>
 <tr><td>
 
-<h3> キーボードショートカットについて </h3>
+<A NAME="キーボードショートカットについて"></A>
+<h3>キーボードショートカットについて</h3>
 
 <p> ONScripter は全ての操作をキーボードで行うことができます。下にショートカット一覧を書きます。</p>
 
@@ -173,6 +213,7 @@ href="http://www2.osk.3web.ne.jp/~naokikun/index.htm">高橋直樹</a>氏が開発したゲ
 <tr><td>n, ↓</td><td>ボタン・文章選択時にマウスカーソルを次の選択肢に動かす</td></tr>
 <tr><td> s </td><td>次の選択肢まで飛ばすモードに切り替え</td></tr>
 <tr><td> o </td><td>１ページ表示をするかしないかの切り替え</td></tr>
+<tr><td> z </td><td>--edit オプションを指定して起動したときに、音量及び変数変更モードに入る</td></tr>
 <tr><td> 1, 2, 3 </td><td>文字の描画速度を変更</td></tr>
 </table>
 
@@ -182,7 +223,8 @@ href="http://www2.osk.3web.ne.jp/~naokikun/index.htm">高橋直樹</a>氏が開発したゲ
 
 </td></tr><tr><td>
 
-<h3> 起動オプションについて </h3>
+<A NAME="起動オプションについて"></A>
+<h3>起動オプションについて</h3>
 
 <p> 以下に示すオプションを指定できます。ただし、オプション無しがデフォルト動作です。</p>
 
@@ -191,13 +233,15 @@ href="http://www2.osk.3web.ne.jp/~naokikun/index.htm">高橋直樹</a>氏が開発したゲ
 <tr><td>-h,--help</td><td>へルプを表示して終了。</td></tr>
 <tr><td>-v,--version</td><td>バージョンを表示して終了。</td></tr>
 <tr><td>--cdaudio</td><td>CD Audio 演奏モードに変更。CD Audio が使えなかったとしても MP3 ファイルは使用しません。</td></tr>
-<tr><td>--font font_file</td><td>使用するフォントの path を指定。</td></tr>
-<tr><td>--registry registry_file</td><td>使用する registry file を指定。</td></tr>
+<tr><td>--font file</td><td>使用するフォントの path を指定。</td></tr>
+<tr><td>--registry file</td><td>使用する registry file を指定。</td></tr>
+<tr><td>--edit</td><td>z キーを押したときに、音量及び変数の編集モードに入れるようになる。</td></tr>
 </table>
 
 </td></tr><tr><td>
 
-<h3> レジストリ読み込みについて </h3>
+<A NAME="レジストリ読み込みについて"></A>
+<h3>レジストリ読み込みについて</h3>
 
 <p> getreg コマンドは Windows の registry から指定されたデータを取得し
 ます。ONScripter では、テキストファイル registry.txt にデータを記述し、
@@ -227,7 +271,33 @@ registry.txt を一カ所にまとめておくことができます。--registry を指定し
 
 </td></tr><tr><td>
 
-<h3> TrueType font による漢字表示について </h3>
+<A NAME="音量及び変数編集モードについて"></A>
+<h3>音量及び変数編集モードについて</h3>
+
+<p>これは暫定的なおまけ機能であり、今後変更されたり無くなったりする可能性があります。</p>
+
+<P>ONScripter 起動時に --edit オプションを指定することで有効になります。</P>
+
+<P>任意のキー入力待ち状態時に z キーを押すことで、編集モードに入ります。この時、title bar に<br>
+<pre>
+[EDIT MODE]  MP3 vol (m)  SE vol (s)  Voice vol (v)  Numeric variable (n)
+</pre>
+
+と表示されるはずです。この状態で、m, s, v, n のいずれかのキーを押すこ
+とで、それぞれの値を変更するサブモードに入ります。また、Esc キーを押す
+ことによってモードを抜けることができます。</P>
+
+<P>数字変数の場合は、値変更の前にどの変数を変更するのかを選択します。</P>
+
+<P>値変更サブモードでは、0 から 9 までの数字と -, BackSpace, Esc, リター
+ンキーが使えます。- キーは、対象が数字変数でかつ数字が0の時のみ有効に
+なります。既に数字が入力されている場合には、一旦 BackSpace で数字を全
+部消してから - キーを押してください。</P>
+
+</td></tr><tr><td>
+
+<A NAME="TrueType font による漢字表示について"></A>
+<h3>TrueType font による漢字表示について</h3>
 
 <p> 漢字を表示するためには、TrueType font を用意する必要があります。例えば Windows 2000 では \WinNT\Fonts の下に msgothic.ttc があり、またフリーの TreuType font として、kochi-gothic.ttf や wadalab-gothic.ttf があります。<BR>
 
@@ -250,7 +320,8 @@ registry.txt を一カ所にまとめておくことができます。--registry を指定し
 
 </td></tr><tr><td>
 
-<h3> CD audio 演奏の振り替えについて </h3>
+<A NAME="CD audio 演奏の振り替えについて"></A>
+<h3>CD audio 演奏の振り替えについて</h3>
 
 <p>ゲームのスクリプトがある場所に cd というディレクトリを作り、そこに<BR>
 cd/track01.mp3<BR>
@@ -267,7 +338,8 @@ cd/track14.mp3<BR>
 
 </td></tr><tr><td>
 
-<h3> Windows 上で MP3 の音がぶつぶつとぎれる問題について </h3>
+<A NAME="Windows 上で MP3 の音がぶつぶつとぎれる問題について"></A>
+<h3>Windows 上で MP3 の音がぶつぶつとぎれる問題について</h3>
 
 <P> Windows でコンパイル済の SMPEG のバイナリを持ってくると、MP3 によっては音がぶつぶつとぎれて演奏されます。これは、SMPEG を MSVC でコンパイルする時の最適化の問題で、下記の通りに MSVC の global optimization を一部抑制する指定をし、自分でコンパイルすることで解決できます。</P>
 

@@ -54,6 +54,7 @@ static struct FuncLUT{
     {"vsp",   &ONScripterLabel::vspCommand},
     {"voicevol",   &ONScripterLabel::voicevolCommand},
     {"trap",   &ONScripterLabel::trapCommand},
+    {"textspeed",   &ONScripterLabel::textspeedCommand},
     {"texton",   &ONScripterLabel::textonCommand},
     {"textoff",   &ONScripterLabel::textoffCommand},
     {"textclear",   &ONScripterLabel::textclearCommand},

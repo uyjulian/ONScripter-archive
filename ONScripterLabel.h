@@ -66,6 +66,7 @@ public:
     int vspCommand();
     int voicevolCommand();
     int trapCommand();
+    int textspeedCommand();
     int textonCommand();
     int textoffCommand();
     int textclearCommand();

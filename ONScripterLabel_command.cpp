@@ -126,6 +126,15 @@ int ONScripterLabel::trapCommand()
     return RET_CONTINUE;
 }
 
+int ONScripterLabel::textspeedCommand()
+{
+    char *p_string_buffer = string_buffer + string_buffer_offset + 9; // strlen("textspeed") = 9
+
+    sentence_font.wait_time = readInt( &p_string_buffer );
+
+    return RET_CONTINUE;
+}
+
 int ONScripterLabel::textonCommand()
 {
     text_on_flag = true;
@@ -1089,6 +1098,7 @@ int ONScripterLabel::clickCommand()
         return RET_CONTINUE;
     }
     else{
+        skip_flag = false;
         event_mode = WAIT_INPUT_MODE;
         key_pressed_flag = false;
         return RET_WAIT;

@@ -37,14 +37,8 @@ int ONScripterLabel::setEffect( int effect_no, char *buf )
     effect_counter = 0;
     effect_command = buf;
     event_mode = EFFECT_EVENT_MODE;
-    if ( effect_no == 1 ){
-        timerEvent();
-        return RET_CONTINUE;
-    }
-    else{
-        startTimer( MINIMUM_TIMER_RESOLUTION );
-        return RET_WAIT_NEXT;
-    }
+    startTimer( MINIMUM_TIMER_RESOLUTION );
+    return RET_WAIT_NEXT;
 }
 
 int ONScripterLabel::doEffect( int effect_no, AnimationInfo *anim, int effect_image )

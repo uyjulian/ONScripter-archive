@@ -420,8 +420,7 @@ void ONScripterLabel::timerEvent( void )
         ret = this->parseLine();
         if ( ret == RET_CONTINUE ){
             delete[] effect_command;
-            if ( effect_counter == 0 ) return;
-            if ( effect_blank == 0 ) goto timerEventTop;
+            if ( effect_blank == 0 || effect_counter == 0 ) goto timerEventTop;
             startTimer( effect_blank );
         }
         else{

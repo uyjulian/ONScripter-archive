@@ -106,13 +106,13 @@ bool DirectReader::getAccessFlag( char *file_name )
     return false;
 }
 
-FILE *DirectReader::getFileHandle( char *file_name, bool &nbz_flag, size_t *length )
+FILE *DirectReader::getFileHandle( char *file_name, int &compression_type, size_t *length )
 {
     FILE *fp;
     unsigned int i;
     size_t len;
 
-    nbz_flag = false;
+    compression_type = NO_COMPRESSION;
     len = strlen( file_name );
     if ( len > MAX_FILE_NAME_LENGTH ) len = MAX_FILE_NAME_LENGTH;
     memcpy( capital_name, file_name, len );
@@ -122,10 +122,19 @@ FILE *DirectReader::getFileHandle( char *file_name, bool &nbz_flag, size_t *leng
         if ( capital_name[i] == '/' || capital_name[i] == '\\' ) capital_name[i] = (char)DELIMITER;
     }
 
-    if ( (fp = fopen( capital_name, "rb" )) != NULL ){
-        if ( len >= 3 && (!strncmp( &capital_name[len-3], "NBZ", 3 ) || !strncmp( &capital_name[len-3], "nbz", 3 )) ){
+    if ( (fp = fopen( capital_name, "rb" )) != NULL && len >= 3 ){
+        if ( (!strncmp( &capital_name[len-3], "NBZ", 3 ) || !strncmp( &capital_name[len-3], "nbz", 3 )) ){
             *length = readLong( fp );
-            if ( readChar( fp ) == 'B' && readChar( fp ) == 'Z' ) nbz_flag = true;
+            if ( readChar( fp ) == 'B' && readChar( fp ) == 'Z' ) compression_type = NBZ_COMPRESSION;
+            fseek( fp, 0, SEEK_SET );
+        }
+        else if ( (!strncmp( &capital_name[len-3], "SPB", 3 ) || !strncmp( &capital_name[len-3], "spb", 3 )) ){
+            char str[30];
+            int width  = readShort( fp );
+            int height = readShort( fp );
+            sprintf( str, "P6 %d %d 255\n", width , height );
+            *length = width * height * 3 + strlen( str );
+            compression_type = SPB_COMPRESSION;
             fseek( fp, 0, SEEK_SET );
         }
     }
@@ -135,12 +144,12 @@ FILE *DirectReader::getFileHandle( char *file_name, bool &nbz_flag, size_t *leng
 
 size_t DirectReader::getFileLength( char *file_name )
 {
-    bool nbz_flag;
+    int compression_type;
     size_t len;
-    FILE *fp = getFileHandle( file_name, nbz_flag, &len );
+    FILE *fp = getFileHandle( file_name, compression_type, &len );
 
     if ( fp ){
-        if ( !nbz_flag ){
+        if ( compression_type == NO_COMPRESSION ){
             fseek( fp, 0, SEEK_END );
             len = ftell( fp );
         }
@@ -154,12 +163,13 @@ size_t DirectReader::getFileLength( char *file_name )
 
 size_t DirectReader::getFile( char *file_name, unsigned char *buffer )
 {
-    bool nbz_flag;
+    int compression_type;
     size_t len, c, total = 0;
-    FILE *fp = getFileHandle( file_name, nbz_flag, &len );
+    FILE *fp = getFileHandle( file_name, compression_type, &len );
     
     if ( fp ){
-        if ( nbz_flag ) return decodeNBZ( fp, 0, buffer );
+        if      ( compression_type & NBZ_COMPRESSION ) return decodeNBZ( fp, 0, buffer );
+        else if ( compression_type & SPB_COMPRESSION ) return decodeSPB( fp, 0, buffer );
 
         total = len;
         while( len > 0 ){
@@ -202,4 +212,93 @@ size_t DirectReader::decodeNBZ( FILE *fp, size_t offset, unsigned char *buf )
 	BZ2_bzReadClose( &err, bfp );
 
     return original_length - count;
+}
+
+int DirectReader::getbit( FILE *fp, int n )
+{
+    int i, x = 0;
+    static int getbit_buf;
+    
+    for ( i=0 ; i<n ; i++ ){
+        if ( getbit_mask == 0 ){
+            if ( (getbit_buf = fgetc( fp )) == EOF ) return EOF;
+            getbit_mask = 128;
+        }
+        x <<= 1;
+        if ( getbit_buf & getbit_mask ) x++;
+        getbit_mask >>= 1;
+    }
+    return x;
+}
+
+size_t DirectReader::decodeSPB( FILE *fp, size_t offset, unsigned char *buf )
+{
+    unsigned int count;
+    unsigned short width, height;
+    unsigned char *pbuf, *psbuf;
+    int i, j, k, c, n, m;
+    char str[30];
+
+    getbit_mask = 0;
+    
+    fseek( fp, offset, SEEK_SET );
+    width  = readShort( fp );
+    height = readShort( fp );
+    sprintf( str, "P6 %d %d 255\n", width , height );
+
+    memcpy( buf, str, strlen( str ) );
+    buf += strlen( str );
+
+    unsigned char *spb_buffer = new unsigned char[ width * height ];
+    
+    for ( i=0 ; i<3 ; i++ ){
+        count = 0;
+        spb_buffer[ count++ ] = c = getbit( fp, 8 );
+        while ( count < (unsigned)(width * height) ){
+            n = getbit( fp, 3 );
+            if ( n == 0 ){
+                spb_buffer[ count++ ] = c;
+                spb_buffer[ count++ ] = c;
+                spb_buffer[ count++ ] = c;
+                spb_buffer[ count++ ] = c;
+                continue;
+            }
+            else if ( n == 7 ){
+                m = getbit( fp, 1 ) + 1;
+            }
+            else{
+                m = n + 2;
+            }
+
+            for ( j=0 ; j<4 ; j++ ){
+                if ( m == 8 ){
+                    c = getbit( fp, 8 );
+                }
+                else{
+                    k = getbit( fp, m );
+                    if ( k & 1 ) c += (k>>1) + 1;
+                    else         c -= (k>>1);
+                }
+                spb_buffer[ count++ ] = c;
+            }
+        }
+
+        pbuf  = buf + 2 - i;
+        psbuf = spb_buffer;
+
+        for ( j=0 ; j<height ; j++ ){
+            if ( j & 1 ){
+                for ( k=0 ; k<width ; k++, pbuf -= 3 ) *pbuf = *psbuf++;
+                pbuf += (width+1) * 3;
+            }
+            else{
+                for ( k=0 ; k<width ; k++, pbuf += 3 ) *pbuf = *psbuf++;
+                pbuf += (width-1) * 3;
+            }
+        }
+    }
+    
+    delete[] spb_buffer;
+    
+    return width * height * 3 + strlen( str );
 }

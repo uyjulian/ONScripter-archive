@@ -692,20 +692,23 @@ void ONScripterLabel::executeSystemLoad()
         if ( current_button_state.button == 0 ) return;
         event_mode = IDLE_EVENT_MODE;
 
-        deleteButtonLink();
-        deleteSelectLink();
-
         if ( current_button_state.button > 0 ){
             if ( loadSaveFile( current_button_state.button ) ){
                 event_mode  = WAIT_INPUT_MODE | WAIT_BUTTON_MODE;
                 refreshMouseOverButton();
                 return;
             }
+            deleteButtonLink();
+            deleteSelectLink();
+
             leaveSystemCall( false );
             saveon_flag = true;
         }
-        else
+        else{
+            deleteButtonLink();
+            deleteSelectLink();
             leaveSystemCall();
+        }
     }
     else{
         searchSaveFiles();

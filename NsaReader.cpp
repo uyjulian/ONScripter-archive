@@ -152,9 +152,8 @@ size_t NsaReader::getFileSub( ArchiveInfo *ai, char *file_name, unsigned char *b
     int i = getIndexFromFile( ai, file_name );
     if ( i == ai->num_of_files ) return 0;
 
-    getbit_mask = 0;
     if ( ai->fi_list[i].compressed_no == 0 )      return SarReader::getFileSub( ai, file_name, buffer );
-    else if ( ai->fi_list[i].compressed_no == 1 ) return decodeSPB( ai, i, buffer );
+    else if ( ai->fi_list[i].compressed_no == 1 ) return decodeSPB( ai->file_handle, ai->fi_list[i].offset, buffer );
     else if ( ai->fi_list[i].compressed_no == 2 ) return decodeLZSS( ai, i, buffer );
 
     return 0;
@@ -194,98 +193,13 @@ struct NsaReader::FileInfo NsaReader::getFileByIndex( int index )
     return archive_info.fi_list[0];
 }
 
-int NsaReader::getbit( FILE *fp, int n )
-{
-    int i, x = 0;
-    static int getbit_buf;
-    
-    for ( i=0 ; i<n ; i++ ){
-        if ( getbit_mask == 0 ){
-            if ( (getbit_buf = fgetc( fp )) == EOF ) return EOF;
-            getbit_mask = 128;
-        }
-        x <<= 1;
-        if ( getbit_buf & getbit_mask ) x++;
-        getbit_mask >>= 1;
-    }
-    return x;
-}
-
-size_t NsaReader::decodeSPB( struct ArchiveInfo *ai, int no, unsigned char *buf )
-{
-    unsigned int count;
-    unsigned short width, height;
-    unsigned char *pbuf, *psbuf;
-    int i, j, k, c, n, m;
-    char str[30];
-
-    fseek( ai->file_handle, ai->fi_list[no].offset, SEEK_SET );
-    width  = readShort( ai->file_handle );
-    height = readShort( ai->file_handle );
-    sprintf( str, "P6 %d %d 255\n", width , height );
-
-    memcpy( buf, str, strlen( str ) );
-    buf += strlen( str );
-
-    unsigned char *spb_buffer = new unsigned char[ width * height ];
-    
-    for ( i=0 ; i<3 ; i++ ){
-        count = 0;
-        spb_buffer[ count++ ] = c = getbit( ai->file_handle, 8 );
-        while ( count < (unsigned)(width * height) ){
-            n = getbit( ai->file_handle, 3 );
-            if ( n == 0 ){
-                spb_buffer[ count++ ] = c;
-                spb_buffer[ count++ ] = c;
-                spb_buffer[ count++ ] = c;
-                spb_buffer[ count++ ] = c;
-                continue;
-            }
-            else if ( n == 7 ){
-                m = getbit( ai->file_handle, 1 ) + 1;
-            }
-            else{
-                m = n + 2;
-            }
-
-            for ( j=0 ; j<4 ; j++ ){
-                if ( m == 8 ){
-                    c = getbit( ai->file_handle, 8 );
-                }
-                else{
-                    k = getbit( ai->file_handle, m );
-                    if ( k & 1 ) c += (k>>1) + 1;
-                    else         c -= (k>>1);
-                }
-                spb_buffer[ count++ ] = c;
-            }
-        }
-
-        pbuf  = buf + 2 - i;
-        psbuf = spb_buffer;
-
-        for ( j=0 ; j<height ; j++ ){
-            if ( j & 1 ){
-                for ( k=0 ; k<width ; k++, pbuf -= 3 ) *pbuf = *psbuf++;
-                pbuf += (width+1) * 3;
-            }
-            else{
-                for ( k=0 ; k<width ; k++, pbuf += 3 ) *pbuf = *psbuf++;
-                pbuf += (width-1) * 3;
-            }
-        }
-    }
-    
-    delete[] spb_buffer;
-    
-    return width * height * 3 + strlen( str );
-}
-
 size_t NsaReader::decodeLZSS( struct ArchiveInfo *ai, int no, unsigned char *buf )
 {
     unsigned int count = 0;
     int i, j, k, r, c;
     unsigned char *lzss_buffer = new unsigned char[ N * 2 ];
+
+    getbit_mask = 0;
 
     fseek( ai->file_handle, ai->fi_list[no].offset, SEEK_SET );
     memset( lzss_buffer, 0, N-F );

@@ -380,14 +380,16 @@ void ONScripterLabel::keyPressEvent( SDL_KeyboardEvent *event )
             printf("toggle skip to true\n");
             key_pressed_flag = true;
             endCursor( clickstr_state );
-            startTimer( MINIMUM_TIMER_RESOLUTION );
+            if ( !(event_mode & WAIT_BUTTON_MODE) )
+                startTimer( MINIMUM_TIMER_RESOLUTION );
         }
         else if (event->keysym.sym == SDLK_o){
             draw_one_page_flag = !draw_one_page_flag;
             printf("toggle draw one page flag to %s\n", (draw_one_page_flag?"true":"false") );
             if ( draw_one_page_flag ){
                 endCursor( clickstr_state );
-                startTimer( MINIMUM_TIMER_RESOLUTION );
+                if ( !(event_mode & WAIT_BUTTON_MODE) )
+                    startTimer( MINIMUM_TIMER_RESOLUTION );
             }
         }
         else if ( event->keysym.sym == SDLK_1 ){

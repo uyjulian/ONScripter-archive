@@ -45,14 +45,11 @@ public:
     
 private:
     bool sar_flag;
-    int  getbit_mask;
     struct ArchiveInfo archive_info2[MAX_EXTRA_ARCHIVE];
     int num_of_nsa_archives;
 
     size_t getFileLengthSub( ArchiveInfo *ai, char *file_name );
     size_t getFileSub( ArchiveInfo *ai, char *file_name, unsigned char *buffer );
-    int getbit( FILE *fp, int n );
-    size_t decodeSPB( struct ArchiveInfo *ai, int no, unsigned char *buf );
     size_t decodeLZSS( struct ArchiveInfo *ai, int no, unsigned char *buffer );
 };
 

@@ -12,7 +12,7 @@
 </CENTER>
 
 Since: Feb. 6, 2002<br>
-Last updated: Oct. 18, 2002<br>
+Last updated: Oct. 20, 2002<br>
 ONScripter のバイナリパッケージを提供してくださる方を募集中です。当方では Zaurus 用のバイナリパッケージのみ公開します。その他のプラットフォーム用のパッケージを公開していただける方は、リンクを張らせていただきますのでメールを下さい。
 <HR>
 
@@ -27,13 +27,17 @@ href="http://www2.osk.3web.ne.jp/~naokikun/index.htm">高橋直樹</a>氏が開発された
 
 <p>ONScripter で何ができるのかについてはαβεさんの[<A HREF="http://abe.platina.sakura.ne.jp/onscripter/">ONScripter のスゝメ</A>]を参照してください。</p>
 
-<p>現在はベータ版<A HREF="onscripter-beta-20021018.tar.gz">onscripter-beta-20021018.tar.gz</A>を配布しております。<FONT color="#ff0000">サーバが prohosting の場合は直接ダウンロードできません。一旦左クリックして先に進み、そこでもう一回左クリックしてください。</FONT><br>
-(一つ前のベータ版<A HREF="onscripter-beta-20021008.tar.gz">onscripter-beta-20021008.tar.gz</A>)<br></p>
+<p>現在はベータ版<A HREF="onscripter-beta-20021020.tar.gz">onscripter-beta-20021020.tar.gz</A>を配布しております。<FONT color="#ff0000">サーバが prohosting の場合は直接ダウンロードできません。一旦左クリックして先に進み、そこでもう一回左クリックしてください。</FONT><br>
+(一つ前のベータ版<A HREF="onscripter-beta-20021018.tar.gz">onscripter-beta-20021018.tar.gz</A>)<br></p>
 
 <p>バイナリパッケージ
 <UL>
   <LI> <A HREF="zaurus/index.html#Package">Zaurus(SL-5500, SL-A300)用</A>
   <LI> <A HREF="http://www.parl.tutkie.tut.ac.jp/~koga/debian/woody/onscripter/">Debian Woody 用</A>（古賀さん）
+       <UL>
+	 <LI> deb http://www.parl.tutkie.tut.ac.jp/~koga/debian/woody ./
+	 <LI> deb-src http://www.parl.tutkie.tut.ac.jp/~koga/debian/woody ./
+       </UL>
   <LI> <A HREF="http://abe.platina.sakura.ne.jp/onscripter/rpms/">Red Hat 系(RPM) 用</A>（αβεさん）
   <LI> その他 MacOS X, FreeBSD ports 等募集中。
 </UL>
@@ -175,7 +179,6 @@ href="http://www2.osk.3web.ne.jp/~naokikun/index.htm">高橋直樹</a>氏が開発された
 
 <OL>
   <LI> (<FONT color="#ff0000">高</FONT>)parser 周りの refine (text_line_flag, next_text_line_flag まわり)
-  <LI> (<FONT color="#ff0000">高</FONT>)nsadec, nsaconv で ns2 に対応する。
   <LI> (<FONT color="#ff0000">高</FONT>)windowback の挙動がおかしいのを直す
   <LI> (<FONT color="#ff8800">中</FONT>)btndown + btnwait でマウスのドラッグに対応させる。
   <LI> (<FONT color="#ff8800">中</FONT>)効果 16, 17 の実装
@@ -453,7 +456,7 @@ NSA アーカイブのバージョン１と２の区別は手動です。スクリプトで ns2 コ
 にコンバータを修正し、再コンバートすることで解決できます。その場合でも、
 save file 等には一切影響がありませんので、Zaurus で使用される方はこの
 オプションを付けてコンバートすることをお勧めします。wav を bzip2 で圧
-縮するので、wav を多用するゲームではかなりアーカイバが小さくなります。
+縮するので、wav を多用するゲームではかなりアーカイブが小さくなります。
 デメリットとしては、bzip2 の復号を行うため若干遅くなりますが、気がづか
 ない程度です。
 

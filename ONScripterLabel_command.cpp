@@ -907,6 +907,17 @@ int ONScripterLabel::mspCommand()
     return RET_CONTINUE;
 }
 
+int ONScripterLabel::mpegplayCommand()
+{
+    script_h.readStr();
+    const char *save_buf = script_h.saveStringBuffer();
+    
+    bool click_flag = (script_h.readInt()==1)?true:false;
+
+    stopBGM( false );
+    playMPEG( save_buf, click_flag );
+}
+
 int ONScripterLabel::mp3volCommand()
 {
     mp3_volume = script_h.readInt();

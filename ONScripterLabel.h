@@ -114,6 +114,7 @@ public:
     int ofscpyCommand();
     int negaCommand();
     int mspCommand();
+    int mpegplayCommand();
     int mp3volCommand();
     int mp3Command();
     int movemousecursorCommand();
@@ -431,6 +432,7 @@ private:
     int playMIDIFile();
     int playMIDI();
     int playMP3( int cd_no );
+    void playMPEG( const char *filename, bool click_flag );
     int playCDAudio( int cd_no );
     enum { WAVE_PLAY        = 0,
            WAVE_PRELOAD     = 1,

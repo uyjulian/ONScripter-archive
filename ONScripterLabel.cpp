@@ -89,6 +89,7 @@ static struct FuncLUT{
     {"ofscpy", &ONScripterLabel::ofscpyCommand},
     {"nega", &ONScripterLabel::negaCommand},
     {"msp", &ONScripterLabel::mspCommand},
+    {"mpegplay", &ONScripterLabel::mpegplayCommand},
     {"mp3vol", &ONScripterLabel::mp3volCommand},
     {"mp3stop", &ONScripterLabel::playstopCommand},
     {"mp3save", &ONScripterLabel::mp3Command},

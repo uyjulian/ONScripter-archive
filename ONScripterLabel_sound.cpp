@@ -118,9 +118,10 @@ int ONScripterLabel::playMP3( int cd_no )
     else{
 #ifndef MP3_MAD        
         SMPEG_enableaudio( mp3_sample, 0 );
-        SMPEG_actualSpec( mp3_sample, &audio_format );
-
-        SMPEG_enableaudio( mp3_sample, 1 );
+        if ( audio_open_flag ){
+            SMPEG_actualSpec( mp3_sample, &audio_format );
+            SMPEG_enableaudio( mp3_sample, 1 );
+        }
 #endif
         SMPEG_play( mp3_sample );
         SMPEG_setvolume( mp3_sample, mp3_volume );
@@ -129,6 +130,59 @@ int ONScripterLabel::playMP3( int cd_no )
     }
 
     return 0;
+}
+
+void ONScripterLabel::playMPEG( const char *filename, bool click_flag )
+{
+#ifndef MP3_MAD        
+    unsigned long length = script_h.cBR->getFileLength( filename );
+    unsigned char *mpeg_buffer = new unsigned char[length];
+    script_h.cBR->getFile( filename, mpeg_buffer );
+    SMPEG *mpeg_sample = SMPEG_new_rwops( SDL_RWFromMem( mpeg_buffer, length ), NULL, 0 );
+
+    if ( !SMPEG_error( mpeg_sample ) ){
+        SMPEG_enableaudio( mpeg_sample, 0 );
+
+        if ( audio_open_flag ){
+            SMPEG_actualSpec( mpeg_sample, &audio_format );
+            SMPEG_enableaudio( mpeg_sample, 1 );
+        }
+
+        SMPEG_enablevideo( mpeg_sample, 1 );
+        SMPEG_setdisplay( mpeg_sample, screen_surface, NULL, NULL );
+        SMPEG_setvolume( mpeg_sample, mp3_volume );
+
+        Mix_HookMusic( mp3callback, mpeg_sample );
+        SMPEG_play( mpeg_sample );
+
+        bool done_flag = false;
+        while( !(done_flag & click_flag) && SMPEG_status(mpeg_sample) == SMPEG_PLAYING ){
+            SDL_Event event;
+
+            while( SDL_PollEvent( &event ) ){
+                switch (event.type){
+                  case SDL_KEYDOWN:
+                    if ( ((SDL_KeyboardEvent *)&event)->keysym.sym == SDLK_RETURN ||
+                         ((SDL_KeyboardEvent *)&event)->keysym.sym == SDLK_SPACE ||
+                         ((SDL_KeyboardEvent *)&event)->keysym.sym == SDLK_ESCAPE )
+                        done_flag = true;
+                    break;
+                  case SDL_MOUSEBUTTONDOWN:
+                    done_flag = true;
+                    break;
+                  default:
+                    break;
+                }
+            }
+            SDL_Delay( 100 );
+        }
+
+        Mix_HookMusic( NULL, NULL );
+        SMPEG_stop( mpeg_sample );
+        SMPEG_delete( mpeg_sample );
+    }
+    delete[] mpeg_buffer;
+#endif
 }
 
 int ONScripterLabel::playCDAudio( int cd_no )
@@ -229,3 +283,4 @@ void ONScripterLabel::playClickVoice()
             playWave( clickvoice_file_name[CLICKVOICE_NORMAL], false, DEFAULT_WAVE_CHANNEL );
     }
 }
+

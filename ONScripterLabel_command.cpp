@@ -425,7 +425,9 @@ int ONScripterLabel::selectCommand()
         }
         else{
             script_h.setInt( save_buf, current_button_state.button - 1 );
-            ret = RET_CONTINUE;
+            current_link_label_info->current_line = select_label_info.current_line;
+            script_h.setCurrent( select_label_info.current_script );
+            ret = RET_CONTINUE_NOREAD;
         }
         deleteSelectLink();
 
@@ -455,7 +457,7 @@ int ONScripterLabel::selectCommand()
         int count = 0;
         while(1){
             //printf("sel [%s] comma %d\n", buf, comma_flag  );
-            if ( buf[0] != 0x0a ){
+            if ( buf[0] != 0x0a && comma_flag == true ){
                 comma_flag = script_h.isEndWithComma();
                 count++;
                 if ( select_mode == SELECT_NUM_MODE || count % 2 ){
@@ -473,11 +475,13 @@ int ONScripterLabel::selectCommand()
                 buf = script_h.readStr();
             }
             else{
-                if ( (count & 1) == 1 ) errorAndExit( "select: label must be in the same line." );
+                if ( select_mode != SELECT_NUM_MODE && (count & 1) == 1 ) errorAndExit( "select: label must be in the same line." );
                 do{
-                    if ( buf[0] == 0x0a ) select_label_info.current_line++;
-                    script_h.setText( false );
-                    buf = script_h.readStr();
+                    if ( buf[0] == 0x0a || buf[0] == ',' ){
+                        select_label_info.current_line++;
+                        script_h.setText( false );
+                        buf = script_h.readStr();
+                    }
                     select_label_info.current_script = script_h.getCurrent();
                     if ( buf[0] == ',' ){
                         if ( comma_flag ) errorAndExit( "select: double comma." );
@@ -586,7 +590,10 @@ int ONScripterLabel::savegameCommand()
         errorAndExit( script_h.getStringBuffer(), "savegame: the specified number is less than 0" );
     else{
         shelter_event_mode = event_mode;
-        saveSaveFile( no );
+        char *p_buf = script_h.getCurrent();
+        script_h.readToken(); // save point is the next token to no
+        saveSaveFile( no ); 
+        script_h.setCurrent( p_buf ); 
     }
 
     return RET_CONTINUE;
@@ -914,7 +921,8 @@ int ONScripterLabel::mp3Command()
     if      ( script_h.isName( "mp3save" ) ){
         music_play_once_flag = true;
     }
-    else if ( script_h.isName( "mp3loop" ) ){
+    else if ( script_h.isName( "mp3loop" ) ||
+              script_h.isName( "bgm" ) ){
         music_play_once_flag = false;
     }
     else{

@@ -25,7 +25,6 @@
 
 extern void initSJIS2UTF16();
 
-#define DEFAULT_DECODEBUF 16384
 #define DEFAULT_AUDIOBUF  4096
 
 #define FONT_FILE "default.ttf"
@@ -145,6 +144,8 @@ static struct FuncLUT{
     {"btn",     &ONScripterLabel::btnCommand},
     {"br",      &ONScripterLabel::brCommand},
     {"blt",      &ONScripterLabel::bltCommand},
+    {"bgmonce", &ONScripterLabel::mp3Command}, 
+    {"bgm", &ONScripterLabel::mp3Command}, 
     {"bg",      &ONScripterLabel::bgCommand},
     {"barclear",      &ONScripterLabel::barclearCommand},
     {"bar",      &ONScripterLabel::barCommand},
@@ -203,8 +204,12 @@ void ONScripterLabel::initSDL( bool cdaudio_flag )
     wm_icon_string = new char[ strlen(DEFAULT_WM_ICON) + 1 ];
     memcpy( wm_icon_string, DEFAULT_WM_TITLE, strlen(DEFAULT_WM_ICON) + 1 );
     SDL_WM_SetCaption( wm_title_string, wm_icon_string );
-    
+
+#if defined(PDA)    
+    if ( Mix_OpenAudio( 22050, MIX_DEFAULT_FORMAT, MIX_DEFAULT_CHANNELS, DEFAULT_AUDIOBUF ) < 0 ){
+#else        
     if ( Mix_OpenAudio( 44100, MIX_DEFAULT_FORMAT, MIX_DEFAULT_CHANNELS, DEFAULT_AUDIOBUF ) < 0 ){
+#endif        
         fprintf(stderr, "Couldn't open audio device!\n"
                 "  reason: [%s].\n", SDL_GetError());
         audio_open_flag = false;

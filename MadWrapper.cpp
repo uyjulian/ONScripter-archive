@@ -62,7 +62,9 @@ static MAD_WRAPPER* init( SDL_RWops *src )
 	mad_stream_init( &mad->Stream );
 	mad_frame_init( &mad->Frame );
 	mad_synth_init( &mad->Synth );
-
+#if defined(PDA)    
+    mad->Stream.options |= MAD_OPTION_HALFSAMPLERATE;
+#endif
     mad->volume = 64;
     
     mad->input_buf = new unsigned char[ INPUT_BUFFER_SIZE ];

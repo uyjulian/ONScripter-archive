@@ -131,7 +131,6 @@ void ONScripterLabel::trapHandler()
  * **************************************** */
 void ONScripterLabel::mouseMoveEvent( SDL_MouseMotionEvent *event )
 {
-  printf("mouseMoveEvent (%d) %d %d %d %d\n", mouse_rotation_mode, event->x, event->y, screen_width, screen_height );
     if      ( mouse_rotation_mode == MOUSE_ROTATION_NONE )
         mouseOverCheck( event->x, event->y );
     else if ( mouse_rotation_mode == MOUSE_ROTATION_PDA ||

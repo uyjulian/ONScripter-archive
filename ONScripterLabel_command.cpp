@@ -606,6 +606,9 @@ int ONScripterLabel::resetCommand()
     current_link_label_info->current_line = 0;
     current_link_label_info->offset = 0;
 
+    barclearCommand();
+    prnumclearCommand();
+
     deleteButtonLink();
     deleteSelectLink();
 
@@ -676,6 +679,68 @@ int ONScripterLabel::puttextCommand()
 
     drawString( tmp_string_buffer, sentence_font.color, &sentence_font, false, text_surface, NULL, true );
     flush();
+
+    return RET_CONTINUE;
+}
+
+int ONScripterLabel::prnumclearCommand()
+{
+    for ( int i=0 ; i<MAX_PARAM_NUM ; i++ ) {
+        if ( prnum_info[i] ) {
+            delete prnum_info[i];
+            prnum_info[i] = NULL;
+        }
+    }
+    return RET_CONTINUE;
+}
+
+int ONScripterLabel::prnumCommand()
+{
+    char *p_string_buffer = string_buffer + string_buffer_offset + 5; // strlen("prnum") = 5
+    char num_buf[12], buf[7];
+    int ptr = 0;
+
+    int no = readInt( &p_string_buffer );
+    if ( prnum_info[no] ) delete prnum_info[no];
+    prnum_info[no] = new AnimationInfo();
+    prnum_info[no]->trans_mode = AnimationInfo::TRANS_STRING;
+    prnum_info[no]->num_of_cells = 1;
+    prnum_info[no]->current_cell = 0;
+    prnum_info[no]->color_list = new uchar3[ prnum_info[no]->num_of_cells ];
+    
+    int param = readInt( &p_string_buffer );
+    prnum_info[no]->pos.x = readInt( &p_string_buffer );
+    prnum_info[no]->pos.y = readInt( &p_string_buffer );
+    prnum_info[no]->font_size_xy[0] = readInt( &p_string_buffer );
+    prnum_info[no]->font_size_xy[1] = readInt( &p_string_buffer );
+
+    readStr( &p_string_buffer, tmp_string_buffer );
+    if ( tmp_string_buffer[0] != '#' ) errorAndExit( string_buffer + string_buffer_offset, "Color is not specified." );
+    readColor( &prnum_info[no]->color_list[0], tmp_string_buffer + 1 );
+
+    sprintf( num_buf, "%3d", param );
+    if ( param<0 ){
+        if ( param>-10 ) {
+            buf[ptr++] = "Å@"[0];
+            buf[ptr++] = "Å@"[1];
+        }
+        buf[ptr++] = "Å|"[0];
+        buf[ptr++] = "Å|"[1];
+        sprintf( num_buf, "%d", -param );
+    }
+    for ( int i=0 ; i<(int)strlen( num_buf ) ; i++ ){
+        if ( num_buf[i] == ' ' ) {
+            buf[ptr++] = "Å@"[0];
+            buf[ptr++] = "Å@"[1];
+            continue;
+        }
+        getSJISFromInteger( &buf[ptr], num_buf[i] - '0', false );
+        ptr += 2;
+        if ( ptr >= 6 ) break; // up to 3 columns (NScripter's restriction)
+    }
+    setStr( &prnum_info[no]->file_name, buf );
+
+    setupAnimationInfo( prnum_info[no] );
 
     return RET_CONTINUE;
 }
@@ -1684,6 +1749,50 @@ int ONScripterLabel::bgCommand()
         makeEffectStr( &p_string_buffer, buf );
         return setEffect( tmp_effect.effect, buf );
     }
+}
+
+int ONScripterLabel::barclearCommand()
+{
+    for ( int i=0 ; i<MAX_PARAM_NUM ; i++ ) {
+        if ( bar_info[i] ) {
+            delete bar_info[i];
+            bar_info[i] = NULL;
+        }
+    }
+    return RET_CONTINUE;
+}
+
+int ONScripterLabel::barCommand()
+{
+    char *p_string_buffer = string_buffer + string_buffer_offset + 3; // strlen("bar") = 3
+
+    int no = readInt( &p_string_buffer );
+    if ( bar_info[no] ) delete bar_info[no];
+    bar_info[no] = new AnimationInfo();
+    bar_info[no]->trans_mode = AnimationInfo::TRANS_COPY;
+    bar_info[no]->num_of_cells = 1;
+    bar_info[no]->current_cell = 0;
+    bar_info[no]->alpha_offset = 0;
+
+    int param           = readInt( &p_string_buffer );
+    bar_info[no]->pos.x = readInt( &p_string_buffer );
+    bar_info[no]->pos.y = readInt( &p_string_buffer );
+
+    bar_info[no]->pos.w = readInt( &p_string_buffer );
+    bar_info[no]->pos.h = readInt( &p_string_buffer );
+    int max             = readInt( &p_string_buffer );
+    if ( max == 0 ) errorAndExit( string_buffer + string_buffer_offset, "Invalid argument (max = 0)." );
+    bar_info[no]->pos.w = bar_info[no]->pos.w * param / max;
+
+    readStr( &p_string_buffer, tmp_string_buffer );
+    if ( tmp_string_buffer[0] != '#' ) errorAndExit( string_buffer + string_buffer_offset, "Color is not specified." );
+    readColor( &bar_info[no]->color, tmp_string_buffer + 1 );
+    
+    bar_info[no]->image_surface = SDL_CreateRGBSurface( DEFAULT_SURFACE_FLAG, bar_info[no]->pos.w, bar_info[no]->pos.h, 32, rmask, gmask, bmask, amask );
+    SDL_SetAlpha( bar_info[no]->image_surface, DEFAULT_BLIT_FLAG, SDL_ALPHA_OPAQUE );
+    SDL_FillRect( bar_info[no]->image_surface, NULL, SDL_MapRGB( bar_info[no]->image_surface->format, bar_info[no]->color[0], bar_info[no]->color[1], bar_info[no]->color[2] ) );
+
+    return RET_CONTINUE;
 }
 
 int ONScripterLabel::autoclickCommand()

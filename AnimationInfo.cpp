@@ -40,10 +40,11 @@ AnimationInfo::AnimationInfo(){
     preserve_surface = NULL;
     mask_surface = NULL;
     trans = 255;
+
+    font_size_xy[0] = font_size_xy[1] = -1;
 }
 
 AnimationInfo::~AnimationInfo(){
-    removeTag();
     remove();
 }
 

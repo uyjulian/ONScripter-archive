@@ -87,6 +87,8 @@ static struct FuncLUT{
     {"quakex",   &ONScripterLabel::quakeCommand},
     {"quake",   &ONScripterLabel::quakeCommand},
     {"puttext",   &ONScripterLabel::puttextCommand},
+    {"prnumclear",   &ONScripterLabel::prnumclearCommand},
+    {"prnum",   &ONScripterLabel::prnumCommand},
     {"print",   &ONScripterLabel::printCommand},
     {"playstop",   &ONScripterLabel::playstopCommand},
     {"playonce",   &ONScripterLabel::playCommand},
@@ -139,6 +141,8 @@ static struct FuncLUT{
     {"br",      &ONScripterLabel::brCommand},
     {"blt",      &ONScripterLabel::bltCommand},
     {"bg",      &ONScripterLabel::bgCommand},
+    {"barclear",      &ONScripterLabel::barclearCommand},
+    {"bar",      &ONScripterLabel::barCommand},
     {"autoclick",      &ONScripterLabel::autoclickCommand},
     {"amsp",      &ONScripterLabel::amspCommand},
     {"allspresume",      &ONScripterLabel::allspresumeCommand},
@@ -300,6 +304,8 @@ ONScripterLabel::ONScripterLabel( bool cdaudio_flag, char *default_font, char *d
     midi_info = NULL;
     current_cd_track = -1;
     for ( i=0 ; i<MIX_CHANNELS ; i++ ) wave_sample[i] = NULL;
+
+    for ( i=0 ; i<MAX_PARAM_NUM ; i++ ) bar_info[i] = prnum_info[i] = NULL;
     
     /* ---------------------------------------- */
     /* Initialize registry */
@@ -1285,6 +1291,19 @@ void ONScripterLabel::refreshAccumulationSurface( SDL_Surface *surface, SDL_Rect
         for ( i=z_order ; i>=top ; i-- ){
             if ( sprite_info[i].valid ){
                 drawTaggedSurface( surface, &sprite_info[i], clip );
+            }
+        }
+    }
+
+    if ( !( refresh_mode & REFRESH_SAYA_MODE ) ) {
+        for ( i=0 ; i<MAX_PARAM_NUM ; i++ ) {
+            if ( bar_info[i] ) {
+                drawTaggedSurface( surface, bar_info[i], clip );
+            }
+        }
+        for ( i=0 ; i<MAX_PARAM_NUM ; i++ ) {
+            if ( prnum_info[i] ) {
+                drawTaggedSurface( surface, prnum_info[i], clip );
             }
         }
     }

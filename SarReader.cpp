@@ -76,11 +76,19 @@ int SarReader::readArchive( struct ArchiveInfo *ai, bool nsa_flag )
         ai->fi_list[i].name[count] = ch;
 
         if ( nsa_flag )
-            ai->fi_list[i].compressed_no = readChar( ai->file_handle );
+            ai->fi_list[i].compression_type = readChar( ai->file_handle );
+        else
+            ai->fi_list[i].compression_type = NO_COMPRESSION;
         ai->fi_list[i].offset = readLong( ai->file_handle ) + base_offset;
         ai->fi_list[i].length = readLong( ai->file_handle );
 
-        ai->fi_list[i].compression_type = NO_COMPRESSION;
+        if ( nsa_flag ){
+            ai->fi_list[i].original_length = readLong( ai->file_handle );
+        }
+        else{
+            ai->fi_list[i].original_length = ai->fi_list[i].length;
+        }
+
         /* NBZ check */
         if ( count >= 3 && !strncmp( &ai->fi_list[i].name[count-3], "NBZ", 3 ) ){
             fpos_t pos;
@@ -106,15 +114,7 @@ int SarReader::readArchive( struct ArchiveInfo *ai, bool nsa_flag )
             ai->fi_list[i].original_length = width * height * 3 + strlen( str );
             fsetpos( ai->file_handle, &pos );
         }
-        
-        if ( nsa_flag ){
-            if ( ai->fi_list[i].compression_type )
-                readLong( ai->file_handle );
-            else
-                ai->fi_list[i].original_length = readLong( ai->file_handle );
-        }
-        else if ( !ai->fi_list[i].compression_type )
-            ai->fi_list[i].original_length = ai->fi_list[i].length;
+
         ai->fi_list[i].access_flag = false;
     }
     ai->num_of_accessed = 0;

@@ -40,15 +40,19 @@
 
 struct BaseReader
 {
-    enum { NO_COMPRESSION=0, NBZ_COMPRESSION=1, SPB_COMPRESSION=2} COMPRESSION_TYPE;
+    enum {
+        NO_COMPRESSION   = 0,
+        SPB_COMPRESSION  = 1,
+        LZSS_COMPRESSION = 2,
+        NBZ_COMPRESSION  = 4
+    } COMPRESSION_TYPE;
     
     struct FileInfo{
         char name[256];
-        int  compressed_no;
+        int  compression_type;
         size_t offset;
         size_t length;
         size_t original_length;
-        bool compression_type;
         bool access_flag;
     };
 

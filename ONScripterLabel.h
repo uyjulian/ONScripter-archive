@@ -40,6 +40,7 @@
 //#define DEFAULT_BLIT_FLAG (SDL_RLEACCEL)
 
 #define MAX_SPRITE_NUM 256
+#define MAX_PARAM_NUM 100
 #define CUSTOM_EFFECT_NO 100
 
 #define DEFAULT_WM_TITLE "ONScripter"
@@ -90,6 +91,8 @@ public:
     int rmodeCommand();
     int quakeCommand();
     int puttextCommand();
+    int prnumclearCommand();
+    int prnumCommand();
     int printCommand();
     int playstopCommand();
     int playonceCommand();
@@ -133,8 +136,10 @@ public:
     int btndefCommand();
     int btnCommand();
     int brCommand();
-    int bgCommand();
     int bltCommand();
+    int bgCommand();
+    int barclearCommand();
+    int barCommand();
     int autoclickCommand();
     int allspresumeCommand();
     int allsphideCommand();
@@ -287,6 +292,10 @@ private:
     AnimationInfo sprite_info[MAX_SPRITE_NUM];
     bool all_sprite_hide_flag;
     
+    /* ---------------------------------------- */
+    /* Parameter related variables */
+    AnimationInfo *bar_info[MAX_PARAM_NUM], *prnum_info[MAX_PARAM_NUM];
+
     /* ---------------------------------------- */
     /* Cursor related variables */
     typedef enum{ CURSOR_WAIT_NO = 0,

@@ -186,11 +186,6 @@ ScriptParser::ScriptParser()
     
     /* ---------------------------------------- */
     /* For loop related variables */
-    root_for_link.previous = NULL;
-    root_for_link.next = NULL;
-    root_for_link.current_line = 0;
-    root_for_link.offset = 0;
-    root_for_link.label_info = lookupLabel("start");
     current_for_link = &root_for_link;
     for_stack_depth = 0;
     break_flag = false;
@@ -635,8 +630,6 @@ bool ScriptParser::getLabelAccessFlag( const char *label )
 
 struct ScriptParser::LabelInfo ScriptParser::lookupLabel( const char *label )
 {
-    struct LabelInfo ret;
-
     int i = findLabel( label );
     if ( i >= 0 ){
         if ( !label_info[i].access_flag ) num_of_label_accessed++;
@@ -644,14 +637,12 @@ struct ScriptParser::LabelInfo ScriptParser::lookupLabel( const char *label )
         return label_info[i];
     }
 
-    ret.start_address = NULL;
-    return ret;
+    errorAndExit( string_buffer + string_buffer_offset, "Label is not found." );
+    return label_info[0];
 }
 
 struct ScriptParser::LabelInfo ScriptParser::lookupLabelNext( const char *label )
 {
-    struct LabelInfo ret;
-
     int i = findLabel( label );
     if ( i >= 0 && i+1 < num_of_labels ){
         if ( !label_info[i+1].access_flag ) num_of_label_accessed++;
@@ -659,8 +650,8 @@ struct ScriptParser::LabelInfo ScriptParser::lookupLabelNext( const char *label 
         return label_info[i+1];
     }
 
-    ret.start_address = NULL;
-    return ret;
+    errorAndExit( string_buffer + string_buffer_offset, "Label is not found." );
+    return label_info[0];
 }
 
 int ScriptParser::labelScript()

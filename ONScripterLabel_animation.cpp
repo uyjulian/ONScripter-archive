@@ -63,9 +63,19 @@ void ONScripterLabel::setupAnimationInfo( AnimationInfo *anim )
         f_info.top_xy[0] = anim->pos.x;
         f_info.top_xy[1] = anim->pos.y;
 
+        if ( anim->font_size_xy[0] >= 0 ){
+            f_info.font_size_xy[0] = f_info.pitch_xy[0] = anim->font_size_xy[0];
+            f_info.font_size_xy[1] = f_info.pitch_xy[1] = anim->font_size_xy[1];
+            f_info.num_xy[0] = strlen( anim->file_name );
+            f_info.num_xy[1] = 1;
+            f_info.ttf_font = NULL;
+        }
+
         drawString( anim->file_name, anim->color_list[ anim->current_cell ], &f_info, true, NULL, &anim->pos );
-        sentence_font.font_valid_flag = f_info.font_valid_flag;
-        sentence_font.ttf_font = f_info.ttf_font;
+        if ( anim->font_size_xy[0] < 0 ){
+            sentence_font.font_valid_flag = f_info.font_valid_flag;
+            sentence_font.ttf_font = f_info.ttf_font;
+        }
     }
     else{
         anim->image_surface = loadImage( anim->file_name );
@@ -216,9 +226,19 @@ void ONScripterLabel::drawTaggedSurface( SDL_Surface *dst_surface, AnimationInfo
         f_info.top_xy[0] = anim->pos.x;
         f_info.top_xy[1] = anim->pos.y;
 
+        if ( anim->font_size_xy[0] >= 0 ){
+            f_info.font_size_xy[0] = f_info.pitch_xy[0] = anim->font_size_xy[0];
+            f_info.font_size_xy[1] = f_info.pitch_xy[1] = anim->font_size_xy[1];
+            f_info.num_xy[0] = strlen( anim->file_name );
+            f_info.num_xy[1] = 1;
+            f_info.ttf_font = NULL;
+        }
+
         drawString( anim->file_name, anim->color_list[ anim->current_cell ], &f_info, false, dst_surface, NULL, false, clip );
-        sentence_font.font_valid_flag = f_info.font_valid_flag;
-        sentence_font.ttf_font = f_info.ttf_font;
+        if ( anim->font_size_xy[0] < 0 ){
+            sentence_font.font_valid_flag = f_info.font_valid_flag;
+            sentence_font.ttf_font = f_info.ttf_font;
+        }
         return;
     }
     else if ( !anim->image_surface ) return;

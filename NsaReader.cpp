@@ -119,7 +119,8 @@ size_t NsaReader::getFileLengthSub( ArchiveInfo *ai, char *file_name )
         ai->num_of_accessed++;
         ai->fi_list[i].access_flag = true;
     }
-    if ( ai->fi_list[i].compressed_no != 1 ) return ai->fi_list[i].original_length;
+    if ( ai->fi_list[i].compression_type != SPB_COMPRESSION )
+        return ai->fi_list[i].original_length;
     
     fseek( ai->file_handle, ai->fi_list[i].offset, SEEK_SET );
     width  = readShort( ai->file_handle );
@@ -152,9 +153,15 @@ size_t NsaReader::getFileSub( ArchiveInfo *ai, char *file_name, unsigned char *b
     int i = getIndexFromFile( ai, file_name );
     if ( i == ai->num_of_files ) return 0;
 
-    if ( ai->fi_list[i].compressed_no == 0 )      return SarReader::getFileSub( ai, file_name, buffer );
-    else if ( ai->fi_list[i].compressed_no == 1 ) return decodeSPB( ai->file_handle, ai->fi_list[i].offset, buffer );
-    else if ( ai->fi_list[i].compressed_no == 2 ) return decodeLZSS( ai, i, buffer );
+    if ( ai->fi_list[i].compression_type == NO_COMPRESSION ){
+        return SarReader::getFileSub( ai, file_name, buffer );
+    }
+    else if ( ai->fi_list[i].compression_type == SPB_COMPRESSION ){
+        return decodeSPB( ai->file_handle, ai->fi_list[i].offset, buffer );
+    }
+    else if ( ai->fi_list[i].compression_type == LZSS_COMPRESSION ){
+        return decodeLZSS( ai, i, buffer );
+    }
 
     return 0;
 }

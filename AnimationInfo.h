@@ -73,6 +73,8 @@ public:
     SDL_Surface *preserve_surface;
     SDL_Surface *mask_surface;
 
+    int font_size_xy[2]; // used by prnum
+
     AnimationInfo();
     ~AnimationInfo();
     void deleteImageName();

@@ -230,6 +230,23 @@ int ONScripterLabel::loadSaveFile( int no )
     setupAnimationInfo( &bg_info );
     bg_effect_image = (EFFECT_IMAGE)fgetc( fp );
 
+    if ( bg_effect_image == COLOR_EFFECT_IMAGE ){
+        SDL_FillRect( background_surface, NULL, SDL_MapRGB( effect_dst_surface->format, bg_info.tag.color[0], bg_info.tag.color[1], bg_info.tag.color[2]) );
+    }
+    else{
+        if ( bg_info.image_surface ){
+            SDL_Rect src_rect, dst_rect;
+            src_rect.x = 0;
+            src_rect.y = 0;
+            src_rect.w = bg_info.image_surface->w;
+            src_rect.h = bg_info.image_surface->h;
+            dst_rect.x = (screen_width - bg_info.image_surface->w) / 2;
+            dst_rect.y = (screen_height - bg_info.image_surface->h) / 2;
+
+            SDL_BlitSurface( bg_info.image_surface, &src_rect, background_surface, &dst_rect );
+        }
+    }
+
     for ( i=0 ; i<3 ; i++ ){
         tachi_info[i].deleteImageName();
         tachi_info[i].deleteImageSurface();

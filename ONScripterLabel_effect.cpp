@@ -29,21 +29,15 @@
 int ONScripterLabel::setEffect( int immediate_flag, char *buf )
 {
     //printf("setEffect %d\n",immediate_flag);
-    DelayedInfo *p_effect = new DelayedInfo();
-    p_effect->next = NULL;
-    p_effect->command = buf;
-
-    if ( !start_delayed_effect_info ) start_delayed_effect_info = p_effect;
-    else{
-        DelayedInfo *p_delayed_effect_info = start_delayed_effect_info;
-        while( p_delayed_effect_info->next ) p_delayed_effect_info = p_delayed_effect_info->next;
-        p_delayed_effect_info->next = p_effect;
-    }
 
     if ( immediate_flag == RET_WAIT || immediate_flag == RET_WAIT_NEXT ){
         effect_counter = 0;
+        effect_command = buf;
         event_mode = EFFECT_EVENT_MODE;
         startTimer( MINIMUM_TIMER_RESOLUTION );
+    }
+    else{
+        delete[] buf;
     }
 
     return immediate_flag;
@@ -63,6 +57,8 @@ int ONScripterLabel::doEffect( int effect_no, AnimationInfo *anim, int effect_im
     int height, height2;
     SDL_Rect src_rect, dst_rect;
 
+    struct EffectLink effect = getEffect( effect_no );
+
     if ( effect_counter == 0 ){
         if ( effect_image != DIRECT_EFFECT_IMAGE )
             SDL_BlitSurface( accumulation_surface, NULL, effect_src_surface, NULL );
@@ -72,11 +68,12 @@ int ONScripterLabel::doEffect( int effect_no, AnimationInfo *anim, int effect_im
             break;
             
           case COLOR_EFFECT_IMAGE:
-            SDL_FillRect( background_surface, NULL, SDL_MapRGB( effect_dst_surface->format, anim->tag.color[0], anim->tag.color[1], anim->tag.color[2]) );
+            //SDL_FillRect( background_surface, NULL, SDL_MapRGB( effect_dst_surface->format, anim->tag.color[0], anim->tag.color[1], anim->tag.color[2]) );
             refreshAccumulationSurface( effect_dst_surface );
             break;
 
           case BG_EFFECT_IMAGE:
+#if 0            
             if ( anim->image_surface ){
                 src_rect.x = 0;
                 src_rect.y = 0;
@@ -87,6 +84,7 @@ int ONScripterLabel::doEffect( int effect_no, AnimationInfo *anim, int effect_im
 
                 SDL_BlitSurface( anim->image_surface, &src_rect, background_surface, &dst_rect );
             }
+#endif            
             refreshAccumulationSurface( effect_dst_surface );
             break;
             
@@ -94,12 +92,19 @@ int ONScripterLabel::doEffect( int effect_no, AnimationInfo *anim, int effect_im
             refreshAccumulationSurface( effect_dst_surface );
             break;
         }
+
+        /* Load mask image */
+        if ( effect.effect == 15 || effect.effect == 18 ){
+            if ( effect.image ){
+                if ( effect_mask_surface ) SDL_FreeSurface( effect_mask_surface );
+                effect_mask_surface = loadImage( effect.image );
+            }
+        }
     }
     
     /* ---------------------------------------- */
     /* Execute effect */
-    struct EffectLink effect = getEffect( effect_no );
-    //printf("Effect number %d\n", effect.effect );
+    //printf("Effect number %d %d\n", effect.effect, effect.duration );
     switch ( effect.effect ){
       case 0: // Instant display
       case 1: // Instant display
@@ -281,6 +286,20 @@ int ONScripterLabel::doEffect( int effect_no, AnimationInfo *anim, int effect_im
         src_rect.h = dst_rect.h = width;
         SDL_BlitSurface( effect_dst_surface, &src_rect, text_surface, &dst_rect );
         break;
+
+      case 15: // Fade with mask
+        alphaBlend( text_surface, 0, 0,
+                    effect_src_surface, 0, 0, screen_width, screen_height,
+                    effect_dst_surface, 0, 0,
+                    0, 0, -TRANS_FADE_MASK, 256 * effect_counter / effect.duration );
+        break;
+        
+      case 18: // Cross fade with mask
+        alphaBlend( text_surface, 0, 0,
+                    effect_src_surface, 0, 0, screen_width, screen_height,
+                    effect_dst_surface, 0, 0,
+                    0, 0, -TRANS_CROSSFADE_MASK, 256 * effect_counter * 2 / effect.duration );
+        break;
     }
 
     //printf("%d / %d\n", effect_counter, effect.duration);
@@ -309,6 +328,10 @@ int ONScripterLabel::doEffect( int effect_no, AnimationInfo *anim, int effect_im
             shadowTextDisplay( NULL, text_surface );
             restoreTextBuffer();
         }
+
+        if ( effect_mask_surface ) SDL_FreeSurface( effect_mask_surface );
+        effect_mask_surface = NULL;
+
         if ( effect.effect != 0 ) flush();
         return RET_CONTINUE;
     }
@@ -326,25 +349,3 @@ void ONScripterLabel::makeEffectStr( char **buf, char *dst_buf )
         }
     }
 }
-
-int ONScripterLabel::readEffect( char **buf, struct EffectLink *effect )
-{
-    int num = 1;
-    
-    effect->effect = readInt( buf );
-    if ( end_with_comma_flag ){
-        num++;
-        effect->duration = readInt( buf );
-        if ( end_with_comma_flag ){
-            num++;
-            readStr( buf, tmp_string_buffer );
-            if ( effect->image ) delete[] effect->image;
-            effect->image = new char[ strlen(tmp_string_buffer ) + 1 ];
-            memcpy( effect->image, tmp_string_buffer, strlen( tmp_string_buffer ) + 1 );
-        }
-    }
-
-    //printf("readEffect %d: %d %d %s\n", num, effect->effect, effect->duration, effect->image );
-    return num;
-}
-

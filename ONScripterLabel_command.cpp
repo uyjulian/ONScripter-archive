@@ -257,7 +257,6 @@ int ONScripterLabel::setwindowCommand()
 
     lookbackflushCommand();
     clearCurrentTextBuffer();
-    //SDL_BlitSurface( accumulation_surface, NULL, select_surface, NULL );
     display_mode = NORMAL_DISPLAY_MODE;
     
     return RET_CONTINUE;
@@ -1190,11 +1189,9 @@ int ONScripterLabel::btnwaitCommand()
         if ( current_over_button != 0 ){
             // Almost the same code as in the mouseOverCheck(), possible cause of bug !!
             if ( current_button_link.button_type == NORMAL_BUTTON ){
-                //SDL_BlitSurface( select_surface, &current_button_link.image_rect, text_surface, &current_button_link.image_rect );
             }
             else if ( current_button_link.button_type == SPRITE_BUTTON ){
                 //refreshAccumulationSurface( select_surface );
-                //SDL_BlitSurface( select_surface, &current_button_link.image_rect, text_surface, &current_button_link.image_rect );
             }
             SDL_BlitSurface( select_surface, &current_button_link.image_rect, text_surface, &current_button_link.image_rect );
             flush( &current_button_link.image_rect );
@@ -1223,6 +1220,7 @@ int ONScripterLabel::btnwaitCommand()
         SDL_BlitSurface( text_surface, NULL, select_surface, NULL );
 
         flush();
+        display_mode = NORMAL_DISPLAY_MODE;
 
         refreshMouseOverButton();
 
@@ -1294,6 +1292,21 @@ int ONScripterLabel::bgCommand()
             parseTaggedString( tmp_string_buffer, &bg_info.tag );
             setupAnimationInfo( &bg_info );
             bg_effect_image = BG_EFFECT_IMAGE;
+            if ( bg_info.image_surface ){
+                SDL_Rect src_rect, dst_rect;
+                src_rect.x = 0;
+                src_rect.y = 0;
+                src_rect.w = bg_info.image_surface->w;
+                src_rect.h = bg_info.image_surface->h;
+                dst_rect.x = (screen_width - bg_info.image_surface->w) / 2;
+                dst_rect.y = (screen_height - bg_info.image_surface->h) / 2;
+
+                SDL_BlitSurface( bg_info.image_surface, &src_rect, background_surface, &dst_rect );
+            }
+        }
+
+        if ( bg_effect_image == COLOR_EFFECT_IMAGE ){
+            SDL_FillRect( background_surface, NULL, SDL_MapRGB( effect_dst_surface->format, bg_info.tag.color[0], bg_info.tag.color[1], bg_info.tag.color[2]) );
         }
 
         char *buf = new char[ 512 ];

@@ -337,17 +337,14 @@ private:
     
     /* ---------------------------------------- */
     /* Effect related variables */
-    struct DelayedInfo{
-        struct DelayedInfo *next;
-        char *command;
-    } *start_delayed_effect_info;
+    char *effect_command;
     int effect_counter; // counter in each effect
     int effect_timer_resolution;
     int effect_start_time;
     int effect_start_time_old;
+    SDL_Surface *effect_mask_surface;
     bool first_mouse_over_flag;
     
-    int readEffect( char **buf, struct EffectLink *effect );
     void makeEffectStr( char **buf, char *dst_buf );
     int  setEffect( int immediate_flag, char *buf );
     int doEffect( int effect_no, AnimationInfo *anim, int effect_image );
@@ -409,9 +406,10 @@ private:
     void alphaBlend( SDL_Surface *dst_surface, int x, int y,
                      SDL_Surface *src1_surface, int x1, int y1, int wx, int wy,
                      SDL_Surface *src2_surface, int x2, int y2,
-                     int x3, int y3, int mask_value );
+                     int x3, int y3, int mask_value, unsigned int effect_value=0 );
     int enterTextDisplayMode();
-    SDL_Surface *loadPixmap( struct TaggedInfo *tag );
+    SDL_Surface *loadImage( char *file_name );
+    SDL_Surface *loadTaggedImage( struct TaggedInfo *tag );
     void drawTaggedSurface( SDL_Surface *dst_surface, SDL_Rect *pos, SDL_Rect *clip,
                            SDL_Surface *src_surface, TaggedInfo *tagged_info );
     void makeMonochromeSurface( SDL_Surface *surface, SDL_Rect *dst_rect=NULL, bool one_color_flag = true );

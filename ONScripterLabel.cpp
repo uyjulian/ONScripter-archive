@@ -271,8 +271,6 @@ ONScripterLabel::ONScripterLabel( bool cdaudio_flag, char *default_font )
     display_mode = NORMAL_DISPLAY_MODE;
     event_mode = IDLE_EVENT_MODE;
     
-    start_delayed_effect_info = NULL;
-    
     last_button_link = &root_button_link;
     last_select_link = &root_select_link;
     btndef_surface = NULL;
@@ -342,10 +340,19 @@ ONScripterLabel::ONScripterLabel( bool cdaudio_flag, char *default_font )
     sentence_font.window_color[0] = sentence_font.window_color[1] = sentence_font.window_color[2] = 0x99;
     sentence_font.on_color[0] = sentence_font.on_color[1] = sentence_font.on_color[2] = 0xff;
     sentence_font.off_color[0] = sentence_font.off_color[1] = sentence_font.off_color[2] = 0x80;
+    sentence_font_info.pos.x = 0;
+    sentence_font_info.pos.y = 0;
+    sentence_font_info.pos.w = screen_width;
+    sentence_font_info.pos.h = screen_height;
+
     
     sentence_font.xy[0] = 0;
     sentence_font.xy[1] = 0;
 
+    /* ---------------------------------------- */
+    /* Effect related variables */
+    effect_mask_surface = NULL;
+    
     bg_effect_image = COLOR_EFFECT_IMAGE;
 
     clearCurrentTextBuffer();
@@ -665,22 +672,15 @@ void ONScripterLabel::timerEvent( void )
         }
         while(1){
             string_buffer_offset = 0;
-            memcpy( string_buffer, start_delayed_effect_info->command, strlen(start_delayed_effect_info->command) + 1 );
+            memcpy( string_buffer, effect_command, strlen(effect_command) + 1 );
             ret = this->parseLine();
-
             if ( ret == RET_CONTINUE ){
-                effect_counter = 0;
-                struct DelayedInfo *p_effect_info = start_delayed_effect_info;
-                start_delayed_effect_info = start_delayed_effect_info->next;
-                delete[] p_effect_info->command;
-                delete p_effect_info;
-            
-                if ( !start_delayed_effect_info ){
-                    event_mode = IDLE_EVENT_MODE;
-                    if ( effect_blank == 0 ) goto timerEventTop;
-                    startTimer( effect_blank );
-                    return;
-                }
+                delete[] effect_command;
+                event_mode = IDLE_EVENT_MODE;
+
+                if ( effect_blank == 0 ) goto timerEventTop;
+                startTimer( effect_blank );
+                return;
             }
             else{
                 startTimer( MINIMUM_TIMER_RESOLUTION );
@@ -821,7 +821,7 @@ void ONScripterLabel::executeLabel()
             if ( string_buffer[string_buffer_offset] == '\0' ) i++;
             continue;
         }
-        
+
         ret1 = ScriptParser::parseLine();
         if ( ret1 == RET_COMMENT ){
             i++;
@@ -932,11 +932,31 @@ int ONScripterLabel::parseLine( )
     return ret;
 }
 
-SDL_Surface *ONScripterLabel::loadPixmap( struct TaggedInfo *tag )
+SDL_Surface *ONScripterLabel::loadImage( char *file_name )
 {
     unsigned long length;
     unsigned char *buffer;
     SDL_Surface *ret = NULL, *tmp;
+
+    length = cBR->getFileLength( file_name );
+    if ( length == 0 ){
+        printf( " *** can't load file [%s] ***\n",file_name );
+        return NULL;
+    }
+    //printf(" ... loading %s length %ld\n", file_name, length );
+    buffer = new unsigned char[length];
+    cBR->getFile( file_name, buffer );
+    tmp = IMG_Load_RW(SDL_RWFromMem( buffer, length ),1);
+    ret = SDL_ConvertSurface( tmp, text_surface->format, DEFAULT_SURFACE_FLAG );
+    SDL_FreeSurface( tmp );
+    delete[] buffer;
+
+    return ret;
+}
+
+SDL_Surface *ONScripterLabel::loadTaggedImage( struct TaggedInfo *tag )
+{
+    SDL_Surface *ret = NULL;
     
     if ( tag->trans_mode == TRANS_STRING ){
         int top_xy[2], xy[2];
@@ -958,18 +978,7 @@ SDL_Surface *ONScripterLabel::loadPixmap( struct TaggedInfo *tag )
         sentence_font.top_xy[1] = top_xy[1];
     }
     else{
-        length = cBR->getFileLength( tag->file_name );
-        if ( length == 0 ){
-            printf( " *** can't load file [%s] ***\n",tag->file_name );
-            return NULL;
-        }
-        //printf(" ... loading %s length %ld\n", tag->file_name, length );
-        buffer = new unsigned char[length];
-        cBR->getFile( tag->file_name, buffer );
-        tmp = IMG_Load_RW(SDL_RWFromMem( buffer, length ),1);
-        ret = SDL_ConvertSurface( tmp, text_surface->format, DEFAULT_SURFACE_FLAG );
-        SDL_FreeSurface( tmp );
-        delete[] buffer;
+        ret = loadImage( tag->file_name );
     }
     return ret;
 }
@@ -1037,7 +1046,7 @@ void ONScripterLabel::deleteSelectLink()
 int ONScripterLabel::enterTextDisplayMode()
 {
     if ( !(display_mode & TEXT_DISPLAY_MODE) ){
-        //printf("enterTextDisplayMode %d\n",event_mode);
+        //printf("enterTextDisplayMode2 %d %d\n",display_mode,event_mode);
         if ( event_mode & EFFECT_EVENT_MODE ){
             if ( doEffect( WINDOW_EFFECT, NULL, DIRECT_EFFECT_IMAGE ) == RET_CONTINUE ){
                 display_mode |= TEXT_DISPLAY_MODE;
@@ -1067,7 +1076,7 @@ int ONScripterLabel::enterTextDisplayMode()
 void ONScripterLabel::alphaBlend( SDL_Surface *dst_surface, int x, int y,
                                   SDL_Surface *src1_surface, int x1, int y1, int wx, int wy,
                                   SDL_Surface *src2_surface, int x2, int y2,
-                                  int x3, int y3, int mask_value )
+                                  int x3, int y3, int mask_value, unsigned int effect_value )
 {
     int i, j;
     SDL_Rect src1_rect, src2_rect, dst_rect;
@@ -1114,7 +1123,7 @@ void ONScripterLabel::alphaBlend( SDL_Surface *dst_surface, int x, int y,
         if ( mask_value == -TRANS_ALPHA ){
             for ( i=0; i<wy ; i++ ) {
                 for ( j=0 ; j<wx ; j++ ){
-                    mask = *(src2_buffer + src2_surface->w * (y3+i) + x3 + j) >> src2_surface->format->Rshift;
+                    mask = (*(src2_buffer + src2_surface->w * (y3+i) + x3 + j) >> src2_surface->format->Rshift) & 0xff;
                     mask = (0xff - mask) << src2_surface->format->Ashift;
                     *(src2_buffer + src2_surface->w * (y2+i) + x2 + j) &= ~amask;
                     *(src2_buffer + src2_surface->w * (y2+i) + x2 + j) |= mask;
@@ -1134,6 +1143,47 @@ void ONScripterLabel::alphaBlend( SDL_Surface *dst_surface, int x, int y,
                         *(src2_buffer + src2_surface->w * (y2+i) + x2 + j) |= mask;
                 }
             }
+        }
+        else if ( mask_value == -TRANS_FADE_MASK ){
+            SDL_LockSurface( effect_mask_surface );
+            Uint32 *mask_buffer = (Uint32 *)effect_mask_surface->pixels;
+            for ( i=0; i<wy ; i++ ) {
+                int y4 = effect_mask_surface->w * ((y2+i) % effect_mask_surface->h );
+                for ( j=0 ; j<wx ; j++ ){
+                    mask = (*(mask_buffer + y4 + (x2 + j) % effect_mask_surface->w ) >> effect_mask_surface->format->Rshift) & 0xff;
+                    if ( effect_value > mask )
+                        mask = amask;
+                    else
+                        mask = 0;
+                        
+                    *(src2_buffer + src2_surface->w * (y2+i) + x2 + j) &= ~amask;
+                    *(src2_buffer + src2_surface->w * (y2+i) + x2 + j) |= mask;
+                }
+            }
+            SDL_UnlockSurface( effect_mask_surface );
+        }
+        else if ( mask_value == -TRANS_CROSSFADE_MASK ){
+            SDL_LockSurface( effect_mask_surface );
+            Uint32 *mask_buffer = (Uint32 *)effect_mask_surface->pixels;
+            for ( i=0; i<wy ; i++ ) {
+                int y4 = effect_mask_surface->w * ((y2+i) % effect_mask_surface->h );
+                for ( j=0 ; j<wx ; j++ ){
+                    mask = (*(mask_buffer + y4 + (x2 + j) % effect_mask_surface->w ) >> effect_mask_surface->format->Rshift) & 0xff;
+                    if ( effect_value > mask ){
+                        mask = effect_value - mask;
+                        if ( mask > 0xff )
+                            mask = amask;
+                        else
+                            mask = mask << src2_surface->format->Ashift;
+                    }
+                    else
+                        mask = 0;
+                        
+                    *(src2_buffer + src2_surface->w * (y2+i) + x2 + j) &= ~amask;
+                    *(src2_buffer + src2_surface->w * (y2+i) + x2 + j) |= mask;
+                }
+            }
+            SDL_UnlockSurface( effect_mask_surface );
         }
     }
     else{
@@ -1701,7 +1751,7 @@ void ONScripterLabel::drawExbtn( SDL_Surface *surface, char *ctl_str )
 void ONScripterLabel::setupAnimationInfo( struct AnimationInfo *anim )
 {
     anim->deleteImageSurface();
-    anim->image_surface = loadPixmap( &anim->tag );
+    anim->image_surface = loadTaggedImage( &anim->tag );
     anim->abs_flag = true;
 
     if ( anim->tag.trans_mode == TRANS_STRING ){

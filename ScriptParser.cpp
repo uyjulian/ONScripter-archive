@@ -540,7 +540,7 @@ int ScriptParser::readLine( char **buf, bool raw_flag )
     int string_counter=0, no;
     char *end_point = script_buffer + script_buffer_length;
     bool head_flag = true;
-    text_line_flag = true;
+    bool text_line_flag = true;
     char num_buf[10], num_sjis_buf[3];
     bool quat_flag = false, comment_flag = false;
     unsigned int i;
@@ -569,10 +569,7 @@ int ScriptParser::readLine( char **buf, bool raw_flag )
             addStringBuffer( ch, string_counter++ );
         }
         else if ( (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') ){
-            if ( head_flag ){
-                text_line_flag = false;
-                head_flag = false;
-            }
+            if ( head_flag ) text_line_flag = false;
             if ( !quat_flag && ch >= 'A' && ch <= 'Z' ) ch += 'a' - 'A';
             addStringBuffer( ch, string_counter++ );
         }
@@ -619,12 +616,14 @@ int ScriptParser::readLine( char **buf, bool raw_flag )
             addStringBuffer( ch, string_counter++ );
             ch = *(*buf)++;
             addStringBuffer( ch, string_counter++ );
+            text_line_flag = true;
         }
         else{
             addStringBuffer( ch, string_counter++ );
         }
 
         head_flag = false;
+        if ( ch == ':' ) head_flag = true;
     }
 
     addStringBuffer( '\0', string_counter++ );
@@ -632,8 +631,6 @@ int ScriptParser::readLine( char **buf, bool raw_flag )
     string_buffer_offset = 0;
     while ( string_buffer[ string_counter ] == ' ' || string_buffer[ string_counter ] == '\t' )
         string_counter++;
-    //if ( !raw_flag )
-    //printf("end of readLine %s\n",string_buffer );
 
     return 0;
 }
@@ -782,7 +779,6 @@ int ScriptParser::parseLine()
     while( func_lut[ lut_counter ].method ){
         if ( !strcmp( func_lut[ lut_counter ].command, tmp_string_buffer ) ){
             ret = (this->*func_lut[ lut_counter ].method)();
-
             if ( ret == RET_CONTINUE || ret == RET_WAIT_NEXT ){
                 skipToken();
             }
@@ -917,19 +913,22 @@ bool ScriptParser::readStr( char **src_buf, char *dst_buf )
     return ret;
 }
 
-void ScriptParser::skipToken( void )
+void ScriptParser::skipToken()
 {
     bool quat_flag = false;
     bool first_flag = true;
     bool comma_flag = false;
     char *buf = string_buffer + string_buffer_offset;
 
-    while(1){
+    if ( *buf & 0x80 ){
+        buf += 2;
+    }
+    else while(1){
         if ( *buf == '\0' ||
              ( !quat_flag && *buf == ':' ) ||
              ( !quat_flag && *buf == ';' )) break;
         else if ( !quat_flag && *buf & 0x80 ){
-            buf += 2;
+            //buf += 2;
             break;
         }
         else if ( *buf == '"' ){
@@ -1315,4 +1314,29 @@ void ScriptParser::setStr( char **dst, char *src )
     }
     else
         *dst = NULL;
+}
+
+int ScriptParser::readEffect( char **buf, struct EffectLink *effect )
+{
+    int num = 1;
+    
+    effect->effect = readInt( buf );
+    if ( end_with_comma_flag ){
+        num++;
+        effect->duration = readInt( buf );
+        if ( end_with_comma_flag ){
+            num++;
+            readStr( buf, tmp_string_buffer );
+            setStr( &effect->image, tmp_string_buffer );
+        }
+        else
+            effect->image = NULL;
+        
+    }
+    else{
+        effect->duration = 0;
+    }
+
+    //printf("readEffect %d: %d %d %s\n", num, effect->effect, effect->duration, effect->image );
+    return num;
 }

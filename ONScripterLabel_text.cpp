@@ -255,7 +255,7 @@ int ONScripterLabel::textCommand( char *text )
     int i, j, ret = enterTextDisplayMode();
     if ( ret != RET_NOMATCH ) return ret;
     
-    char out_text[20], num_buf[10];
+    char out_text[20];
     char *p_string_buffer;
 
     if ( event_mode & (WAIT_INPUT_MODE | WAIT_SLEEP_MODE) ){
@@ -300,6 +300,7 @@ int ONScripterLabel::textCommand( char *text )
     
     //printf("*** textCommand %d %d(%d) %s\n", string_buffer_offset, sentence_font.xy[0], sentence_font.pitch_xy[0], string_buffer + string_buffer_offset );
     
+    while( string_buffer[ string_buffer_offset ] == ' ' || string_buffer[ string_buffer_offset ] == '\t' ) string_buffer ++;
     char ch = string_buffer[ string_buffer_offset ];
     if ( ch & 0x80 ){ // Shift jis
         text_char_flag = true;
@@ -411,23 +412,6 @@ int ONScripterLabel::textCommand( char *text )
         }
         return RET_CONTINUE;
     }
-    else if ( ch == '%' ){ // number variable
-        text_char_flag = true;
-        p_string_buffer = &string_buffer[ string_buffer_offset ];
-        int j = readInt( &p_string_buffer );
-        printf("read Int %d\n",j);
-        sprintf( num_buf, "%d", j);
-        if ( j < 0 ){
-            drawChar( "иб", &sentence_font, false, text_surface );
-            j = -j;
-        }
-        for ( unsigned int i=0 ; i<strlen(num_buf) ; i++ ){
-            getSJISFromInteger( out_text, num_buf[i] - '0', false );
-            drawChar( out_text, &sentence_font, false, text_surface );
-        }
-        string_buffer_offset = p_string_buffer - string_buffer;
-        return RET_CONTINUE;
-    }
     else if ( ch == '_' ){ // Ignore following forced return
         clickstr_state = CLICK_IGNORE;
         string_buffer_offset++;
@@ -443,7 +427,7 @@ int ONScripterLabel::textCommand( char *text )
         return RET_CONTINUE;
     }
     else{
-        printf("unrecognized text %c\n",ch);
+        printf("unrecognized text %x\n",ch);
         text_char_flag = true;
         out_text[0] = ch;
         out_text[1] = '\0';

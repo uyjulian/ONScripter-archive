@@ -838,34 +838,23 @@ int ScriptParser::effectCommand()
     if ( !strncmp( string_buffer + string_buffer_offset, "windoweffect", 12 ) ) window_effect_flag = true;
     
     if ( window_effect_flag ){
-        //printf("windoweffectCommand\n");
         p_string_buffer = string_buffer + string_buffer_offset + 12; // strlen("windoweffect") = 12
         elink = &window_effect;
     }
     else{
         if ( current_mode != DEFINE_MODE ) errorAndExit( string_buffer + string_buffer_offset );
-        //printf("effectCoomand\n");
+
         last_effect_link->next = new EffectLink();
         last_effect_link = last_effect_link->next;
         last_effect_link->next = NULL;
+        last_effect_link->image = NULL;
         p_string_buffer = string_buffer + string_buffer_offset + 6; // strlen("effect") = 6
         elink = last_effect_link;
     }
     
     if ( !window_effect_flag ) elink->num = readInt( &p_string_buffer );
-    elink->effect = readInt( &p_string_buffer );
-    elink->duration = readInt( &p_string_buffer );
-    readStr( &p_string_buffer, tmp_string_buffer );
-    elink->image = new char[ strlen(tmp_string_buffer ) + 1 ];
-    
-    memcpy( elink->image, tmp_string_buffer, strlen( tmp_string_buffer ) + 1 );
-#if 0
-    printf("effect [%d] [%d] [%d] [%s]\n",
-           elink->num,
-           elink->effect,
-           elink->duration,
-           elink->image );
-#endif
+    readEffect( &p_string_buffer, elink );
+
     return RET_CONTINUE;
 }
 

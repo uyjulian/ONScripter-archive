@@ -180,6 +180,7 @@ protected:
 
     struct LinkLabelInfo root_link_label_info, *current_link_label_info;
     struct EffectLink getEffect( int effect_no );
+    int readEffect( char **buf, struct EffectLink *effect );
 
     /* ---------------------------------------- */
     /* Global definitions */
@@ -257,7 +258,9 @@ protected:
             TRANS_DIRECT = 5,
             TRANS_PALLET = 6,
             TRANS_TOPRIGHT = 7,
-            TRANS_MASK = 8
+            TRANS_MASK = 8,
+            TRANS_FADE_MASK = 9,
+            TRANS_CROSSFADE_MASK = 10
             } TRANS_MODE;
     int trans_mode;
     
@@ -285,7 +288,6 @@ protected:
         int xy[2];
     } text_buffer[ MAX_TEXT_BUFFER ], *current_text_buffer; // ring buffer
     int text_history_num;
-    bool text_line_flag;
     int  clickstr_num;
     char *clickstr_list;
     int  clickstr_line;

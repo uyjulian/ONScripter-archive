@@ -386,7 +386,7 @@ void ONScripterLabel::keyPressEvent( SDL_KeyboardEvent *event )
 void ONScripterLabel::timerEvent( void )
 {
   timerEventTop:
-    
+
     int ret;
     
     if ( event_mode & WAIT_ANIMATION_MODE ){
@@ -408,20 +408,19 @@ void ONScripterLabel::timerEvent( void )
                 SDL_BlitSurface( text_surface, NULL, effect_src_surface, NULL );
             }
             if ( doEffect( WINDOW_EFFECT, NULL, DIRECT_EFFECT_IMAGE ) == RET_CONTINUE ){
-                display_mode &= ~TEXT_DISPLAY_MODE;
+                display_mode = NORMAL_DISPLAY_MODE;
                 effect_counter = 0;
+                event_mode = EFFECT_EVENT_MODE;
             }
             startTimer( MINIMUM_TIMER_RESOLUTION );
             return;
         }
-
         string_buffer_offset = 0;
         memcpy( string_buffer, effect_command, strlen(effect_command) + 1 );
         ret = this->parseLine();
         if ( ret == RET_CONTINUE ){
             delete[] effect_command;
-            event_mode = IDLE_EVENT_MODE;
-
+            if ( effect_counter == 0 ) return;
             if ( effect_blank == 0 ) goto timerEventTop;
             startTimer( effect_blank );
         }

@@ -54,6 +54,8 @@ static struct FuncLUT{
     {"vsp",   &ONScripterLabel::vspCommand},
     {"voicevol",   &ONScripterLabel::voicevolCommand},
     {"trap",   &ONScripterLabel::trapCommand},
+    {"texton",   &ONScripterLabel::textonCommand},
+    {"textoff",   &ONScripterLabel::textoffCommand},
     {"textclear",   &ONScripterLabel::textclearCommand},
     {"systemcall",   &ONScripterLabel::systemcallCommand},
     {"stop",   &ONScripterLabel::stopCommand},
@@ -284,6 +286,7 @@ ONScripterLabel::ONScripterLabel( bool cdaudio_flag, char *default_font, char *d
     
     new_line_skip_flag = false;
     erase_text_window_flag = true;
+    text_on_flag = true;
     sentence_font.ttf_font = (void*)TTF_OpenFont( font_file, FONT_SIZE );
     if ( !sentence_font.ttf_font ){
         fprintf( stderr, "can't open font file: %s\n", font_file );
@@ -611,7 +614,8 @@ int ONScripterLabel::parseLine( )
         lut_counter++;
     }
 
-    if ( string_buffer[string_buffer_offset] != '@' && string_buffer[string_buffer_offset] != '\\' &&
+    if ( !text_line_flag &&
+         string_buffer[string_buffer_offset] != '@' && string_buffer[string_buffer_offset] != '\\' &&
          string_buffer[string_buffer_offset] != '/' && string_buffer[string_buffer_offset] != '!' &&
          string_buffer[string_buffer_offset] != '#' && string_buffer[string_buffer_offset] != '_' &&
          string_buffer[string_buffer_offset] != '%' && !(string_buffer[string_buffer_offset] & 0x80 ) ){
@@ -751,6 +755,7 @@ int ONScripterLabel::enterTextDisplayMode()
         if ( event_mode & EFFECT_EVENT_MODE ){
             if ( doEffect( WINDOW_EFFECT, NULL, DIRECT_EFFECT_IMAGE ) == RET_CONTINUE ){
                 display_mode |= TEXT_DISPLAY_MODE;
+                text_on_flag = true;
                 return RET_CONTINUE;
             }
             return RET_WAIT;
@@ -758,7 +763,6 @@ int ONScripterLabel::enterTextDisplayMode()
         else{
             flush();
             SDL_BlitSurface( text_surface, NULL, effect_src_surface, NULL );
-
             shadowTextDisplay();
             restoreTextBuffer();
 
@@ -766,8 +770,9 @@ int ONScripterLabel::enterTextDisplayMode()
 
             char *buf = new char[ strlen( string_buffer + string_buffer_offset ) + 1 ];
             memcpy( buf, string_buffer + string_buffer_offset, strlen( string_buffer + string_buffer_offset ) + 1 );
-            setEffect( RET_WAIT, buf );
-            return RET_WAIT;
+            int ret = setEffect( window_effect.effect, buf );
+            if ( ret == RET_WAIT_NEXT ) return RET_WAIT;
+            return ret;
         }
     }
     
@@ -1073,7 +1078,10 @@ void ONScripterLabel::newPage( bool next_flag )
     }
 
     clearCurrentTextBuffer();
-    shadowTextDisplay();
+    if ( display_mode & TEXT_DISPLAY_MODE )
+        shadowTextDisplay();
+    else
+        SDL_BlitSurface( accumulation_surface, NULL, text_surface, NULL );
     flush();
 }
 

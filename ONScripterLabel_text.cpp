@@ -42,6 +42,7 @@ void ONScripterLabel::drawChar( char* text, struct FontInfo *info, bool flush_fl
     SDL_Color color;
     unsigned short index, unicode;
     int minx, maxx, miny, maxy, advanced;
+    char *p_text;
 
     //printf("draw %x-%x[%s] %d, %d\n", text[0], text[1], text, system_menu_enter_flag, buffering_flag );
 
@@ -65,13 +66,22 @@ void ONScripterLabel::drawChar( char* text, struct FontInfo *info, bool flush_fl
         index = ((unsigned char*)text)[0];
         index = index << 8 | ((unsigned char*)text)[1];
         unicode = convSJIS2UTF16( index );
+        TTF_GlyphMetrics( (TTF_Font*)info->ttf_font, unicode,
+                          &minx, &maxx, &miny, &maxy, &advanced );
+    }
+    else if ( text[1] ){
+        p_text = &text[1];
+        unicode = text[1];
+        TTF_GlyphMetrics( (TTF_Font*)info->ttf_font, text[1],
+                          &minx, &maxx, &miny, &maxy, &advanced );
     }
     else{
+        p_text = &text[0];
         unicode = text[0];
+        TTF_GlyphMetrics( (TTF_Font*)info->ttf_font, text[0],
+                          &minx, &maxx, &miny, &maxy, &advanced );
     }
 
-    TTF_GlyphMetrics( (TTF_Font*)info->ttf_font, unicode,
-                      &minx, &maxx, &miny, &maxy, &advanced );
     //printf("minx %d maxx %d miny %d maxy %d ace %d\n",minx, maxx, miny, maxy, advanced );
     
     if ( info->xy[0] >= info->num_xy[0] ){
@@ -82,15 +92,18 @@ void ONScripterLabel::drawChar( char* text, struct FontInfo *info, bool flush_fl
     xy[1] = info->xy[1] * info->pitch_xy[1] + info->top_xy[1];
     
     rect.x = xy[0] + 1 + minx;
+    if ( !(text[0] & 0x80) && text[1] ) rect.x += info->pitch_xy[0] / 2;
     rect.y = xy[1] + TTF_FontAscent( (TTF_Font*)info->ttf_font ) - maxy;
     if ( info->display_shadow ){
         color.r = color.g = color.b = 0;
         tmp_surface = TTF_RenderGlyph_Blended( (TTF_Font*)info->ttf_font, unicode, color );
         rect.w = tmp_surface->w;
         rect.h = tmp_surface->h;
-        if ( surface )
-            SDL_BlitSurface( tmp_surface, NULL, surface, &rect );
-        SDL_FreeSurface( tmp_surface );
+
+        if ( tmp_surface ){
+            if ( surface ) SDL_BlitSurface( tmp_surface, NULL, surface, &rect );
+            SDL_FreeSurface( tmp_surface );
+        }
     }
 
     color.r = info->color[0];
@@ -101,10 +114,10 @@ void ONScripterLabel::drawChar( char* text, struct FontInfo *info, bool flush_fl
     rect.x--;
     rect.w = tmp_surface->w;
     rect.h = tmp_surface->h;
-    if ( surface )
-        SDL_BlitSurface( tmp_surface, NULL, surface, &rect );
-    if ( tmp_surface ) SDL_FreeSurface( tmp_surface );
-    
+    if ( tmp_surface ){
+        if ( surface ) SDL_BlitSurface( tmp_surface, NULL, surface, &rect );
+        SDL_FreeSurface( tmp_surface );
+    }
     if ( flush_flag ) flush( rect.x, rect.y, rect.w + 1, rect.h );
 
     /* ---------------------------------------- */
@@ -185,6 +198,11 @@ void ONScripterLabel::restoreTextBuffer( SDL_Surface *surface )
     for ( i=0 ; i<current_text_buffer->num_xy[1] * current_text_buffer->num_xy[0] ; i++ ){
         if ( sentence_font.xy[1] * current_text_buffer->num_xy[0] + sentence_font.xy[0] >= end ) break;
         out_text[0] = current_text_buffer->buffer[ i * 2 ];
+        if ( !(out_text[0] & 0x80) ){
+            out_text[1] = '\0';
+            drawChar( out_text, &sentence_font, false, surface );
+            sentence_font.xy[0]--;
+        }
         out_text[1] = current_text_buffer->buffer[ i * 2 + 1];
         drawChar( out_text, &sentence_font, false, surface );
     }
@@ -255,7 +273,7 @@ int ONScripterLabel::textCommand( char *text )
     int i, j, ret = enterTextDisplayMode();
     if ( ret != RET_NOMATCH ) return ret;
     
-    char out_text[20];
+    char out_text[3]= {'\0', '\0', '\0'};
     char *p_string_buffer;
 
     if ( event_mode & (WAIT_INPUT_MODE | WAIT_SLEEP_MODE) ){
@@ -287,9 +305,11 @@ int ONScripterLabel::textCommand( char *text )
                 string_buffer_offset = p_string_buffer - string_buffer;
             }
         }
-        else{
-            string_buffer_offset++;
+        else if ( string_buffer[ string_buffer_offset+1 ] ){
+            string_buffer_offset += 2;
         }
+        else
+            string_buffer_offset++;
 
         event_mode = IDLE_EVENT_MODE;
         current_link_label_info->offset = string_buffer_offset;
@@ -314,7 +334,6 @@ int ONScripterLabel::textCommand( char *text )
         
         out_text[0] = string_buffer[ string_buffer_offset ];
         out_text[1] = string_buffer[ string_buffer_offset + 1 ];
-        out_text[2] = '\0';
         if ( clickstr_state == CLICK_IGNORE ){
             clickstr_state = CLICK_NONE;
         }
@@ -427,20 +446,25 @@ int ONScripterLabel::textCommand( char *text )
         return RET_CONTINUE;
     }
     else{
-        printf("unrecognized text %x\n",ch);
+        bool flush_flag = true;
+        if ( skip_flag || draw_one_page_flag || sentence_font.wait_time == 0)
+            flush_flag = false;
         text_char_flag = true;
         out_text[0] = ch;
-        out_text[1] = '\0';
+        drawChar( out_text, &sentence_font, flush_flag, text_surface );
+        sentence_font.xy[0]--;
+        if ( string_buffer[ string_buffer_offset + 1 ] ){
+            out_text[1] = string_buffer[ string_buffer_offset + 1 ];
+            drawChar( out_text, &sentence_font, flush_flag, text_surface );
+        }
         if ( skip_flag || draw_one_page_flag || sentence_font.wait_time == 0){
-            drawChar( out_text, &sentence_font, false, text_surface );
             string_buffer_offset++;
+            if ( string_buffer[ string_buffer_offset + 1 ] ) string_buffer_offset++;
             return RET_CONTINUE;
         }
         else{
-            drawChar( out_text, &sentence_font, true, text_surface );
             event_mode = WAIT_SLEEP_MODE;
             startTimer( sentence_font.wait_time );
-            printf("dispatch timer %d\n",sentence_font.wait_time);
             return RET_WAIT;
         }
     }

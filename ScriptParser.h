@@ -305,7 +305,8 @@ protected:
     char *clickstr_list;
     int  clickstr_line;
     int  clickstr_state;
-    
+    bool text_line_flag;
+
     /* ---------------------------------------- */
     /* Sound related variables */
     int mp3_volume;

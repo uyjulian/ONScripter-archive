@@ -27,19 +27,24 @@
 #define EFFECT_STRIPE_CURTAIN_WIDTH 24
 #define EFFECT_QUAKE_AMP 12
 
-int ONScripterLabel::setEffect( int immediate_flag, char *buf )
+int ONScripterLabel::setEffect( int effect_no, char *buf )
 {
-    if ( immediate_flag == RET_WAIT || immediate_flag == RET_WAIT_NEXT ){
-        effect_counter = 0;
-        effect_command = buf;
-        event_mode = EFFECT_EVENT_MODE;
-        startTimer( MINIMUM_TIMER_RESOLUTION );
-    }
-    else{
+    if ( effect_no == 0 ){
         delete[] buf;
+        return RET_CONTINUE;
     }
 
-    return immediate_flag;
+    effect_counter = 0;
+    effect_command = buf;
+    event_mode = EFFECT_EVENT_MODE;
+    if ( effect_no == 1 ){
+        timerEvent();
+        return RET_CONTINUE;
+    }
+    else{
+        startTimer( MINIMUM_TIMER_RESOLUTION );
+        return RET_WAIT_NEXT;
+    }
 }
 
 int ONScripterLabel::doEffect( int effect_no, AnimationInfo *anim, int effect_image )
@@ -50,7 +55,6 @@ int ONScripterLabel::doEffect( int effect_no, AnimationInfo *anim, int effect_im
     effect_timer_resolution = effect_start_time - effect_start_time_old;
     effect_start_time_old = effect_start_time;
     
-    //printf("doEffect %d %d\n", effect_no, effect_counter );
     int i;
     int width, width2;
     int height, height2;
@@ -310,7 +314,7 @@ int ONScripterLabel::doEffect( int effect_no, AnimationInfo *anim, int effect_im
     effect_counter += effect_timer_resolution;
     if ( effect_counter < effect.duration ){
         if ( effect.effect != 0 ){
-            if ( !erase_text_window_flag ){
+            if ( !erase_text_window_flag && text_on_flag ){
                 shadowTextDisplay( NULL, text_surface );
                 restoreTextBuffer();
             }
@@ -327,15 +331,18 @@ int ONScripterLabel::doEffect( int effect_no, AnimationInfo *anim, int effect_im
             SDL_BlitSurface( effect_dst_surface, NULL, accumulation_surface, NULL );
             SDL_BlitSurface( accumulation_surface, NULL, text_surface, NULL );
         }
-        if ( !erase_text_window_flag ){
+        if ( !erase_text_window_flag && text_on_flag ){
             shadowTextDisplay( NULL, text_surface );
             restoreTextBuffer();
+            display_mode = TEXT_DISPLAY_MODE;
         }
 
         if ( effect_mask_surface ) SDL_FreeSurface( effect_mask_surface );
         effect_mask_surface = NULL;
 
         if ( effect.effect != 0 ) flush();
+        if ( effect.effect == 1 ) effect_counter = 0;
+        event_mode = IDLE_EVENT_MODE;
         return RET_CONTINUE;
     }
 }

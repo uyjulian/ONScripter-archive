@@ -199,8 +199,7 @@ int ONScripterLabel::loadSaveFile( int no )
         label_stack_depth++;
     }
 
-    event_mode = fgetc( fp );
-    if ( event_mode & WAIT_BUTTON_MODE ) event_mode = WAIT_SLEEP_MODE; // Re-execute the selectCommand, etc.
+    int tmp_event_mode = fgetc( fp );
     
     /* ---------------------------------------- */
     /* Load variables */
@@ -316,6 +315,9 @@ int ONScripterLabel::loadSaveFile( int no )
     rmode_flag = (fgetc( fp )==1)?true:false;
     
     fclose( fp );
+
+    event_mode = tmp_event_mode;
+    if ( event_mode & WAIT_BUTTON_MODE ) event_mode = WAIT_SLEEP_MODE; // Re-execute the selectCommand, etc.
 
     return 0;
 }

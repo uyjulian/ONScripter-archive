@@ -126,6 +126,31 @@ int ONScripterLabel::trapCommand()
     return RET_CONTINUE;
 }
 
+int ONScripterLabel::textonCommand()
+{
+    text_on_flag = true;
+    if ( !(display_mode & TEXT_DISPLAY_MODE) ){
+        shadowTextDisplay();
+        restoreTextBuffer();
+        flush();
+        display_mode = TEXT_DISPLAY_MODE;
+    }
+
+    return RET_CONTINUE;
+}
+
+int ONScripterLabel::textoffCommand()
+{
+    text_on_flag = false;
+    if ( display_mode & TEXT_DISPLAY_MODE ){
+        SDL_BlitSurface( accumulation_surface, NULL, text_surface, NULL );
+        flush();
+        display_mode = NORMAL_DISPLAY_MODE;
+    }
+
+    return RET_CONTINUE;
+}
+
 int ONScripterLabel::textclearCommand()
 {
     newPage( false );
@@ -387,7 +412,7 @@ int ONScripterLabel::selectCommand()
                 if ( first_token_flag ) comma_flag = true;
 
                 do{
-                    readLine( &p_script_buffer );
+                    readLine( &p_script_buffer, true );
                     select_label_info.current_line++;
                 }
                 while ( string_buffer[ string_buffer_offset ] == ';' || string_buffer[ string_buffer_offset ] == '\0' );
@@ -537,6 +562,8 @@ int ONScripterLabel::quakeCommand()
     quake_effect.duration = readInt( &p_string_buffer );
 
     if ( event_mode & EFFECT_EVENT_MODE ){
+        if ( effect_counter == 0 )
+            SDL_BlitSurface( text_surface, NULL, effect_dst_surface, NULL );
         quake_effect.effect = CUSTOM_EFFECT_NO + quake_type;
         return doEffect( QUAKE_EFFECT, NULL, DIRECT_EFFECT_IMAGE );
     }
@@ -545,7 +572,8 @@ int ONScripterLabel::quakeCommand()
         if ( quake_type == 0 )      sprintf( buf, "quakey %d, %d", quake_effect.num, quake_effect.duration );
         else if ( quake_type == 1 ) sprintf( buf, "quakex %d, %d", quake_effect.num, quake_effect.duration );
         else if ( quake_type == 2 ) sprintf( buf, "quake %d, %d",  quake_effect.num, quake_effect.duration );
-        return setEffect( RET_WAIT_NEXT, buf );
+        setEffect( 2, buf ); // 2 is dummy value
+        return RET_WAIT_NEXT;
     }
 }
 
@@ -576,8 +604,7 @@ int ONScripterLabel::printCommand()
         char *buf = new char[512];
         sprintf( buf, "print " );
         makeEffectStr( &p_string_buffer, buf );
-        if ( print_effect.effect == 0 ) return setEffect( RET_CONTINUE, buf );
-        else                            return setEffect( RET_WAIT_NEXT, buf );
+        return setEffect( tmp_effect.effect, buf );
     }
 }
 
@@ -816,8 +843,7 @@ int ONScripterLabel::ldCommand()
         char *buf = new char[512];
         sprintf( buf, "ld %c, \"%s\",", loc, tmp_string_buffer );
         makeEffectStr( &p_string_buffer, buf );
-        if ( tmp_effect.effect == 0 ) return setEffect( RET_CONTINUE, buf );
-        else                          return setEffect( RET_WAIT_NEXT, buf );
+        return setEffect( tmp_effect.effect, buf );
     }
 }
 
@@ -1098,8 +1124,7 @@ int ONScripterLabel::clCommand()
         char *buf = new char[512];
         sprintf( buf, "cl %c,", loc );
         makeEffectStr( &p_string_buffer, buf );
-        if ( tmp_effect.effect == 0 ) return setEffect( RET_CONTINUE, buf );
-        else                          return setEffect( RET_WAIT_NEXT, buf );
+        return setEffect( tmp_effect.effect, buf );
     }
 }
 
@@ -1272,14 +1297,18 @@ int ONScripterLabel::btnwaitCommand()
         }
         refreshAccumulationSurface( accumulation_surface );
         SDL_BlitSurface( accumulation_surface, NULL, text_surface, NULL );
-        if ( !erase_text_window_flag ){
+        if ( !erase_text_window_flag && text_on_flag ){
             shadowTextDisplay( NULL, text_surface );
             restoreTextBuffer();
+            display_mode = TEXT_DISPLAY_MODE;
         }
+        else{
+            display_mode = NORMAL_DISPLAY_MODE;
+        }
+        
         SDL_BlitSurface( text_surface, NULL, select_surface, NULL );
 
         flush();
-        display_mode = NORMAL_DISPLAY_MODE;
 
         refreshMouseOverButton();
 
@@ -1371,8 +1400,7 @@ int ONScripterLabel::bgCommand()
         char *buf = new char[ 512 ];
         sprintf( buf, "bg \"%s\",",tmp_string_buffer );
         makeEffectStr( &p_string_buffer, buf );
-        if ( tmp_effect.effect == 0 ) return setEffect( RET_CONTINUE, buf );
-        else                          return setEffect( RET_WAIT_NEXT, buf );
+        return setEffect( tmp_effect.effect, buf );
     }
 }
 

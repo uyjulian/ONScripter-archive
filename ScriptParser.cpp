@@ -456,7 +456,7 @@ int ScriptParser::readLine( char **buf, bool raw_flag )
     int string_counter=0, no;
     char *end_point = script_buffer + script_buffer_length;
     bool head_flag = true;
-    bool text_line_flag = true;
+    text_line_flag = true;
     char num_buf[10], num_sjis_buf[3];
     bool quat_flag = false, comment_flag = false;
     unsigned int i;
@@ -1244,6 +1244,7 @@ int ScriptParser::readEffect( char **buf, struct EffectLink *effect )
         effect->duration = 0;
     }
 
+    if ( effect->effect == 1 ) effect->duration = 0;
     //printf("readEffect %d: %d %d %s\n", num, effect->effect, effect->duration, effect->image );
     return num;
 }

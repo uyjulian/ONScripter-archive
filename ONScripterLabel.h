@@ -66,6 +66,8 @@ public:
     int vspCommand();
     int voicevolCommand();
     int trapCommand();
+    int textonCommand();
+    int textoffCommand();
     int textclearCommand();
     int systemcallCommand();
     int stopCommand();
@@ -360,6 +362,7 @@ private:
     AnimationInfo sentence_font_info;
     char *font_file;
     bool erase_text_window_flag;
+    bool text_on_flag;
 
     void drawChar( char* text, struct FontInfo *info, bool flush_flag = true, SDL_Surface *surface = NULL, bool buffering_flag = true );
     void drawString( char *str, uchar3 color, FontInfo *info, bool flush_flag, SDL_Surface *surface, SDL_Rect *rect = NULL, bool buffering_flag = false );
@@ -379,8 +382,8 @@ private:
     bool first_mouse_over_flag;
     
     void makeEffectStr( char **buf, char *dst_buf );
-    int  setEffect( int immediate_flag, char *buf );
-    int doEffect( int effect_no, AnimationInfo *anim, int effect_image );
+    int  setEffect( int effect_no, char *buf );
+    int  doEffect( int effect_no, AnimationInfo *anim, int effect_image );
 
     /* ---------------------------------------- */
     /* Select related variables */

@@ -142,33 +142,41 @@ int ONScripterLabel::playCDAudio( int cd_no )
     return 0;
 }
 
-int ONScripterLabel::playWave( const char *file_name, bool loop_flag, int channel )
+int ONScripterLabel::playWave( const char *file_name, bool loop_flag, int channel, int play_mode )
 {
-    unsigned long length;
+    unsigned long length = 0;
     unsigned char *buffer;
 
     if ( !audio_open_flag ) return -1;
     
-    if ( channel >= MIX_CHANNELS ) channel = MIX_CHANNELS - 1;
+    if ( channel >= ONS_MIX_CHANNELS ) channel = ONS_MIX_CHANNELS - 1;
 
-    length = script_h.cBR->getFileLength( file_name );
-    buffer = new unsigned char[length];
-    script_h.cBR->getFile( file_name, buffer );
+    Mix_Pause( channel );
+    if ( !(play_mode & WAVE_PLAY_LOADED) ){
+        length = script_h.cBR->getFileLength( file_name );
+        if ( length==0 ) return -1;
+        buffer = new unsigned char[length];
+        script_h.cBR->getFile( file_name, buffer );
 
-    if ( wave_sample[channel] ){
-        Mix_Pause( channel );
-        Mix_FreeChunk( wave_sample[channel] );
+        if ( wave_sample[channel] ){
+            Mix_FreeChunk( wave_sample[channel] );
+        }
+        wave_sample[channel] = Mix_LoadWAV_RW(SDL_RWFromMem( buffer, length ), 1);
+        delete[] buffer;
     }
-    wave_sample[channel] = Mix_LoadWAV_RW(SDL_RWFromMem( buffer, length ), 1);
-    delete[] buffer;
-
+    else{
+        if ( wave_sample[channel] ) return -1; // if not pre-loaded
+    }
+    
     if ( channel == 0 ) Mix_Volume( channel, voice_volume * 128 / 100 );
     else                Mix_Volume( channel, se_volume * 128 / 100 );
 
     if ( debug_level > 0 )
         printf("playWave %s %ld at vol %d\n", file_name, length, (channel==0)?voice_volume:se_volume );
     
-    Mix_PlayChannel( channel, wave_sample[channel], loop_flag?-1:0 );
+    if ( !(play_mode & WAVE_PRELOAD) ){
+        Mix_PlayChannel( channel, wave_sample[channel], loop_flag?-1:0 );
+    }
 
     return 0;
 }

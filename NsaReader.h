@@ -43,8 +43,8 @@ public:
     struct FileInfo getFileByIndex( int index );
     bool getAccessFlag( const char *file_name );
 
-    int openForConvert( char *nsa_name );
-    int writeHeader( FILE *fp );
+    int openForConvert( char *nsa_name, int archive_type=ARCHIVE_TYPE_NSA );
+    int writeHeader( FILE *fp, int archive_type=ARCHIVE_TYPE_NSA );
     size_t putFile( FILE *fp, int no, size_t offset, size_t length, size_t original_length, int compression_type, bool modified_flag, unsigned char *buffer );
     
 private:

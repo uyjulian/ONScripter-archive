@@ -50,8 +50,8 @@ int main( int argc, char **argv )
         else argc = 1;
     }
     if ( argc != 4 ){
-        fprintf( stderr, "Usage: sardec 640 arc_file rescaled_arc_file\n");
-        fprintf( stderr, "Usage: sardec 800 arc_file rescaled_arc_file\n");
+        fprintf( stderr, "Usage: sarconv 640 arc_file rescaled_arc_file\n");
+        fprintf( stderr, "Usage: sarconv 800 arc_file rescaled_arc_file\n");
         exit(-1);
     }
 

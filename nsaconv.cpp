@@ -41,12 +41,14 @@ int main( int argc, char **argv )
     unsigned long length, offset = 0, buffer_length = 0;
     unsigned char *buffer = NULL, *rescaled_buffer = NULL;
     unsigned int i, count;
+    int archive_type = BaseReader::ARCHIVE_TYPE_NSA;
     bool enhanced_flag = false;
     FILE *fp;
 
-    if ( argc == 4 || argc == 5 ){
-        if ( argc == 5 ){
-            if ( !strcmp( argv[1], "-e" ) ) enhanced_flag = true;
+    if ( argc >= 4 ){
+        while ( argc > 4 ){
+            if      ( !strcmp( argv[1], "-e" ) )   enhanced_flag = true;
+            else if ( !strcmp( argv[1], "-ns2" ) ) archive_type = BaseReader::ARCHIVE_TYPE_NS2;
             argc--;
             argv++;
         }
@@ -56,8 +58,8 @@ int main( int argc, char **argv )
         else argc = 1;
     }
     if ( argc != 4 ){
-        fprintf( stderr, "Usage: nsadec [-e] 640 arc_file rescaled_arc_file\n");
-        fprintf( stderr, "Usage: nsadec [-e] 800 arc_file rescaled_arc_file\n");
+        fprintf( stderr, "Usage: nsaconv [-e] [-ns2] 640 arc_file rescaled_arc_file\n");
+        fprintf( stderr, "Usage: nsaconv [-e] [-ns2] 800 arc_file rescaled_arc_file\n");
         exit(-1);
     }
 
@@ -65,7 +67,7 @@ int main( int argc, char **argv )
         fprintf( stderr, "can't open file %s for writing.\n", argv[3] );
         exit(-1);
     }
-    cSR.openForConvert( argv[2] );
+    cSR.openForConvert( argv[2], archive_type );
     count = cSR.getNumFiles();
 
     SarReader::FileInfo sFI;
@@ -112,7 +114,7 @@ int main( int argc, char **argv )
         
         offset += sFI.length;
     }
-    cSR.writeHeader( fp );
+    cSR.writeHeader( fp, archive_type );
 
     fclose(fp);
 

@@ -45,6 +45,7 @@
 #define MAX_SPRITE_NUM 256
 #define MAX_PARAM_NUM 100
 #define CUSTOM_EFFECT_NO 100
+#define ONS_MIX_CHANNELS 50
 
 #define DEFAULT_WM_TITLE "ONScripter"
 #define DEFAULT_WM_ICON  "ONScripter"
@@ -133,6 +134,7 @@ public:
     int gettextCommand();
     int gettabCommand();
     int getregCommand();
+    int getpageupCommand();
     int getmouseposCommand();
     int getfunctionCommand();
     int getenterCommand();
@@ -308,6 +310,7 @@ private:
     int current_over_button;
 
     bool gettab_flag;
+    bool getpageup_flag;
     bool getfunction_flag;
     bool getenter_flag;
     bool getcursor_flag;
@@ -423,14 +426,17 @@ private:
     SMPEG *mp3_sample;
     Mix_Music *midi_info;
     
-    Mix_Chunk *wave_sample[MIX_CHANNELS];
-    bool wave_play_once_flag;
+    Mix_Chunk *wave_sample[ONS_MIX_CHANNELS];
 
     int playMIDIFile();
     int playMIDI();
     int playMP3( int cd_no );
     int playCDAudio( int cd_no );
-    int playWave( const char *file_name, bool loop_flag, int channel );
+    enum { WAVE_PLAY        = 0,
+           WAVE_PRELOAD     = 1,
+           WAVE_PLAY_LOADED = 2
+    };
+    int playWave( const char *file_name, bool loop_flag, int channel, int play_mode=WAVE_PLAY );
     void stopBGM( bool continue_flag );
     void playClickVoice();
     

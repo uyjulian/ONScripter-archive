@@ -61,7 +61,7 @@ int SarReader::readArchive( struct ArchiveInfo *ai, int archive_type )
     int i=0;
     
     /* Read header */
-    if ( archive_type > ARCHIVE_TYPE_NSA ){
+    if ( archive_type >= ARCHIVE_TYPE_NS2 ){
         i = readChar( ai->file_handle ); // FIXME: for what ?
     }
     ai->num_of_files = readShort( ai->file_handle );
@@ -69,7 +69,7 @@ int SarReader::readArchive( struct ArchiveInfo *ai, int archive_type )
     
     ai->base_offset = readLong( ai->file_handle );
     if ( archive_type >= ARCHIVE_TYPE_NS2 )
-        ai->base_offset++; // FIXME: It's temporary fix.
+        ai->base_offset++;
     
     for ( i=0 ; i<ai->num_of_files ; i++ ){
         unsigned char ch;
@@ -129,13 +129,17 @@ int SarReader::readArchive( struct ArchiveInfo *ai, int archive_type )
     return 0;
 }
 
-int SarReader::writeHeaderSub( ArchiveInfo *ai, FILE *fp, bool nsa_flag )
+int SarReader::writeHeaderSub( ArchiveInfo *ai, FILE *fp, int archive_type )
 {
     int i, j;
 
     fseek( fp, 0L, SEEK_SET );
+    if ( archive_type == ARCHIVE_TYPE_NS2 ) fputc( 0, fp );
     writeShort( fp, ai->num_of_files  );
-    writeLong( fp, ai->base_offset );
+    if ( archive_type == ARCHIVE_TYPE_NS2 )
+        writeLong( fp, ai->base_offset-1 );
+    else
+        writeLong( fp, ai->base_offset );
     
     for ( i=0 ; i<ai->num_of_files ; i++ ){
 
@@ -143,13 +147,13 @@ int SarReader::writeHeaderSub( ArchiveInfo *ai, FILE *fp, bool nsa_flag )
             fputc( ai->fi_list[i].name[j], fp );
         fputc( ai->fi_list[i].name[j], fp );
         
-        if ( nsa_flag )
+        if ( archive_type >= ARCHIVE_TYPE_NSA )
             writeChar( fp, ai->fi_list[i].compression_type );
 
         writeLong( fp, ai->fi_list[i].offset  - ai->base_offset );
         writeLong( fp, ai->fi_list[i].length );
 
-        if ( nsa_flag ){
+        if ( archive_type >= ARCHIVE_TYPE_NSA ){
             writeLong( fp, ai->fi_list[i].original_length );
         }
     }
@@ -160,7 +164,7 @@ int SarReader::writeHeaderSub( ArchiveInfo *ai, FILE *fp, bool nsa_flag )
 int SarReader::writeHeader( FILE *fp )
 {
     ArchiveInfo *ai = archive_info.next;
-    return writeHeaderSub( ai, fp, false );
+    return writeHeaderSub( ai, fp );
 }
 
 size_t SarReader::putFileSub( ArchiveInfo *ai, FILE *fp, int no, size_t offset, size_t length, size_t original_length, int compression_type, bool modified_flag, unsigned char *buffer )

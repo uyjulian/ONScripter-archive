@@ -32,17 +32,16 @@
 
 int ONScripterLabel::waveCommand()
 {
+    bool loop_flag = false;
+    
     if ( script_h.isName( "waveloop" ) ){
-        wave_play_once_flag = true;
-    }
-    else{
-        wave_play_once_flag = false;
+        loop_flag = true;
     }
 
     wavestopCommand();
 
     const char *buf = script_h.readStr();
-    playWave( buf, wave_play_once_flag, DEFAULT_WAVE_CHANNEL );
+    playWave( buf, loop_flag, DEFAULT_WAVE_CHANNEL );
         
     return RET_CONTINUE;
 }
@@ -277,7 +276,7 @@ int ONScripterLabel::sevolCommand()
 {
     se_volume = script_h.readInt();
 
-    for ( int i=1 ; i<MIX_CHANNELS ; i++ )
+    for ( int i=1 ; i<ONS_MIX_CHANNELS ; i++ )
         if ( wave_sample[i] ) Mix_Volume( i, se_volume * 128 / 100 );
         
     return RET_CONTINUE;
@@ -525,7 +524,8 @@ int ONScripterLabel::selectCommand()
         sentence_font.xy[0] = xy[0];
         sentence_font.xy[1] = xy[1];
 
-        event_mode = WAIT_INPUT_MODE | WAIT_BUTTON_MODE;
+        event_mode = WAIT_INPUT_MODE | WAIT_BUTTON_MODE | WAIT_ANIMATION_MODE;
+        advancePhase();
         refreshMouseOverButton();
 
         return RET_WAIT;
@@ -1193,6 +1193,13 @@ int ONScripterLabel::gettabCommand()
     return RET_CONTINUE;
 }
 
+int ONScripterLabel::getpageupCommand()
+{
+    getpageup_flag = true;
+    
+    return RET_CONTINUE;
+}
+
 int ONScripterLabel::getregCommand()
 {
     char *path = NULL, *key = NULL;
@@ -1434,23 +1441,30 @@ int ONScripterLabel::dwavestopCommand()
 
 int ONScripterLabel::dwaveCommand()
 {
+    int play_mode = WAVE_PLAY;
+    bool loop_flag = false;
+    
     if ( script_h.isName( "dwaveloop" ) ){
-        wave_play_once_flag = true;
+        loop_flag = true;
     }
-    else{
-        wave_play_once_flag = false;
+    else if ( script_h.isName( "dwaveload" ) ){
+        play_mode = WAVE_PRELOAD;
+    }
+    else if ( script_h.isName( "dwaveplayloop" ) ){
+        play_mode = WAVE_PLAY_LOADED;
+        loop_flag = true;
+    }
+    else if ( script_h.isName( "dwaveplay" ) ){
+        play_mode = WAVE_PLAY_LOADED;
+        loop_flag = false;
     }
 
     int ch = script_h.readInt();
-
-    if ( wave_sample[ch] ){
-        Mix_Pause( ch );
-        Mix_FreeChunk( wave_sample[ch] );
-        wave_sample[ch] = NULL;
+    const char *buf = NULL;
+    if ( !(skip_flag & WAVE_PLAY_LOADED) ){
+        buf = script_h.readStr();
     }
-
-    const char *buf = script_h.readStr();
-    playWave( buf, wave_play_once_flag, ch );
+    playWave( buf, loop_flag, ch );
         
     return RET_CONTINUE;
 }
@@ -1677,6 +1691,7 @@ int ONScripterLabel::btnwaitCommand()
         btndown_flag = false;
 
         gettab_flag = false;
+        getpageup_flag = false;
         getfunction_flag = false;
         getenter_flag = false;
         getcursor_flag = false;
@@ -1801,6 +1816,7 @@ int ONScripterLabel::btndefCommand()
     deleteButtonLink();
 
     gettab_flag = false;
+    getpageup_flag = false;
     getfunction_flag = false;
     getenter_flag = false;
     getcursor_flag = false;

@@ -170,6 +170,7 @@ void ScriptHandler::skipLine( int no )
         }
         current_script++;
     }
+    next_text_line_flag = false;
     text_flag = true;
     rereadToken();
 }

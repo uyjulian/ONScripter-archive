@@ -38,10 +38,22 @@ int main( int argc, char **argv )
     unsigned char *buffer;
     char file_name[256], dir_name[256];
     unsigned int i, j, count;
+    int archive_type = BaseReader::ARCHIVE_TYPE_NSA;
     FILE *fp;
     struct stat file_stat;
 
-    cNR.openForConvert( argv[1] );
+    if ( argc >= 2 ){
+        while ( argc > 2 ){
+            if ( !strcmp( argv[1], "-ns2" ) ) archive_type = BaseReader::ARCHIVE_TYPE_NS2;
+            argc--;
+            argv++;
+        }
+    }
+    if ( argc != 2 ){
+        fprintf( stderr, "Usage: nsadec [-ns2] arc_file\n");
+        exit(-1);
+    }
+    cNR.openForConvert( argv[1], archive_type );
     count = cNR.getNumFiles();
     
     SarReader::FileInfo sFI;

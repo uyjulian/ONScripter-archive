@@ -156,13 +156,11 @@ void ONScripterLabel::mousePressEvent( SDL_MouseButtonEvent *event )
          ( rmode_flag || (event_mode & WAIT_BUTTON_MODE) ) ) {
         current_button_state.button = -1;
         volatile_button_state.button = -1;
-        //last_mouse_state.button = -1;
     }
     else if ( event->button == SDL_BUTTON_LEFT &&
               ( event->type == SDL_MOUSEBUTTONUP || btndown_flag ) ){
         current_button_state.button = current_over_button;
         volatile_button_state.button = current_over_button;
-        //last_mouse_state.button = current_over_button;
         if ( event->type == SDL_MOUSEBUTTONUP )
                 current_button_state.down_flag = true;
         if ( trap_flag ){
@@ -170,6 +168,16 @@ void ONScripterLabel::mousePressEvent( SDL_MouseButtonEvent *event )
             return;
         }
     }
+#if SDL_VERSION_ATLEAST(1, 2, 5)
+    else if ( event->button == SDL_BUTTON_WHEELUP && usewheel_flag ){
+        current_button_state.button = -2;
+        volatile_button_state.button = -2;
+    }
+    else if ( event->button == SDL_BUTTON_WHEELDOWN && usewheel_flag ){
+        current_button_state.button = -3;
+        volatile_button_state.button = -3;
+    }
+#endif
     else return;
     
     if ( skip_flag ) skip_flag = false;
@@ -265,7 +273,7 @@ void ONScripterLabel::variableEditMode( SDL_KeyboardEvent *event )
 
           case EDIT_SE_VOLUME_MODE:
             se_volume = variable_edit_num;
-            for ( i=1 ; i<MIX_CHANNELS ; i++ )
+            for ( i=1 ; i<ONS_MIX_CHANNELS ; i++ )
                 if ( wave_sample[i] ) Mix_Volume( i, se_volume * 128 / 100 );
             break;
 
@@ -445,6 +453,9 @@ void ONScripterLabel::keyPressEvent( SDL_KeyboardEvent *event )
         }
         else if ( useescspc_flag && event->keysym.sym == SDLK_SPACE ){
             current_button_state.button  = -11;
+        }
+        else if ( getpageup_flag && event->keysym.sym == SDLK_PAGEUP ){
+            current_button_state.button  = -12;
         }
         else if ( getenter_flag && event->keysym.sym == SDLK_RETURN ){
             current_button_state.button  = -19;

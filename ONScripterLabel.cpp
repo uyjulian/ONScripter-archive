@@ -113,6 +113,7 @@ static struct FuncLUT{
     {"gettext", &ONScripterLabel::gettextCommand},
     {"gettab", &ONScripterLabel::gettabCommand},
     {"getreg", &ONScripterLabel::getregCommand},
+    {"getpageup", &ONScripterLabel::getpageupCommand},
     {"getmousepos", &ONScripterLabel::getmouseposCommand},
     {"getfunction", &ONScripterLabel::getfunctionCommand},
     {"getenter", &ONScripterLabel::getenterCommand},
@@ -126,7 +127,10 @@ static struct FuncLUT{
     {"erasetextwindow", &ONScripterLabel::erasetextwindowCommand},
     {"end", &ONScripterLabel::endCommand},
     {"dwavestop", &ONScripterLabel::dwavestopCommand},
+    {"dwaveplayloop", &ONScripterLabel::dwaveCommand},
+    {"dwaveplay", &ONScripterLabel::dwaveCommand},
     {"dwaveloop", &ONScripterLabel::dwaveCommand},
+    {"dwaveload", &ONScripterLabel::dwaveCommand},
     {"dwave", &ONScripterLabel::dwaveCommand},
     {"delay", &ONScripterLabel::delayCommand},
     {"csp", &ONScripterLabel::cspCommand},
@@ -231,7 +235,7 @@ void ONScripterLabel::initSDL( bool cdaudio_flag )
 
         audio_open_flag = true;
 
-        Mix_AllocateChannels( 50 );
+        Mix_AllocateChannels( ONS_MIX_CHANNELS );
     }
 }
 
@@ -278,6 +282,7 @@ ONScripterLabel::ONScripterLabel( bool cdaudio_flag, char *default_font, char *d
 
     this->force_button_shortcut_flag = force_button_shortcut_flag;
     gettab_flag = false;
+    getpageup_flag = false;
     getfunction_flag = false;
     getenter_flag = false;
     getcursor_flag = false;
@@ -332,7 +337,7 @@ ONScripterLabel::ONScripterLabel( bool cdaudio_flag, char *default_font, char *d
     midi_info = NULL;
     current_cd_track = -1;
 
-    for ( i=0 ; i<MIX_CHANNELS ; i++ ) wave_sample[i] = NULL;
+    for ( i=0 ; i<ONS_MIX_CHANNELS ; i++ ) wave_sample[i] = NULL;
 
     for ( i=0 ; i<MAX_PARAM_NUM ; i++ ) bar_info[i] = prnum_info[i] = NULL;
     
@@ -807,7 +812,7 @@ SDL_Surface *ONScripterLabel::loadImage( char *file_name )
     tmp = IMG_Load_RW(SDL_RWFromMem( buffer, length ),1);
 
     char *ext = strrchr(file_name, '.');
-    if ( !tmp && ext && !strcasecmp( ext+1, "JPG" ) ){
+    if ( !tmp && ext && !strcmp( ext+1, "JPG" ) ){
         fprintf( stderr, " *** force-loading a JPG image [%s]\n", file_name );
         SDL_RWops *src = SDL_RWFromMem( buffer, length );
         tmp = IMG_LoadJPG_RW(src);

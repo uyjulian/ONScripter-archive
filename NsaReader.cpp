@@ -74,7 +74,7 @@ int NsaReader::open( char *nsa_path, int archive_type )
     return 0;
 }
 
-int NsaReader::openForConvert( char *nsa_name )
+int NsaReader::openForConvert( char *nsa_name, int archive_type )
 {
     sar_flag = false;
     if ( ( archive_info.file_handle = ::fopen( nsa_name, "rb" ) ) == NULL ){
@@ -82,15 +82,15 @@ int NsaReader::openForConvert( char *nsa_name )
         return -1;
     }
 
-    readArchive( &archive_info, ARCHIVE_TYPE_NSA );
+    readArchive( &archive_info, archive_type );
 
     return 0;
 }
 
-int NsaReader::writeHeader( FILE *fp )
+int NsaReader::writeHeader( FILE *fp, int archive_type )
 {
     ArchiveInfo *ai = &archive_info;
-    return writeHeaderSub( ai, fp, true );
+    return writeHeaderSub( ai, fp, archive_type );
 }
 
 size_t NsaReader::putFile( FILE *fp, int no, size_t offset, size_t length, size_t original_length, int compression_type, bool modified_flag, unsigned char *buffer )

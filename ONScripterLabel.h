@@ -74,6 +74,7 @@ public:
     int waitCommand();
     int vspCommand();
     int voicevolCommand();
+    int vCommand();
     int trapCommand();
     int textspeedCommand();
     int textonCommand();
@@ -148,6 +149,7 @@ public:
     int endCommand();
     int dwavestopCommand();
     int dwaveCommand();
+    int dvCommand();
     int delayCommand();
     int cspCommand();
     int cselgotoCommand();

@@ -123,6 +123,7 @@ static struct FuncLUT{
     {"getcselnum", &ONScripterLabel::getcselnumCommand},
     {"getbtntimer", &ONScripterLabel::gettimerCommand},
     {"game", &ONScripterLabel::gameCommand},
+    {"existspbtn", &ONScripterLabel::spbtnCommand},
     {"exbtn_d", &ONScripterLabel::exbtnCommand},
     {"exbtn", &ONScripterLabel::exbtnCommand},
     {"erasetextwindow", &ONScripterLabel::erasetextwindowCommand},
@@ -671,6 +672,11 @@ int ONScripterLabel::parseLine( )
             }
             lut_counter++;
         }
+        
+        if ( s_buf[0] == 'v' && s_buf[0] >= '0' && s_buf[1] <= '9' )
+            return vCommand();
+        else if ( s_buf[0] == 'd' && s_buf[1] == 'v' && s_buf[2] >= '0' && s_buf[2] <= '9' )
+            return dvCommand();
 
         if ( s_buf[0] != 0x0a && s_buf[0] != '@' && s_buf[0] != '\\' &&
              s_buf[0] != '/'  && s_buf[0] != '!' && s_buf[0] != '#'  &&

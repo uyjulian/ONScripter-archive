@@ -90,6 +90,16 @@ int ONScripterLabel::voicevolCommand()
     return RET_CONTINUE;
 }
 
+int ONScripterLabel::vCommand()
+{
+    char buf[256];
+    
+    sprintf( buf, "wav%c%s.wav", DELIMITER, script_h.getStringBuffer()+1 );
+    playWave( buf, false, DEFAULT_WAVE_CHANNEL );
+    
+    return RET_CONTINUE;
+}
+
 int ONScripterLabel::trapCommand()
 {
     const char *buf = script_h.readStr();
@@ -900,7 +910,8 @@ int ONScripterLabel::mspCommand()
     int no = script_h.readInt();
     sprite_info[ no ].pos.x += script_h.readInt() * screen_ratio1 / screen_ratio2;
     sprite_info[ no ].pos.y += script_h.readInt() * screen_ratio1 / screen_ratio2;
-    sprite_info[ no ].trans += script_h.readInt();
+    if ( script_h.isEndWithComma() )
+        sprite_info[ no ].trans += script_h.readInt();
     if ( sprite_info[ no ].trans > 255 ) sprite_info[ no ].trans = 255;
     else if ( sprite_info[ no ].trans < 0 ) sprite_info[ no ].trans = 0;
 
@@ -916,6 +927,8 @@ int ONScripterLabel::mpegplayCommand()
 
     stopBGM( false );
     playMPEG( save_buf, click_flag );
+
+    return RET_CONTINUE;
 }
 
 int ONScripterLabel::mp3volCommand()
@@ -1475,8 +1488,18 @@ int ONScripterLabel::dwaveCommand()
     if ( !(skip_flag & WAVE_PLAY_LOADED) ){
         buf = script_h.readStr();
     }
-    playWave( buf, loop_flag, ch );
+    playWave( buf, loop_flag, ch, play_mode );
         
+    return RET_CONTINUE;
+}
+
+int ONScripterLabel::dvCommand()
+{
+    char buf[256];
+    
+    sprintf( buf, "voice%c%s.wav", DELIMITER, script_h.getStringBuffer()+2 );
+    playWave( buf, false, 0 );
+    
     return RET_CONTINUE;
 }
 
@@ -1634,7 +1657,7 @@ int ONScripterLabel::captionCommand()
 
             c1 -= (c1 <= 0x9f) ? 0x71 : 0xb1;
             c1 = c1 * 2 + 1;
-            if (c2 >= 0x9e) {
+            if (c2 > 0x9e) {
                 c2 -= 0x7e;
                 c1++;
             }

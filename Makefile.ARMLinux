@@ -28,7 +28,8 @@ LD = arm-linux-g++ -o
 CFLAGS = -O3 -Wall -Wpointer-arith -fno-exceptions -fno-rtti -fno-check-new -pipe -c $(INCS) $(DEFS)
 RM = rm -f
 
-TARGET = onscripter$(EXESUFFIX)
+TARGET = onscripter$(EXESUFFIX) sarconv$(EXESUFFIX) nsaconv$(EXESUFFIX)
 EXT_OBJS = MadWrapper$(OBJSUFFIX)
+CONV_LIBS = /opt/Qtopia/sharp/lib/libjpeg.a
 
 include Makefile.onscripter

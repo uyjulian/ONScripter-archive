@@ -35,6 +35,10 @@ extern float scale_ratio;
 extern size_t rescaleJPEG( unsigned char *original_buffer, size_t length, unsigned char **rescaled_buffer );
 extern size_t rescaleBMP( unsigned char *original_buffer, size_t length, unsigned char **rescaled_buffer );
 
+#ifdef main
+#undef main
+#endif
+
 int main( int argc, char **argv )
 {
     SarReader cSR;

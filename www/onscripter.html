@@ -12,7 +12,7 @@
 </CENTER>
 
 Created: Feb. 6, 2002<br>
-Last updated: Mar. 4, 2002
+Last updated: Mar. 5, 2002
 
 <HR>
 
@@ -22,14 +22,16 @@ Last updated: Mar. 4, 2002
 
 <p>ONScripterとは、NScripter 用に作られたスクリプトを独自に解釈して実行するプログラムです。</p>
 
-<p>NScripterとは<a
+<p>NScripterは<a
 href="http://www2.osk.3web.ne.jp/~naokikun/index.htm">高橋直樹</a>氏が開発したゲーム実行エンジンであり、高橋氏のホームページから<a href="http://www2.osk.3web.ne.jp/~naokikun/index.htm">ダウンロード</a>できます。</p>
 
-<p>現在はベータ版<A HREF="onscripter-beta-20020304.tar.gz">onscripter-beta-20020304.tar.gz</A>を配布しております。<br>
+<p>現在はベータ版<A HREF="onscripter-beta-20020305.tar.gz">onscripter-beta-20020305.tar.gz</A>を配布しております。<br>
 ベータ版ゆえデバッグ出力・assert 等が有効になっていますが、正式版になったら取り除きます。<br>
-(一つ前のベータ版<A HREF="onscripter-beta-20020303.tar.gz">onscripter-beta-20020303.tar.gz</A>)</p>
+(一つ前のベータ版<A HREF="onscripter-beta-20020304.tar.gz">onscripter-beta-20020304.tar.gz</A>)</p>
 
-<p>バグ報告・機能追加要望・パッチは随時受け付けますので、一番下のメールアドレスまでお願いします。</p>
+<p>更新内容については<A HREF="onscripter_devel.html">開発日誌</A>を参照して下さい。</p>
+
+<p>動作報告・バグ報告・機能追加要望・パッチは随時受け付けますので、一番下のメールアドレスまでお願いします。</p>
 
 </td></tr>
 </table>
@@ -126,7 +128,7 @@ href="http://www2.osk.3web.ne.jp/~naokikun/index.htm">高橋直樹</a>氏が開発したゲ
   <LI> 回想モードの表示がおかしい場合がある？
   <LI> skip でマイナス方向にラベルをまたぐと破綻するバグを取る。lchk とのからみも考えて調べる。
   <LI> 立ち絵・スプライト・カーソルに汎用に使えるアニメーション機構の実装
-  <LI> s コマンドで文字から絵を作るときに、描画時ではなく生成時にその幅と高さを取得する。
+  <LI> s コマンドで文字から絵を作るときに、描画時ではなく生成時にその幅と高さを取得する。これをしないと spbtn で使えない。
   <LI> voicevol, sevol, mp3vol の引数の扱いを確認。
 </OL>       
 
@@ -134,12 +136,26 @@ href="http://www2.osk.3web.ne.jp/~naokikun/index.htm">高橋直樹</a>氏が開発したゲ
 </table>
 
 <table>
-<tr><th>雑多なこと</th></tr>
+<tr><th> リンク </th></tr>
 <tr><td>
 
-<h3> 開発日誌 </h3>
+<p>お世話になっているページ、よく利用させていただいているページへのリンクです。</p>
 
-<p><A HREF="onscripter_devel.html">こちら</A>を参照してください。</p>
+<DL>
+  <DT> ○<A HREF="http://chig.vis.ne.jp/m/port.html">娯楽用アプリケーションの異機種間データ共有の試み</A>
+  <DD> 千熊屋さんによる様々なゲーム互換エンジンへのリンク集です。ONScripter も紹介していただいてます。
+  <DT> ○<A HREF="http://abe.platina.sakura.ne.jp/onscripter/"> ONScripter のスゝメ </A>
+  <DD> αβεさんによる ONScripter の導入方法・既存のゲームの動作状況・バグ報告のページです。<br>
+       ONScripter を開発する上でたいへんお世話になっております。<br>
+       ONScripter に興味を持たれた方は最初にこちらのページを見ることをお勧めします。
+</DL>
+
+</td></tr>
+</table>
+
+<table>
+<tr><th>雑多なこと</th></tr>
+<tr><td>
 
 <h3> キーボードショートカットについて </h3>
 

@@ -65,9 +65,11 @@ public:
     int waitCommand();
     int vspCommand();
     int voicevolCommand();
+    int trapCommand();
     int textclearCommand();
     int systemcallCommand();
     int stopCommand();
+    int spstrCommand();
     int spbtnCommand();
     int sevolCommand();
     int setwindowCommand();
@@ -97,6 +99,7 @@ public:
     int getversionCommand();
     int gettimerCommand();
     int gameCommand();
+    int exbtnCommand();
     int endCommand();
     int dwavestopCommand();
     int dwaveCommand();
@@ -183,6 +186,8 @@ private:
         }
     };
 
+    /* ---------------------------------------- */
+    /* Global definitions */
     long internal_timer;
     long autoclick_timer;
 
@@ -191,6 +196,8 @@ private:
     uchar3 monocro_color_lut[256];
 
     bool rmode_flag;
+    bool trap_flag;
+    char *trap_dist;
 
     Uint32 rmask, gmask, bmask, amask;
     
@@ -220,22 +227,33 @@ private:
     } current_button_state, volatile_button_state, last_mouse_state, shelter_mouse_state;
 
     typedef enum{ NORMAL_BUTTON = 0,
-                      SPRITE_BUTTON = 1
+                      SPRITE_BUTTON = 1,
+                      EX_SPRITE_BUTTON = 2
                       } BUTTON_TYPE;
     struct ButtonLink{
         struct ButtonLink *next;
         BUTTON_TYPE button_type;
         int no;
         int sprite_no;
+        char *exbtn_ctl;
         SDL_Rect select_rect;
         SDL_Rect image_rect;
         SDL_Surface *image_surface;
-    } root_button_link, *last_button_link, current_over_button_link, *shelter_button_link;
+
+        ButtonLink(){
+            next = NULL;
+            exbtn_ctl = NULL;
+            image_surface = NULL;
+        };
+    } root_button_link, *last_button_link, current_over_button_link, *shelter_button_link, exbtn_d_button_link;
 
     int current_over_button;
 
     void deleteButtonLink();
     void refreshMouseOverButton();
+    int refreshSprite( SDL_Surface *surface, int sprite_no, bool active_flag, int cell_no, bool draw_flag );
+    int decodeExbtnControl( SDL_Surface *surface, char *ctl_str, bool draw_flag );
+    void drawExbtn( SDL_Surface *surface, char *ctl_str );
     
     /* ---------------------------------------- */
     /* Effect related variables */
@@ -273,13 +291,6 @@ private:
     SDL_Surface *lookback_image_surface[4];
     
     /* ---------------------------------------- */
-    /* Tachi related variables */
-    /* 0 ... left, 1 ... center, 2 ... right */
-    int tachi_image_x[3], tachi_image_width[3];
-    char *tachi_image_name[3];
-    SDL_Surface *tachi_image_surface[3];
-    
-    /* ---------------------------------------- */
     /* Animation related variables */
     struct AnimationInfo{
         bool valid; // valid flag for sprite and absolute flag for cursor
@@ -289,7 +300,19 @@ private:
         char *image_name;
         SDL_Surface *image_surface;
         SDL_Surface *preserve_surface;
+
+        AnimationInfo(){
+            image_name = NULL;
+            image_surface = NULL;
+            preserve_surface = NULL;
+            trans = 255;
+        }
     };
+
+    /* ---------------------------------------- */
+    /* Tachi-e related variables */
+    /* 0 ... left, 1 ... center, 2 ... right */
+    struct AnimationInfo tachi_info[3];
 
     /* ---------------------------------------- */
     /* Sprite related variables */

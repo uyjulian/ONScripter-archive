@@ -1018,6 +1018,10 @@ int ScriptParser::atoiCommand()
 
 int ScriptParser::arcCommand()
 {
+    char *p_string_buffer = string_buffer + string_buffer_offset + 3; // strlen("arc") = 3
+    readStr( &p_string_buffer, tmp_string_buffer );
+    printf("arc %s\n", tmp_string_buffer );
+
     delete cBR;
     cBR = new NsaReader();
     if ( cBR->open() ){

@@ -222,15 +222,15 @@ int ONScripterLabel::loadSaveFile( int no )
         delete[] bg_image_tag.color_list;
         bg_image_tag.color_list = NULL;
     }
-    bg_image_tag.num_of_cells = 0;
+    bg_image_tag.num_of_cells = 1;
     loadStr( fp, &bg_image_tag.file_name );
     bg_effect_image = (EFFECT_IMAGE)fgetc( fp );
 
     for ( i=0 ; i<3 ; i++ ){
-        if ( tachi_image_surface[i] ) SDL_FreeSurface( tachi_image_surface[i] );
-        tachi_image_surface[i] = NULL;
-        if ( tachi_image_name[i] ) delete[] tachi_image_name[i];
-        tachi_image_name[i] = NULL;
+        if ( tachi_info[i].image_surface ) SDL_FreeSurface( tachi_info[i].image_surface );
+        tachi_info[i].image_surface = NULL;
+        if ( tachi_info[i].image_name ) delete[] tachi_info[i].image_name;
+        tachi_info[i].image_name = NULL;
     }
 
     for ( i=0 ; i<MAX_SPRITE_NUM ; i++ ){
@@ -245,11 +245,11 @@ int ONScripterLabel::loadSaveFile( int no )
     /* ---------------------------------------- */
     /* Load Tachi image and Sprite */
     for ( i=0 ; i<3 ; i++ ){
-        loadStr( fp, &tachi_image_name[i] );
-        tachi_image_surface[i] = NULL;
-        if ( tachi_image_name[i] ){
-            parseTaggedString( tachi_image_name[i], &tagged_info );
-            tachi_image_surface[i] = loadPixmap( &tagged_info );
+        loadStr( fp, &tachi_info[i].image_name );
+        tachi_info[i].image_surface = NULL;
+        if ( tachi_info[i].image_name ){
+            parseTaggedString( tachi_info[i].image_name, &tagged_info );
+            tachi_info[i].image_surface = loadPixmap( &tagged_info );
         }
     }
 
@@ -385,9 +385,9 @@ int ONScripterLabel::saveSaveFile( int no )
     saveStr( fp, bg_image_tag.file_name );
     fputc( bg_effect_image, fp );
 
-    saveStr( fp, tachi_image_name[0] );
-    saveStr( fp, tachi_image_name[1] );
-    saveStr( fp, tachi_image_name[2] );
+    saveStr( fp, tachi_info[0].image_name );
+    saveStr( fp, tachi_info[1].image_name );
+    saveStr( fp, tachi_info[2].image_name );
 
     /* ---------------------------------------- */
     /* Save current sprites */
@@ -498,9 +498,9 @@ void ONScripterLabel::executeSystemMenu()
 {
     MenuLink *tmp_menu_link;
 
-    //printf("ONScripterLabel::executeSystemMenu()\n");
-    
     if ( event_mode & (WAIT_MOUSE_MODE | WAIT_BUTTON_MODE) ){
+
+        if ( current_button_state.button == 0 ) return;
         event_mode = IDLE_EVENT_MODE;
         int counter = 1;
 
@@ -510,10 +510,6 @@ void ONScripterLabel::executeSystemMenu()
             leaveSystemCall();
             return;
         }
-        else if ( current_button_state.button == 0 ){
-            event_mode = (WAIT_MOUSE_MODE | WAIT_BUTTON_MODE);
-            return;
-        }
     
         last_menu_link = root_menu_link.next;
         while ( last_menu_link ){
@@ -521,7 +517,6 @@ void ONScripterLabel::executeSystemMenu()
                 //printf("label %s is selected \n",last_menu_link->label );
                 system_menu_mode = last_menu_link->system_call_no;
             }
-            
             last_menu_link = last_menu_link->next;
         }
 
@@ -598,12 +593,11 @@ void ONScripterLabel::executeSystemLoad()
     unsigned int i;
     char out_text[3] = {'\0','\0','\0'};
 
-    //printf("ONScripterLabel::executeSystemLoad() %d\n", event_mode);
-
     if ( event_mode & (WAIT_MOUSE_MODE | WAIT_BUTTON_MODE) ){
 
         if ( current_button_state.button == 0 ) return;
         event_mode = IDLE_EVENT_MODE;
+
         if ( loadSaveFile( current_button_state.button ) ){
             event_mode  = WAIT_MOUSE_MODE | WAIT_BUTTON_MODE;
             refreshMouseOverButton();
@@ -672,17 +666,12 @@ void ONScripterLabel::executeSystemSave()
     unsigned int i;
     char out_text[3] = {'\0','\0','\0'};
 
-    //printf("ONScripterLabel::executeSystemSave() %d\n", event_mode);
-
     if ( event_mode & (WAIT_MOUSE_MODE | WAIT_BUTTON_MODE) ){
+
+        if ( current_button_state.button == 0 ) return;
         event_mode = IDLE_EVENT_MODE;
 
         deleteButtonLink();
-
-        if ( current_button_state.button == 0 ){
-            event_mode = WAIT_MOUSE_MODE | WAIT_BUTTON_MODE;
-            return;
-        }
 
         saveSaveFile( current_button_state.button );
         leaveSystemCall();
@@ -745,10 +734,10 @@ void ONScripterLabel::setupLookbackButton()
     /* Previous button check */
     if ( (current_text_buffer->previous->xy[1] != -1 ) &&
          current_text_buffer->previous != shelter_text_buffer ){
-        last_button_link->next = new struct ButtonLink();
+        last_button_link->next = new ButtonLink();
         last_button_link = last_button_link->next;
-        last_button_link->next = NULL;
     
+        last_button_link->button_type = NORMAL_BUTTON;
         last_button_link->no = 1;
         last_button_link->select_rect.x = 0;
         last_button_link->select_rect.y = 0;
@@ -768,9 +757,6 @@ void ONScripterLabel::setupLookbackButton()
                         lookback_image_surface[0], 0, 0,
                         0, 0, -lookback_image_tag[0].trans_mode );
         }
-        else{
-            last_button_link->image_surface = NULL;
-        }
 
         if ( lookback_image_surface[1] )
             alphaBlend( select_surface, last_button_link->image_rect.x, last_button_link->image_rect.y,
@@ -783,10 +769,10 @@ void ONScripterLabel::setupLookbackButton()
     /* ---------------------------------------- */
     /* Next button check */
     if ( current_text_buffer->next != shelter_text_buffer ){
-        last_button_link->next = new struct ButtonLink();
+        last_button_link->next = new ButtonLink();
         last_button_link = last_button_link->next;
-        last_button_link->next = NULL;
     
+        last_button_link->button_type = NORMAL_BUTTON;
         last_button_link->no = 2;
         last_button_link->select_rect.x = 0;
         last_button_link->select_rect.y = screen_height*2/3;
@@ -805,9 +791,6 @@ void ONScripterLabel::setupLookbackButton()
                         text_surface, last_button_link->image_rect.x, last_button_link->image_rect.y, lookback_image_surface[2]->w, lookback_image_surface[2]->h,
                         lookback_image_surface[2], 0, 0,
                         0, 0, -lookback_image_tag[2].trans_mode );
-        }
-        else{
-            last_button_link->image_surface = NULL;
         }
 
         if ( lookback_image_surface[3] )
@@ -828,10 +811,8 @@ void ONScripterLabel::executeSystemLookback()
     shadowTextDisplay();
 
     if ( event_mode & (WAIT_MOUSE_MODE | WAIT_BUTTON_MODE) ){
-        if ( current_button_state.button == 0 ){
-            event_mode = WAIT_MOUSE_MODE | WAIT_BUTTON_MODE;
-            return;
-        }
+
+        if ( current_button_state.button == 0 ) return;
         event_mode = IDLE_EVENT_MODE;
         
         deleteButtonLink();

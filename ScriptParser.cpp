@@ -54,7 +54,6 @@ static struct FuncLUT{
     {"selectcolor",     &ScriptParser::selectcolorCommand},
     {"savenumber",     &ScriptParser::savenumberCommand},
     {"savename",     &ScriptParser::savenameCommand},
-    {"sar",    &ScriptParser::arcCommand},
     {"rmenu",    &ScriptParser::rmenuCommand},
     {"return",   &ScriptParser::returnCommand},
     {"numalias", &ScriptParser::numaliasCommand},

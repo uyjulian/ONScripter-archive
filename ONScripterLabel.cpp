@@ -1190,6 +1190,11 @@ int ONScripterLabel::playWave( char *file_name, bool loop_flag, int channel )
     length = cBR->getFileLength( file_name );
     buffer = new unsigned char[length];
     cBR->getFile( file_name, buffer );
+
+    if ( wave_sample[channel] ){
+        Mix_Pause( channel );
+        Mix_FreeChunk( wave_sample[channel] );
+    }
     wave_sample[channel] = Mix_LoadWAV_RW(SDL_RWFromMem( buffer, length ), 1);
     delete[] buffer;
 
@@ -1456,7 +1461,7 @@ void ONScripterLabel::drawExbtn( SDL_Surface *surface, char *ctl_str )
 
 void ONScripterLabel::setupAnimationInfo( struct AnimationInfo *anim )
 {
-    anim->deleteImageSurface();
+    anim->deleteSurface();
     anim->image_surface = loadTaggedImage( &anim->tag );
     anim->abs_flag = true;
 

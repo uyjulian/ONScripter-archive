@@ -1187,25 +1187,22 @@ int ONScripterLabel::clCommand()
     readStr( &p_string_buffer, tmp_string_buffer );
     char loc = tmp_string_buffer[0];
     
-    if ( loc == 'l' || loc == 'a' ){
-        tachi_info[0].deleteImageName();
-        tachi_info[0].deleteImageSurface();
-    }
-    if ( loc == 'c' || loc == 'a' ){
-        tachi_info[1].deleteImageName();
-        tachi_info[1].deleteImageSurface();
-    }
-    if ( loc == 'r' || loc == 'a' ){
-        tachi_info[2].deleteImageName();
-        tachi_info[2].deleteImageSurface();
-    }
-
     if ( event_mode & EFFECT_EVENT_MODE ){
         int num = readEffect( &p_string_buffer, &tmp_effect );
         if ( num > 1 ) return doEffect( TMP_EFFECT, NULL, TACHI_EFFECT_IMAGE );
         else           return doEffect( tmp_effect.effect, NULL, TACHI_EFFECT_IMAGE );
     }
     else{
+        if ( loc == 'l' || loc == 'a' ){
+            tachi_info[0].remove();
+        }
+        if ( loc == 'c' || loc == 'a' ){
+            tachi_info[1].remove();
+        }
+        if ( loc == 'r' || loc == 'a' ){
+            tachi_info[2].remove();
+        }
+
         char *buf = new char[512];
         sprintf( buf, "cl %c,", loc );
         makeEffectStr( &p_string_buffer, buf );
@@ -1438,9 +1435,9 @@ int ONScripterLabel::bgCommand()
     }
     else{
         for ( int i=0 ; i<3 ; i++ ){
-            tachi_info[i].deleteImageName();
-            tachi_info[i].deleteImageSurface();
+            tachi_info[i].remove();
         }
+        bg_info.remove();
 
         bg_effect_image = COLOR_EFFECT_IMAGE;
 

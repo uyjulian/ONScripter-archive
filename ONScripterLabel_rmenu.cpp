@@ -219,13 +219,10 @@ int ONScripterLabel::loadSaveFile( int no )
     
     /* ---------------------------------------- */
     /* Load current images */
+    bg_info.remove();
     bg_info.tag.color[0] = (unsigned char)fgetc( fp );
     bg_info.tag.color[1] = (unsigned char)fgetc( fp );
     bg_info.tag.color[2] = (unsigned char)fgetc( fp );
-    if ( bg_info.tag.color_list ){
-        delete[] bg_info.tag.color_list;
-        bg_info.tag.color_list = NULL;
-    }
     bg_info.tag.num_of_cells = 1;
     loadStr( fp, &bg_info.tag.file_name );
     setupAnimationInfo( &bg_info );
@@ -249,13 +246,11 @@ int ONScripterLabel::loadSaveFile( int no )
     }
 
     for ( i=0 ; i<3 ; i++ ){
-        tachi_info[i].deleteImageName();
-        tachi_info[i].deleteImageSurface();
+        tachi_info[i].remove();
     }
 
     for ( i=0 ; i<MAX_SPRITE_NUM ; i++ ){
-        sprite_info[i].valid = false;
-        sprite_info[i].deleteImageName();
+        sprite_info[i].remove();
     }
 
     effect_counter = 0;

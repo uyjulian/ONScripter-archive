@@ -329,14 +329,16 @@ private:
             image_name = new char[ strlen(name) + 1 ];
             memcpy( image_name, name, strlen(name) + 1 );
         }
-        void deleteImageSurface(){
+        void deleteSurface(){
             if ( image_surface ) SDL_FreeSurface( image_surface );
             image_surface = NULL;
+            if ( preserve_surface ) SDL_FreeSurface( preserve_surface );
+            preserve_surface = NULL;
         }
         void remove(){
             valid = false;
             deleteImageName();
-            deleteImageSurface();
+            deleteSurface();
             tag.remove();
         }
     };

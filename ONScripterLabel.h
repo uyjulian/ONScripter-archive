@@ -79,6 +79,8 @@ public:
     int setwindowCommand();
     int setcursorCommand();
     int selectCommand();
+    int saveonCommand();
+    int saveoffCommand();
     int savegameCommand();
     int resettimerCommand();
     int resetCommand();
@@ -227,6 +229,9 @@ private:
     long internal_timer;
     long autoclick_timer;
 
+    FILE *tmp_save_fp;
+    bool saveon_flag;
+
     bool monocro_flag;
     uchar3 monocro_color;
     uchar3 monocro_color_lut[256];
@@ -296,6 +301,7 @@ private:
         bool valid;
         bool abs_flag;
         SDL_Rect pos;
+        int alpha_offset;
         int trans;
         struct TaggedInfo tag;
         char *image_name;
@@ -323,6 +329,12 @@ private:
         void deleteImageSurface(){
             if ( image_surface ) SDL_FreeSurface( image_surface );
             image_surface = NULL;
+        }
+        void remove(){
+            valid = false;
+            deleteImageName();
+            deleteImageSurface();
+            tag.remove();
         }
     };
 
@@ -459,7 +471,7 @@ private:
     void drawTaggedSurface( SDL_Surface *dst_surface, SDL_Rect *pos, SDL_Rect *clip,
                            SDL_Surface *src_surface, TaggedInfo *tagged_info );
     void makeMonochromeSurface( SDL_Surface *surface, SDL_Rect *dst_rect=NULL, bool one_color_flag = true );
-    void refreshAccumulationSurface( SDL_Surface *surface, SDL_Rect *rect=NULL );
+    void refreshAccumulationSurface( SDL_Surface *surface, SDL_Rect *rect=NULL, bool shadow_flag = false );
     void mouseOverCheck( int x, int y );
     
     /* ---------------------------------------- */

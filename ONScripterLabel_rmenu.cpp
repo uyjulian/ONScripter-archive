@@ -33,6 +33,8 @@
 #elif
 #endif
 
+#define READ_LENGTH 4096
+
 void ONScripterLabel::searchSaveFiles()
 {
     unsigned int i;
@@ -314,6 +316,10 @@ int ONScripterLabel::loadSaveFile( int no )
     /* Load rmode flag */
     rmode_flag = (fgetc( fp )==1)?true:false;
     
+    /* ---------------------------------------- */
+    /* Load text on flag */
+    text_on_flag = (fgetc( fp )==1)?true:false;
+
     fclose( fp );
 
     event_mode = tmp_event_mode;
@@ -324,15 +330,47 @@ int ONScripterLabel::loadSaveFile( int no )
 
 int ONScripterLabel::saveSaveFile( int no )
 {
-    printf("saveSaveFile() %d\n", no);
+    printf("saveSaveFile %d\n", no);
     FILE *fp;
     int i, j;
     char file_name[256];
-    
-    sprintf( file_name, "save%d.dat", no );
-    if ( ( fp = fopen( file_name, "wb" ) ) == NULL ){
-        fprintf( stderr, "can't open save file %s\n", file_name );
-        return -1;
+
+    if ( no >= 0 ){
+        sprintf( file_name, "save%d.dat", no );
+
+        if ( ( fp = fopen( file_name, "wb" ) ) == NULL ){
+            fprintf( stderr, "can't open save file %s\n", file_name );
+            return -1;
+        }
+
+        if ( !saveon_flag ){
+            int c;
+            long len;
+            char *buf = new char[ READ_LENGTH ];
+        
+            fseek( tmp_save_fp, 0, SEEK_END );
+            len = ftell( tmp_save_fp );
+            fseek( tmp_save_fp, 0, SEEK_SET );
+            while( len > 0 ){
+                if ( len > READ_LENGTH ) c = READ_LENGTH;
+                else                     c = len;
+                len -= c;
+                fread( buf, 1, c, tmp_save_fp );
+                fwrite( buf, 1, c, fp );
+            }
+            fclose( fp );
+
+            delete[] buf;
+            return 0;
+        }
+    }
+    else{
+        if ( tmp_save_fp ) fclose( tmp_save_fp );
+        if ( (tmp_save_fp = tmpfile()) == NULL ){
+            fprintf( stderr, "can't open tmp_file\n");
+            return -1;
+        }
+        fp = tmp_save_fp;
     }
 
     /* ---------------------------------------- */
@@ -438,7 +476,11 @@ int ONScripterLabel::saveSaveFile( int no )
     /* Save rmode flag */
     rmode_flag?fputc(1,fp):fputc(0,fp);
 
-    fclose( fp );
+    /* ---------------------------------------- */
+    /* Save text on flag */
+    text_on_flag?fputc(1,fp):fputc(0,fp);
+
+    if ( no >= 0 ) fclose( fp );
 
     return 0;
 }
@@ -629,6 +671,7 @@ void ONScripterLabel::executeSystemLoad()
                 return;
             }
             leaveSystemCall( false );
+            saveon_flag = true;
         }
         else
             leaveSystemCall();
@@ -757,29 +800,29 @@ void ONScripterLabel::setupLookbackButton()
         last_button_link->select_rect.h = sentence_font_info.pos.h/3;
 
         if ( lookback_info[0].image_surface ){
-            last_button_link->image_rect.x = sentence_font_info.pos.x + sentence_font_info.pos.w - lookback_info[0].image_surface->w;
+            last_button_link->image_rect.x = sentence_font_info.pos.x + sentence_font_info.pos.w - lookback_info[0].pos.w;
             last_button_link->image_rect.y = sentence_font_info.pos.y;
-            last_button_link->image_rect.w = lookback_info[0].image_surface->w;
-            last_button_link->image_rect.h = lookback_info[0].image_surface->h;
+            last_button_link->image_rect.w = lookback_info[0].pos.w;
+            last_button_link->image_rect.h = lookback_info[0].pos.h;
             
             last_button_link->image_surface =
                 SDL_CreateRGBSurface( DEFAULT_SURFACE_FLAG,
-                                      lookback_info[0].image_surface->w, lookback_info[0].image_surface->h,
+                                      lookback_info[0].pos.w, lookback_info[0].pos.h,
                                       32, rmask, gmask, bmask, amask );
             SDL_SetAlpha( last_button_link->image_surface, DEFAULT_BLIT_FLAG, SDL_ALPHA_OPAQUE );
             alphaBlend( last_button_link->image_surface, 0, 0,
                         text_surface, last_button_link->image_rect.x, last_button_link->image_rect.y,
-                        lookback_info[0].image_surface->w, lookback_info[0].image_surface->h,
+                        lookback_info[0].pos.w, lookback_info[0].pos.h,
                         lookback_info[0].image_surface, 0, 0,
-                        0, 0, -lookback_info[1].tag.trans_mode );
+                        lookback_info[0].alpha_offset, 0, -lookback_info[1].tag.trans_mode );
         }
 
         if ( lookback_info[1].image_surface )
             alphaBlend( text_surface, last_button_link->image_rect.x, last_button_link->image_rect.y,
                         text_surface, last_button_link->image_rect.x, last_button_link->image_rect.y,
-                        lookback_info[1].image_surface->w, lookback_info[1].image_surface->h,
+                        lookback_info[1].pos.w, lookback_info[1].pos.h,
                         lookback_info[1].image_surface, 0, 0,
-                        0, 0, -lookback_info[1].tag.trans_mode );
+                        lookback_info[1].alpha_offset, 0, -lookback_info[1].tag.trans_mode );
     }
 
     /* ---------------------------------------- */
@@ -796,29 +839,29 @@ void ONScripterLabel::setupLookbackButton()
         last_button_link->select_rect.h = sentence_font_info.pos.h/3;
 
         if ( lookback_info[2].image_surface ){
-            last_button_link->image_rect.x = sentence_font_info.pos.x + sentence_font_info.pos.w - lookback_info[2].image_surface->w;
-            last_button_link->image_rect.y = sentence_font_info.pos.y + sentence_font_info.pos.h - lookback_info[2].image_surface->h;
-            last_button_link->image_rect.w = lookback_info[2].image_surface->w;
-            last_button_link->image_rect.h = lookback_info[2].image_surface->h;
+            last_button_link->image_rect.x = sentence_font_info.pos.x + sentence_font_info.pos.w - lookback_info[2].pos.w;
+            last_button_link->image_rect.y = sentence_font_info.pos.y + sentence_font_info.pos.h - lookback_info[2].pos.h;
+            last_button_link->image_rect.w = lookback_info[2].pos.w;
+            last_button_link->image_rect.h = lookback_info[2].pos.h;
             
             last_button_link->image_surface =
                 SDL_CreateRGBSurface( DEFAULT_SURFACE_FLAG,
-                                      lookback_info[2].image_surface->w, lookback_info[2].image_surface->h,
+                                      lookback_info[2].pos.w, lookback_info[2].pos.h,
                                       32, rmask, gmask, bmask, amask );
             SDL_SetAlpha( last_button_link->image_surface, DEFAULT_BLIT_FLAG, SDL_ALPHA_OPAQUE );
             alphaBlend( last_button_link->image_surface, 0, 0,
                         text_surface, last_button_link->image_rect.x, last_button_link->image_rect.y,
-                        lookback_info[2].image_surface->w, lookback_info[2].image_surface->h,
+                        lookback_info[2].pos.w, lookback_info[2].pos.h,
                         lookback_info[2].image_surface, 0, 0,
-                        0, 0, -lookback_info[2].tag.trans_mode );
+                        lookback_info[2].alpha_offset, 0, -lookback_info[2].tag.trans_mode );
         }
 
         if ( lookback_info[3].image_surface )
             alphaBlend( text_surface, last_button_link->image_rect.x, last_button_link->image_rect.y,
                         text_surface, last_button_link->image_rect.x, last_button_link->image_rect.y,
-                        lookback_info[3].image_surface->w, lookback_info[3].image_surface->h,
+                        lookback_info[3].pos.w, lookback_info[3].pos.h,
                         lookback_info[3].image_surface, 0, 0,
-                        0, 0, -lookback_info[3].tag.trans_mode );
+                        lookback_info[3].alpha_offset, 0, -lookback_info[3].tag.trans_mode );
     }
 }
 

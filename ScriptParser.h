@@ -101,6 +101,7 @@ public:
     void saveLabelLog();
     
     /* Command */
+    int windowbackCommand();
     int versionstrCommand();
     int underlineCommand();
     int transmodeCommand();
@@ -170,6 +171,7 @@ protected:
     LinkLabelInfo last_tilde;
     int z_order;
     bool rmode_flag;
+    bool windowback_flag;
 
     BaseReader *cBR;
 
@@ -254,11 +256,17 @@ protected:
         int current_line;
         int offset;
         char *current_script;
-        int var_type;
-        int *p_var;
-        int var_no;
+        char *p_int;
         int to;
         int step;
+
+        ForInfo(){
+            next = NULL;
+            p_int = NULL;
+        };
+        ~ForInfo(){
+            if ( p_int ) delete[] p_int;
+        };
     } root_for_link, *current_for_link;
     int for_stack_depth;
     bool break_flag;

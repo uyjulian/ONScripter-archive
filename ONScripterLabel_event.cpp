@@ -132,7 +132,7 @@ void ONScripterLabel::mousePressEvent( SDL_MouseButtonEvent *event )
 
 void ONScripterLabel::variableEditMode( SDL_KeyboardEvent *event )
 {
-    int  p;
+    int  i, p;
     char *var_name, var_index[12];
 
     switch ( event->keysym.sym ) {
@@ -206,7 +206,7 @@ void ONScripterLabel::variableEditMode( SDL_KeyboardEvent *event )
 
           case EDIT_SE_VOLUME_MODE:
             se_volume = variable_edit_num;
-            for ( int i=1 ; i<MIX_CHANNELS ; i++ )
+            for ( i=1 ; i<MIX_CHANNELS ; i++ )
                 if ( wave_sample[i] ) Mix_Volume( i, se_volume * 128 / 100 );
             break;
 
@@ -323,8 +323,14 @@ void ONScripterLabel::keyPressEvent( SDL_KeyboardEvent *event )
         else if ( event->keysym.sym == SDLK_RETURN ||
                   event->keysym.sym == SDLK_SPACE ){
             if ( shortcut_mouse_line >= 0 ){
-                current_button_state.button = current_over_button;
-                volatile_button_state.button = current_over_button;
+                if ( event->keysym.sym == SDLK_RETURN ){
+                    current_button_state.button = current_over_button;
+                    volatile_button_state.button = current_over_button;
+                }
+                else{
+                    current_button_state.button = 0;
+                    volatile_button_state.button = 0;
+                }
                 startTimer( MINIMUM_TIMER_RESOLUTION );
                 return;
             }

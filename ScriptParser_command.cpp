@@ -23,12 +23,9 @@
 
 #include "ScriptParser.h"
 
-int ScriptParser::underlineCommand()
+int ScriptParser::windowbackCommand()
 {
-    if ( current_mode != DEFINE_MODE ) errorAndExit( string_buffer + string_buffer_offset, "not in the define section" );
-    char *p_string_buffer = string_buffer + string_buffer_offset + 9; // strlen("underline") = 9
-
-    underline_value = readInt( &p_string_buffer );
+    windowback_flag = true;
 
     return RET_CONTINUE;
 }
@@ -55,6 +52,16 @@ int ScriptParser::versionstrCommand()
 
     delete[] buf;
     
+    return RET_CONTINUE;
+}
+
+int ScriptParser::underlineCommand()
+{
+    if ( current_mode != DEFINE_MODE ) errorAndExit( string_buffer + string_buffer_offset, "not in the define section" );
+    char *p_string_buffer = string_buffer + string_buffer_offset + 9; // strlen("underline") = 9
+
+    underline_value = readInt( &p_string_buffer );
+
     return RET_CONTINUE;
 }
 
@@ -296,21 +303,25 @@ int ScriptParser::nsaCommand()
 
 int ScriptParser::nextCommand()
 {
-    //printf("nextCommand %d( %d -> %d)\n", for_stack_depth, *current_for_link->p_var, *current_for_link->p_var + current_for_link->step );
-
-    /* ***** Ugly code !! ***** */
-    if ( current_for_link->var_type == VAR_INT )
-        setNumVariable( current_for_link->var_no, *current_for_link->p_var + current_for_link->step );
-    else{
-        *current_for_link->p_var += current_for_link->step;
+    char *p_buf;
+    int val;
+    
+    if ( !break_flag ){
+        p_buf = current_for_link->p_int;
+        val   = readInt( &p_buf );
+        setInt( current_for_link->p_int, val + current_for_link->step );
     }
+
+    p_buf = current_for_link->p_int;
+    val   = readInt( &p_buf );
     
     if ( break_flag ||
-         current_for_link->step >= 0 && *current_for_link->p_var > current_for_link->to ||
-         current_for_link->step < 0 && *current_for_link->p_var < current_for_link->to ){
+         current_for_link->step >= 0 && val > current_for_link->to ||
+         current_for_link->step < 0  && val < current_for_link->to ){
         break_flag = false;
         for_stack_depth--;
         current_for_link = current_for_link->previous;
+
         delete current_for_link->next;
         current_for_link->next = NULL;
 
@@ -745,36 +756,18 @@ int ScriptParser::forCommand()
 {
     for_stack_depth++;
     char *p_string_buffer = string_buffer + string_buffer_offset + 3; // strlen("for") = 3
-    char *p_buf2;
     ForInfo *info = new ForInfo();
-    info->next = NULL;
 
-    SKIP_SPACE( p_string_buffer );
-    char *p_buf = p_string_buffer;
+    setStr( &info->p_int, p_string_buffer );
     readInt( &p_string_buffer );
-    //char *p_dst_buf = tmp_string_buffer;
-    //info->variable_no = readInt( &p_dst_buf );
     
-    if ( *p_string_buffer != '=' ) errorAndExit( string_buffer + string_buffer_offset );
+    if ( *p_string_buffer != '=' ) errorAndExit( string_buffer + string_buffer_offset, "no =" );
     p_string_buffer++;
 
-    if ( p_buf[0] == '%' ){
-        info->var_type = VAR_INT;
-        p_buf2 = p_buf + 1;
-        info->var_no = readInt( &p_buf2 );
-        info->p_var = num_variables + info->var_no;
-    }
-    else{
-        info->var_type = VAR_ARRAY;
-        p_buf2 = p_buf;
-        info->p_var = decodeArray( &p_buf2 );
-    }
-
-    setInt( p_buf, readInt( &p_string_buffer ) );
-    //setNumVariable( info->variable_no, 
+    setInt( info->p_int, readInt( &p_string_buffer ) );
     
     readStr( &p_string_buffer, tmp_string_buffer );
-    if ( strcmp( tmp_string_buffer, "to" ) ) errorAndExit( string_buffer + string_buffer_offset );
+    if ( strcmp( tmp_string_buffer, "to" ) ) errorAndExit( string_buffer + string_buffer_offset, "no to" );
     
     info->to = readInt( &p_string_buffer );
 

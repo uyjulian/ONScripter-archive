@@ -168,11 +168,8 @@ int ONScripterLabel::textclearCommand()
 
 int ONScripterLabel::texecCommand()
 {
-    printf("texecCommand %d\n", clickstr_state);
-    
-    if ( clickstr_state == CLICK_NEWPAGE ){
-        newPage( false );
-    }
+    if ( clickstr_state == CLICK_NEWPAGE ) newPage( false );
+
     return RET_CONTINUE;
 }
 
@@ -215,13 +212,15 @@ int ONScripterLabel::spbtnCommand()
     int sprite_no = readInt( &p_string_buffer );
     int no        = readInt( &p_string_buffer );
 
+    if ( sprite_info[ sprite_no ].tag.num_of_cells == 0 ) return RET_CONTINUE;
+
     last_button_link->next = new ButtonLink();
     last_button_link = last_button_link->next;
 
     last_button_link->button_type = SPRITE_BUTTON;
     last_button_link->sprite_no   = sprite_no;
     last_button_link->no          = no;
-    
+
     if ( sprite_info[ sprite_no ].image_surface || sprite_info[ sprite_no ].tag.trans_mode == TRANS_STRING ){
         last_button_link->image_rect = last_button_link->select_rect = sprite_info[ last_button_link->sprite_no ].pos;
         sprite_info[ sprite_no ].valid = true;
@@ -479,12 +478,33 @@ int ONScripterLabel::selectCommand()
     }
 }
 
+int ONScripterLabel::saveonCommand()
+{
+    saveon_flag = true;
+
+    return RET_CONTINUE;
+}
+
+int ONScripterLabel::saveoffCommand()
+{
+    if ( saveon_flag ){
+        saveSaveFile( -1 );
+    }
+    
+    saveon_flag = false;
+
+    return RET_CONTINUE;
+}
+
 int ONScripterLabel::savegameCommand()
 {
     char *p_string_buffer = string_buffer + string_buffer_offset + 8; // strlen("savegame") = 8
 
     int no = readInt( &p_string_buffer );
-    saveSaveFile( no );
+    if ( no < 0 )
+        errorAndExit( string_buffer + string_buffer_offset );
+    else
+        saveSaveFile( no );
 
     return RET_CONTINUE;
 }
@@ -543,7 +563,8 @@ int ONScripterLabel::resetCommand()
     text_char_flag = false;
     skip_flag      = false;
     monocro_flag   = false;
-
+    saveon_flag    = true;
+    
     deleteLabelLink();
     current_link_label_info->label_info = lookupLabel( "start" );
     current_link_label_info->current_line = 0;
@@ -820,16 +841,19 @@ int ONScripterLabel::loadgameCommand()
     char *p_string_buffer = string_buffer + string_buffer_offset + 8; // strlen("loadgame") = 8
     
     int no = readInt( &p_string_buffer );
-    printf("loadGmae %d\n", no);
+
+    if ( no < 0 )
+        errorAndExit( string_buffer + string_buffer_offset );
+
     if ( loadSaveFile( no ) ) return RET_CONTINUE;
     else {
         skip_flag = false;
         deleteButtonLink();
         deleteSelectLink();
         key_pressed_flag = false;
-        printf("loadGmae %d %d\n",event_mode,skip_flag);
+        saveon_flag = true;
+        printf("loadGame %d %d\n",event_mode,skip_flag);
         if ( event_mode & WAIT_INPUT_MODE ) return RET_WAIT;
-        startTimer( MINIMUM_TIMER_RESOLUTION );
         return RET_JUMP;
     }
 }
@@ -1029,6 +1053,9 @@ int ONScripterLabel::exbtnCommand()
         p_string_buffer = string_buffer + string_buffer_offset + 5; // strlen("exbtn") = 5
         sprite_no = readInt( &p_string_buffer );
         no = readInt( &p_string_buffer );
+
+        if ( sprite_info[ sprite_no ].tag.num_of_cells == 0 ) return RET_CONTINUE;
+        
         button = new ButtonLink();
         last_button_link->next = button;
         last_button_link = last_button_link->next;
@@ -1131,12 +1158,10 @@ int ONScripterLabel::cspCommand()
 
     if ( no == -1 )
         for ( int i=0 ; i<MAX_SPRITE_NUM ; i++ ){
-            sprite_info[i].valid = false;
-            sprite_info[i].deleteImageName();
+            sprite_info[i].remove();
         }
     else{
-        sprite_info[no].valid = false;
-        sprite_info[no].deleteImageName();
+        sprite_info[no].remove();
     }
 
     return RET_CONTINUE;
@@ -1321,7 +1346,6 @@ int ONScripterLabel::btnwaitCommand()
         del_flag = true;
     }
     else if ( !strncmp( string_buffer + string_buffer_offset, "textbtnwait", 11 ) ){
-        printf("textbtnwait\n");
         p_string_buffer = string_buffer + string_buffer_offset + 11; // strlen("textbtnwait") = 11
         del_flag = false;
         textbtn_flag = true;
@@ -1354,7 +1378,7 @@ int ONScripterLabel::btnwaitCommand()
     else{
         skip_flag = false;
         event_mode = WAIT_BUTTON_MODE;
-        if ( textbtn_flag ) event_mode |= WAIT_BUTTON_MODE;
+        if ( textbtn_flag ) event_mode |= WAIT_TEXTBTN_MODE;
 
         ButtonLink *p_button_link = root_button_link.next;
         while( p_button_link ){

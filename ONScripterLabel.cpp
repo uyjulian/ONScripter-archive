@@ -70,6 +70,8 @@ static struct FuncLUT{
     {"selnum",   &ONScripterLabel::selectCommand},
     {"selgosub",   &ONScripterLabel::selectCommand},
     {"select",   &ONScripterLabel::selectCommand},
+    {"saveon",   &ONScripterLabel::saveonCommand},
+    {"saveoff",   &ONScripterLabel::saveoffCommand},
     {"savegame",   &ONScripterLabel::savegameCommand},
     {"rnd",   &ONScripterLabel::rndCommand},
     {"rnd2",   &ONScripterLabel::rndCommand},
@@ -235,6 +237,9 @@ ONScripterLabel::ONScripterLabel( bool cdaudio_flag, char *default_font, char *d
     internal_timer = SDL_GetTicks();
     autoclick_timer = 0;
 
+    tmp_save_fp = NULL;
+    saveon_flag = true;
+    
     monocro_flag = false;
     trap_flag = false;
     trap_dist = NULL;
@@ -408,9 +413,9 @@ void ONScripterLabel::showAnimation( AnimationInfo *anim )
                 dst_rect.y = sentence_font.xy[1] * sentence_font.pitch_xy[1] + sentence_font.top_xy[1] + anim->pos.y;
             }
             alphaBlend( text_surface, dst_rect.x, dst_rect.y,
-                        anim->preserve_surface, 0, 0, anim->preserve_surface->w, anim->preserve_surface->h,
+                        anim->preserve_surface, 0, 0, anim->pos.w, anim->pos.h,
                         anim->image_surface, src_rect.x, src_rect.y,
-                        0, 0, -anim->tag.trans_mode );
+                        anim->alpha_offset, 0, -anim->tag.trans_mode );
             //SDL_BlitSurface( anim->image_surface, &src_rect, text_surface, &dst_rect );
             flush( dst_rect.x, dst_rect.y, src_rect.w, src_rect.h );
         }
@@ -777,7 +782,9 @@ int ONScripterLabel::enterTextDisplayMode()
         else{
             flush();
             SDL_BlitSurface( text_surface, NULL, effect_src_surface, NULL );
-            shadowTextDisplay();
+
+            //shadowTextDisplay();
+            refreshAccumulationSurface( text_surface, NULL, true );
             restoreTextBuffer();
 
             SDL_BlitSurface( text_surface, NULL, effect_dst_surface, NULL );
@@ -1069,15 +1076,11 @@ void ONScripterLabel::shadowTextDisplay( SDL_Surface *dst_surface, SDL_Surface *
     else{
         if ( sentence_font_info.image_surface ){
             /* drawTaggedSurface must be used intead !! */
-            int tmp_x3 = 0;
-            if ( sentence_font_info.tag.trans_mode == TRANS_ALPHA ){
-                tmp_x3 = sentence_font_info.pos.w;
-            }
             alphaBlend( dst_surface, sentence_font_info.pos.x, sentence_font_info.pos.y,
                         src_surface, sentence_font_info.pos.x, sentence_font_info.pos.y,
                         sentence_font_info.pos.w, sentence_font_info.pos.h,
                         sentence_font_info.image_surface, 0, 0,
-                        tmp_x3, 0, -sentence_font_info.tag.trans_mode );
+                        sentence_font_info.alpha_offset, 0, -sentence_font_info.tag.trans_mode );
         }
     }
 }
@@ -1262,7 +1265,7 @@ void ONScripterLabel::drawTaggedSurface( SDL_Surface *dst_surface, SDL_Rect *pos
         sentence_font.xy[0] = 0;
         sentence_font.xy[1] = 0;
 
-        drawString( tag->file_name, tag->color_list[ tag->current_cell ], &sentence_font, true, dst_surface, NULL );
+        drawString( tag->file_name, tag->color_list[ tag->current_cell ], &sentence_font, false, dst_surface, NULL );
         
         sentence_font.xy[0] = xy[0];
         sentence_font.xy[1] = xy[1];
@@ -1365,7 +1368,7 @@ void ONScripterLabel::makeMonochromeSurface( SDL_Surface *surface, SDL_Rect *dst
     SDL_UnlockSurface( surface );
 }
 
-void ONScripterLabel::refreshAccumulationSurface( SDL_Surface *surface, SDL_Rect *rect )
+void ONScripterLabel::refreshAccumulationSurface( SDL_Surface *surface, SDL_Rect *rect, bool shadow_flag )
 {
     int i;
     SDL_Rect clip;
@@ -1392,6 +1395,9 @@ void ONScripterLabel::refreshAccumulationSurface( SDL_Surface *surface, SDL_Rect
                                tachi_info[i].image_surface, &tachi_info[i].tag );
         }
     }
+
+    if ( shadow_flag && windowback_flag ) shadowTextDisplay( surface );
+    
     for ( i=z_order ; i>=0 ; i-- ){
         if ( sprite_info[i].valid ){
             drawTaggedSurface( surface, &sprite_info[i].pos, &clip,
@@ -1399,6 +1405,8 @@ void ONScripterLabel::refreshAccumulationSurface( SDL_Surface *surface, SDL_Rect
         }
     }
 
+    if ( shadow_flag && !windowback_flag ) shadowTextDisplay( surface );
+    
     if ( monocro_flag ) makeMonochromeSurface( surface, &clip );
 }
 
@@ -1481,7 +1489,13 @@ void ONScripterLabel::setupAnimationInfo( struct AnimationInfo *anim )
     else if ( anim->image_surface ){
         anim->pos.w = anim->image_surface->w / anim->tag.num_of_cells;
         anim->pos.h = anim->image_surface->h;
-        if ( anim->tag.trans_mode == TRANS_ALPHA ) anim->pos.w /= 2;
+        if ( anim->tag.trans_mode == TRANS_ALPHA ){
+            anim->pos.w /= 2;
+            anim->alpha_offset = anim->pos.w;
+        }
+        else{
+            anim->alpha_offset = 0;
+        }
         if ( anim->preserve_surface ) SDL_FreeSurface( anim->preserve_surface );
         anim->preserve_surface = SDL_CreateRGBSurface( DEFAULT_SURFACE_FLAG, anim->pos.w, anim->pos.h, 32, rmask, gmask, bmask, amask );
         SDL_SetAlpha( anim->preserve_surface, DEFAULT_BLIT_FLAG, SDL_ALPHA_OPAQUE );

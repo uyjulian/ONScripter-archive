@@ -44,6 +44,7 @@ static struct FuncLUT{
     FuncList method;
 } func_lut[] = {
     {"windoweffect",      &ScriptParser::effectCommand},
+    {"windowback",      &ScriptParser::windowbackCommand},
     {"versionstr",      &ScriptParser::versionstrCommand},
     {"underline", &ScriptParser::underlineCommand},
     {"transmode", &ScriptParser::transmodeCommand},
@@ -128,6 +129,7 @@ ScriptParser::ScriptParser()
     num_of_label_accessed = 0;
     underline_value = 479;
     rmode_flag = true;
+    windowback_flag = false;
     
     num_of_labels = 0;
     label_info = NULL;

@@ -777,6 +777,7 @@ int ScriptParser::forCommand()
     printf("stack %d forCommand %d = %d to %d step %d\n", for_stack_depth,
            info->var_no, *info->p_var, info->to, info->step );
 
+    string_buffer_offset = p_string_buffer - string_buffer;
     return RET_CONTINUE;
 }
 

@@ -352,8 +352,6 @@ ONScripterLabel::ONScripterLabel()
     //timer_id = NULL;
 
     clearCurrentTextBuffer();
-    
-    startTimer( MINIMUM_TIMER_RESOLUTION );
 }
 
 ONScripterLabel::~ONScripterLabel( )
@@ -384,6 +382,8 @@ void ONScripterLabel::flush( int x, int y, int w, int h )
 int ONScripterLabel::eventLoop()
 {
 	SDL_Event event;
+
+    startTimer( MINIMUM_TIMER_RESOLUTION );
 
 	while ( SDL_WaitEvent(&event) ) {
 		switch (event.type) {
@@ -549,10 +549,10 @@ void ONScripterLabel::mousePressEvent( SDL_MouseButtonEvent *event )
 
 void ONScripterLabel::timerEvent( void )
 {
-    
+#if 0    
     if ( sentence_font.wait_time == 0 )
         printf("timer wait_time = 0\n");
-
+#endif
     //printf("timerEvent %d\n", event_mode);
 
   timerEventTop:
@@ -706,14 +706,13 @@ void ONScripterLabel::mouseOverCheck( int x, int y )
             if ( event_mode & WAIT_BUTTON_MODE ){
                 if ( p_button_link->button_type == NORMAL_BUTTON && p_button_link->image_surface ){
                     SDL_BlitSurface( p_button_link->image_surface, NULL, text_surface, &p_button_link->image_rect );
-                    if ( monocro_flag && !(event_mode & WAIT_MOUSE_MODE) ) makeMonochromeSurface( text_surface, &p_button_link->image_rect );
                 }
                 else if ( p_button_link->button_type == SPRITE_BUTTON ){
                     sprite_info[ p_button_link->sprite_no ].tag.current_cell = 1;
                     refreshAccumulationSurface( accumulation_surface, &p_button_link->image_rect );
                     SDL_BlitSurface( accumulation_surface, &p_button_link->image_rect, text_surface, &p_button_link->image_rect );
-                    if ( monocro_flag && !(event_mode & WAIT_MOUSE_MODE) ) makeMonochromeSurface( text_surface, &p_button_link->image_rect );
                 }
+                if ( monocro_flag && !(event_mode & WAIT_MOUSE_MODE) ) makeMonochromeSurface( text_surface, &p_button_link->image_rect );
                 flush( &p_button_link->image_rect );
             }
             current_over_button_link.image_rect = p_button_link->image_rect;
@@ -738,10 +737,11 @@ void ONScripterLabel::executeLabel()
            current_link_label_info->label_info.name,
            current_link_label_info->current_line,
            current_link_label_info->offset );
-#endif    
+#endif
+#if 0    
     if ( sentence_font.wait_time == 0 )
         printf("exe wait_time = 0\n");
-
+#endif
     int i, ret1, ret2;
     int line_cache = -1;
     bool first_read_flag = true;
@@ -781,12 +781,7 @@ void ONScripterLabel::executeLabel()
             if ( string_buffer[string_buffer_offset] == '\0' ) i++;
             continue;
         }
-        if ( jumpf_flag ){
-            skipToken();
-            if ( string_buffer[string_buffer_offset] == '\0' ) i++;
-            continue;
-        }
-        if ( break_flag && strncmp( string_buffer + string_buffer_offset, "next", 4 ) ){
+        if ( jumpf_flag || break_flag && strncmp( string_buffer + string_buffer_offset, "next", 4 ) ){
             skipToken();
             if ( string_buffer[string_buffer_offset] == '\0' ) i++;
             continue;
@@ -1700,16 +1695,24 @@ int ONScripterLabel::playMP3( int cd_no )
         mp3_sample = SMPEG_new_rwops( SDL_RWFromMem( mp3_buffer, length ), &mp3_info, 0 );
     }
 
-    SMPEG_enableaudio( mp3_sample, 0 );
-    SMPEG_actualSpec( mp3_sample, &audio_format );
+    if ( SMPEG_error( mp3_sample ) ){
+        printf(" failed. [%s]\n",SMPEG_error( mp3_sample ));
+        // The line below fails. ?????
+        //SMPEG_delete( mp3_sample );
+        mp3_sample = NULL;
+    }
+    else{
+        SMPEG_enableaudio( mp3_sample, 0 );
+        SMPEG_actualSpec( mp3_sample, &audio_format );
 
-    printf(" at vol %d once %d\n", mp3_volume, mp3_play_once_flag );
-    Mix_HookMusic( mp3callback, mp3_sample );
-    SMPEG_enableaudio( mp3_sample, 1 );
-    //SMPEG_loop( mp3_sample, mp3_play_once_flag?0:1 );
-    SMPEG_play( mp3_sample );
+        printf(" at vol %d once %d\n", mp3_volume, mp3_play_once_flag );
+        Mix_HookMusic( mp3callback, mp3_sample );
+        SMPEG_enableaudio( mp3_sample, 1 );
+        //SMPEG_loop( mp3_sample, mp3_play_once_flag?0:1 );
+        SMPEG_play( mp3_sample );
 
-    SMPEG_setvolume( mp3_sample, mp3_volume );
+        SMPEG_setvolume( mp3_sample, mp3_volume );
+    }
 
     return 0;
 }
@@ -1817,11 +1820,11 @@ struct ONScripterLabel::ButtonLink *ONScripterLabel::getSelectableSentence( char
     return button_link;
 }
 
-void ONScripterLabel::drawTaggedSurface( SDL_Surface *dst_surface, SDL_Rect *pos,
+void ONScripterLabel::drawTaggedSurface( SDL_Surface *dst_surface, SDL_Rect *pos, SDL_Rect *clip,
                                          SDL_Surface *src_surface, TaggedInfo *tagged_info )
 {
-    SDL_Rect dst_rect, src_rect;
-    int offset, aoffset = 0, i, w;
+    SDL_Rect dst_rect = *pos, src_rect;
+    int offset, aoffset = 0, i, w, h, src_y;
 
     //printf("drawTagged %d %d\n",x,y);
     if ( tagged_info->trans_mode == TRANS_STRING ){
@@ -1861,6 +1864,8 @@ void ONScripterLabel::drawTaggedSurface( SDL_Surface *dst_surface, SDL_Rect *pos
     else if ( !src_surface ) return;
 
     w = src_surface->w / tagged_info->num_of_cells;
+    h = src_surface->h;
+    src_y = 0;
     offset = w * tagged_info->current_cell;
 
     if ( tagged_info->trans_mode == TRANS_ALPHA ||
@@ -1868,12 +1873,33 @@ void ONScripterLabel::drawTaggedSurface( SDL_Surface *dst_surface, SDL_Rect *pos
               tagged_info->trans_mode == TRANS_TOPRIGHT ){
         if ( tagged_info->trans_mode == TRANS_ALPHA ){
             w /= 2;
-            aoffset = w;
+            aoffset = offset + w;
         }
-        alphaBlend( dst_surface, pos->x, pos->y,
-                    dst_surface, pos->x, pos->y, w, src_surface->h,
-                    src_surface, offset, 0,
-                    aoffset, 0, -tagged_info->trans_mode );
+        if ( pos->x >= clip->x + clip->w ||
+             pos->x + w <= clip->x ||
+             pos->y >= clip->y + clip->h ||
+             pos->y + h <= clip->y ) return;
+        if ( dst_rect.x < clip->x ){
+            w -= clip->x - pos->x;
+            aoffset += clip->x - pos->x;
+            offset += clip->x - pos->x;
+            dst_rect.x = clip->x;
+        }
+        if ( clip->x + clip->w < dst_rect.x + w ){
+            w -= dst_rect.x + w - clip->x - clip->w;
+        }
+        if ( dst_rect.y < clip->y ){
+            h -= clip->y - pos->y;
+            src_y = clip->y - pos->y;
+            dst_rect.y = clip->y;
+        }
+        if ( clip->y + clip->h < dst_rect.y + h ){
+            h -= dst_rect.y + h - clip->y - clip->h;
+        }
+        alphaBlend( dst_surface, dst_rect.x, dst_rect.y,
+                    dst_surface, dst_rect.x, dst_rect.y, w, h,
+                    src_surface, offset, src_y,
+                    aoffset, src_y, -tagged_info->trans_mode );
     }
     else if ( tagged_info->trans_mode == TRANS_COPY ){
         src_rect.x = offset;
@@ -1931,15 +1957,22 @@ void ONScripterLabel::makeMonochromeSurface( SDL_Surface *surface, SDL_Rect *dst
 void ONScripterLabel::refreshAccumulationSurface( SDL_Surface *surface, SDL_Rect *rect )
 {
     int i, w, h;
-    SDL_Rect pos;
+    SDL_Rect pos, clip;
     TaggedInfo tag;
-    
+
+    if ( !rect ){
+        clip.x = 0;
+        clip.y = 0;
+        clip.w = surface->w;
+        clip.h = surface->h;
+    }
+    else clip = *rect;
+        
     SDL_BlitSurface( background_surface, rect, surface, rect );
-    SDL_SetClipRect( surface, rect );
     
     for ( i=MAX_SPRITE_NUM-1 ; i>z_order ; i-- ){
         if ( sprite_info[i].valid ){
-            drawTaggedSurface( surface, &sprite_info[i].pos,
+            drawTaggedSurface( surface, &sprite_info[i].pos, &clip,
                                sprite_info[i].image_surface, &sprite_info[i].tag );
         }
     }
@@ -1951,18 +1984,17 @@ void ONScripterLabel::refreshAccumulationSurface( SDL_Surface *surface, SDL_Rect
             if ( tag.trans_mode == TRANS_ALPHA ) w /= 2;
             pos.x = screen_width * (i+1) / 4 - w / 2;
             pos.y = underline_value - h + 1;
-            drawTaggedSurface( surface, &pos, tachi_image_surface[i], &tag );
+            drawTaggedSurface( surface, &pos, &clip, tachi_image_surface[i], &tag );
         }
     }
     for ( i=z_order ; i>=0 ; i-- ){
         if ( sprite_info[i].valid ){
-            drawTaggedSurface( surface, &sprite_info[i].pos,
+            drawTaggedSurface( surface, &sprite_info[i].pos, &clip,
                                sprite_info[i].image_surface, &sprite_info[i].tag );
         }
     }
 
-    if ( monocro_flag ) makeMonochromeSurface( surface, rect );
-    SDL_SetClipRect( surface, NULL );
+    if ( monocro_flag ) makeMonochromeSurface( surface, &clip );
 }
 
 int ONScripterLabel::clickWait( char *out_text )
@@ -2023,15 +2055,38 @@ int ONScripterLabel::clickNewPage( char *out_text )
     return RET_WAIT;
 }
 
-void ONScripterLabel::makeEffectStr( char *buf, int no, int duration, char *image )
+void ONScripterLabel::makeEffectStr( char **buf, char *dst_buf )
 {
-    sprintf( buf + strlen(buf), "%d", no );
-    if ( duration>0 ){
-        sprintf( buf + strlen(buf), ",%d", duration );
-        if ( image[0] != '\0' ){
-            sprintf( buf + strlen(buf), ",%s", image );
+    int num = readEffect( buf, &tmp_effect );
+
+    sprintf( dst_buf + strlen(dst_buf), "%d", tmp_effect.effect );
+    if ( num >= 2 ){
+        sprintf( dst_buf + strlen(dst_buf), ",%d", tmp_effect.duration );
+        if ( num >= 3 ){
+            sprintf( dst_buf + strlen(dst_buf), ",%s", tmp_effect.image );
         }
     }
+}
+
+int ONScripterLabel::readEffect( char **buf, struct EffectLink *effect )
+{
+    int num = 1;
+    
+    effect->effect = readInt( buf );
+    if ( end_with_comma_flag ){
+        num++;
+        effect->duration = readInt( buf );
+        if ( end_with_comma_flag ){
+            num++;
+            readStr( buf, tmp_string_buffer );
+            if ( effect->image ) delete[] effect->image;
+            effect->image = new char[ strlen(tmp_string_buffer ) + 1 ];
+            memcpy( effect->image, tmp_string_buffer, strlen( tmp_string_buffer ) + 1 );
+        }
+    }
+
+    //printf("readEffect %d: %d %d %s\n", num, effect->effect, effect->duration, effect->image );
+    return num;
 }
 
 void ONScripterLabel::setupAnimationInfo( struct AnimationInfo *anim )
@@ -2226,7 +2281,7 @@ int ONScripterLabel::textCommand( char *text )
             return clickNewPage( out_text );
         }
         else{
-            if ( skip_flag || draw_one_page_flag ){
+            if ( skip_flag || draw_one_page_flag || sentence_font.wait_time == 0 ){
                 drawChar( out_text, &sentence_font, false );
                 string_buffer_offset += 2;
                 return RET_CONTINUE;
@@ -2261,10 +2316,12 @@ int ONScripterLabel::textCommand( char *text )
             else{
                 p_string_buffer = &string_buffer[ string_buffer_offset ];
                 sentence_font.wait_time = readInt( &p_string_buffer );
+#if 0                
                 if ( sentence_font.wait_time == 0 ){
                     printf("damedayo wait = 0\n");
                     exit(0);
                 }
+#endif                
                 string_buffer_offset = p_string_buffer - string_buffer;
             }
         }
@@ -2330,7 +2387,7 @@ int ONScripterLabel::textCommand( char *text )
         text_char_flag = true;
         out_text[0] = ch;
         out_text[1] = '\0';
-        if ( skip_flag || draw_one_page_flag ){
+        if ( skip_flag || draw_one_page_flag || sentence_font.wait_time == 0){
             drawChar( out_text, &sentence_font, false );
             string_buffer_offset++;
             return RET_CONTINUE;
@@ -2509,7 +2566,7 @@ int ONScripterLabel::setwindowCommand()
     sentence_font.pitch_xy[0] = readInt( &p_string_buffer ) + sentence_font.font_size;
     sentence_font.pitch_xy[1] = readInt( &p_string_buffer ) + sentence_font.font_size;
     sentence_font.wait_time = readInt( &p_string_buffer );
-    if ( sentence_font.wait_time == 0 ) sentence_font.wait_time = 10;
+    //if ( sentence_font.wait_time == 0 ) sentence_font.wait_time = 10;
     sentence_font.display_bold = readInt( &p_string_buffer )?true:false;
     sentence_font.display_shadow = readInt( &p_string_buffer )?true:false;
 
@@ -2876,28 +2933,16 @@ int ONScripterLabel::puttextCommand()
 int ONScripterLabel::printCommand()
 {
     char *p_string_buffer = string_buffer + string_buffer_offset + 5; // strlen("print") = 5
-    char *buf = new char[512];
-    int ret;
-
-    sprintf( buf, "print " );
-    print_effect.effect = readInt( &p_string_buffer );
-    print_effect.duration = readInt( &p_string_buffer );
-    readStr( &p_string_buffer, tmp_string_buffer );
 
     if ( event_mode & EFFECT_EVENT_MODE ){
-        if ( print_effect.duration ){
-            if ( print_effect.image ) delete[] print_effect.image;
-            print_effect.image = new char[ strlen(tmp_string_buffer ) + 1 ];
-            memcpy( print_effect.image, tmp_string_buffer, strlen( tmp_string_buffer ) + 1 );
-            ret = doEffect( PRINT_EFFECT, NULL, TACHI_EFFECT_IMAGE );
-        }
-        else
-            ret = doEffect( print_effect.effect, NULL, TACHI_EFFECT_IMAGE );
-        delete[] buf;
-        return ret;
+        int num = readEffect( &p_string_buffer, &print_effect );
+        if ( num > 1 ) return doEffect( PRINT_EFFECT, NULL, TACHI_EFFECT_IMAGE );
+        else           return doEffect( print_effect.effect, NULL, TACHI_EFFECT_IMAGE );
     }
     else{
-        makeEffectStr( buf, print_effect.effect, print_effect.duration, tmp_string_buffer );
+        char *buf = new char[512];
+        sprintf( buf, "print " );
+        makeEffectStr( &p_string_buffer, buf );
         if ( print_effect.effect == 0 ) return setEffect( RET_CONTINUE, buf );
         else                            return setEffect( RET_WAIT_NEXT, buf );
     }
@@ -2906,10 +2951,10 @@ int ONScripterLabel::printCommand()
 int ONScripterLabel::playstopCommand()
 {
     if ( mp3_sample ){
-        SMPEG_stop(mp3_sample);
+        SMPEG_stop( mp3_sample );
+        SMPEG_delete( mp3_sample );
         //Mix_FadeOutMusic( 1000 );
         Mix_HookMusic( NULL, NULL );
-
 #if 0        
         if ( mp3_sample->flags & SOUND_SAMPLEFLAG_ERROR ){
             fprintf(stderr, "Error in decoding sound file!\n"
@@ -3127,63 +3172,38 @@ int ONScripterLabel::loadgameCommand()
 int ONScripterLabel::ldCommand()
 {
     char *p_string_buffer = string_buffer + string_buffer_offset + 2; // strlen("ld") = 2
-    char *buf = new char[512];
-    int no, effect_no, i, ret;
-    TaggedInfo tagged_info;
     
     readStr( &p_string_buffer, tmp_string_buffer );
-    sprintf( buf, "ld %s",tmp_string_buffer );
-    if ( tmp_string_buffer[0] == 'l' )      no = 0;
-    else if ( tmp_string_buffer[0] == 'c' ) no = 1;
-    else if ( tmp_string_buffer[0] == 'r' ) no = 2;
+    char loc = tmp_string_buffer[0];
 
     readStr( &p_string_buffer, tmp_string_buffer );
-    sprintf( buf+strlen(buf), ", \"%s\",", tmp_string_buffer );
     
     if ( event_mode & EFFECT_EVENT_MODE ){
-        effect_no = readInt( &p_string_buffer );
-        if ( end_with_comma_flag ){
-            tmp_effect.effect = effect_no;
-            tmp_effect.duration = readInt( &p_string_buffer );
-            if ( end_with_comma_flag ){
-                readStr( &p_string_buffer, tmp_string_buffer );
-                if ( tmp_effect.image ) delete[] tmp_effect.image;
-                tmp_effect.image = new char[ strlen(tmp_string_buffer ) + 1 ];
-                memcpy( tmp_effect.image, tmp_string_buffer, strlen( tmp_string_buffer ) + 1 );
-            }
-            ret = doEffect( TMP_EFFECT, NULL, TACHI_EFFECT_IMAGE );
-        }
-        else{
-            ret = doEffect( effect_no, NULL, TACHI_EFFECT_IMAGE );
-        }
-
-        delete[] buf;
-        return ret;
+        int num = readEffect( &p_string_buffer, &tmp_effect );
+        if ( num > 1 ) return doEffect( TMP_EFFECT, NULL, TACHI_EFFECT_IMAGE );
+        else           return doEffect( tmp_effect.effect, NULL, TACHI_EFFECT_IMAGE );
     }
     else{
-        if ( tachi_image_name[no] ) delete[] tachi_image_name[no];
-        tachi_image_name[no] = new char[ strlen(tmp_string_buffer) + 1 ];
-        memcpy( tachi_image_name[no], tmp_string_buffer, strlen(tmp_string_buffer) + 1 );
-        parseTaggedString( tachi_image_name[no], &tagged_info );
+        int no;
+        TaggedInfo tagged_info;
+
+        if ( loc == 'l' )      no = 0;
+        else if ( loc == 'c' ) no = 1;
+        else if ( loc == 'r' ) no = 2;
+        
+        if ( tachi_image_name[ no ] ) delete[] tachi_image_name[ no ];
+        tachi_image_name[ no ] = new char[ strlen(tmp_string_buffer) + 1 ];
+        memcpy( tachi_image_name[ no ], tmp_string_buffer, strlen(tmp_string_buffer) + 1 );
+        parseTaggedString( tachi_image_name[ no ], &tagged_info );
     
-        if ( tachi_image_surface[no] ) SDL_FreeSurface( tachi_image_surface[no] );
-        tachi_image_surface[no] = loadPixmap( &tagged_info );
+        if ( tachi_image_surface[ no ] ) SDL_FreeSurface( tachi_image_surface[ no ] );
+        tachi_image_surface[ no ] = loadPixmap( &tagged_info );
 
-        effect_no = readInt( &p_string_buffer );
-        if ( end_with_comma_flag ){
-            i = readInt( &p_string_buffer );
-            if ( end_with_comma_flag ){
-                readStr( &p_string_buffer, tmp_string_buffer );
-            }
-            else
-                tmp_string_buffer[0] = '\0';
-        }
-        else
-            i = -1;
-        makeEffectStr( buf, effect_no, i, tmp_string_buffer );
-
-        if ( effect_no == 0 ) return setEffect( RET_CONTINUE, buf );
-        else                  return setEffect( RET_WAIT_NEXT, buf );
+        char *buf = new char[512];
+        sprintf( buf, "ld %c, \"%s\",", loc, tmp_string_buffer );
+        makeEffectStr( &p_string_buffer, buf );
+        if ( tmp_effect.effect == 0 ) return setEffect( RET_CONTINUE, buf );
+        else                          return setEffect( RET_WAIT_NEXT, buf );
     }
 }
 
@@ -3340,55 +3360,40 @@ int ONScripterLabel::clickCommand()
 int ONScripterLabel::clCommand()
 {
     char *p_string_buffer = string_buffer + string_buffer_offset + 2; // strlen("cl") = 2
-    char *buf = new char[512];
-    int effect_no, i, ret;
     
     readStr( &p_string_buffer, tmp_string_buffer );
-    sprintf( buf, "cl %s,",tmp_string_buffer );
+    char loc = tmp_string_buffer[0];
     
-    if ( tmp_string_buffer[0] == 'l' || tmp_string_buffer[0] == 'a' ){
+    if ( loc == 'l' || loc == 'a' ){
         if ( tachi_image_name[0] ) delete[] tachi_image_name[0];
         tachi_image_name[0] = NULL;
         if ( tachi_image_surface[0] ) SDL_FreeSurface( tachi_image_surface[0] );
         tachi_image_surface[0] = NULL;
     }
-    if ( tmp_string_buffer[0] == 'c' || tmp_string_buffer[0] == 'a' ){
+    if ( loc == 'c' || loc == 'a' ){
         if ( tachi_image_name[1] ) delete[] tachi_image_name[1];
         tachi_image_name[1] = NULL;
         if ( tachi_image_surface[1] ) SDL_FreeSurface( tachi_image_surface[1] );
         tachi_image_surface[1] = NULL;
     }
-    if ( tmp_string_buffer[0] == 'r' || tmp_string_buffer[0] == 'a' ){
+    if ( loc == 'r' || loc == 'a' ){
         if ( tachi_image_name[2] ) delete[] tachi_image_name[2];
         tachi_image_name[2] = NULL;
         if ( tachi_image_surface[2] ) SDL_FreeSurface( tachi_image_surface[2] );
         tachi_image_surface[2] = NULL;
     }
 
-    effect_no = readInt( &p_string_buffer );
-    i = readInt( &p_string_buffer );
-    readStr( &p_string_buffer, tmp_string_buffer );
-        
     if ( event_mode & EFFECT_EVENT_MODE ){
-        tmp_effect.effect = effect_no;
-        tmp_effect.duration = i;
-        if ( i != 0 ){
-            if ( tmp_effect.image ) delete[] tmp_effect.image;
-            tmp_effect.image = new char[ strlen(tmp_string_buffer ) + 1 ];
-            memcpy( tmp_effect.image, tmp_string_buffer, strlen( tmp_string_buffer ) + 1 );
-            ret = doEffect( TMP_EFFECT, NULL, TACHI_EFFECT_IMAGE );
-        }
-        else{
-            ret = doEffect( effect_no, NULL, TACHI_EFFECT_IMAGE );
-        }
-        delete[] buf;
-        return ret;
+        int num = readEffect( &p_string_buffer, &tmp_effect );
+        if ( num > 1 ) return doEffect( TMP_EFFECT, NULL, TACHI_EFFECT_IMAGE );
+        else           return doEffect( tmp_effect.effect, NULL, TACHI_EFFECT_IMAGE );
     }
     else{
-        makeEffectStr( buf, effect_no, i, tmp_string_buffer );
-
-        if ( effect_no == 0 ) return setEffect( RET_CONTINUE, buf );
-        else                  return setEffect( RET_WAIT_NEXT, buf );
+        char *buf = new char[512];
+        sprintf( buf, "cl %c,", loc );
+        makeEffectStr( &p_string_buffer, buf );
+        if ( tmp_effect.effect == 0 ) return setEffect( RET_CONTINUE, buf );
+        else                          return setEffect( RET_WAIT_NEXT, buf );
     }
 }
 
@@ -3554,13 +3559,8 @@ int ONScripterLabel::bltCommand()
 int ONScripterLabel::bgCommand()
 {
     char *p_string_buffer = string_buffer + string_buffer_offset + 2; // strlen("bg") = 2
-    char *buf;
-    int effect_no, ret, i;
     
     readStr( &p_string_buffer, tmp_string_buffer );
-    //buf = new char[ 3 + strlen( tmp_string_buffer ) + 1 ];
-    buf = new char[ 512 ];
-    sprintf( buf, "bg \"%s\",",tmp_string_buffer );
 
     if ( event_mode & EFFECT_EVENT_MODE ){
         bg_effect_image = COLOR_EFFECT_IMAGE;
@@ -3581,30 +3581,14 @@ int ONScripterLabel::bgCommand()
             bg_effect_image = BG_EFFECT_IMAGE;
         }
         
-        effect_no = readInt( &p_string_buffer );
-        i = readInt( &p_string_buffer );
-
-        if ( i != 0 ){
-            tmp_effect.effect = effect_no;
-            tmp_effect.duration = i;
-            readStr( &p_string_buffer, tmp_string_buffer );
-            if ( tmp_effect.image ) delete[] tmp_effect.image;
-            tmp_effect.image = new char[ strlen(tmp_string_buffer ) + 1 ];
-            memcpy( tmp_effect.image, tmp_string_buffer, strlen( tmp_string_buffer ) + 1 );
-            
-            ret = doEffect( TMP_EFFECT, &bg_image_tag, bg_effect_image );
-        }
-        else{
-            ret = doEffect( effect_no, &bg_image_tag, bg_effect_image );
-        }
-
-        delete[] buf;
-        return ret;
+        int num = readEffect( &p_string_buffer, &tmp_effect );
+        if ( num > 1 ) return doEffect( TMP_EFFECT, &bg_image_tag, bg_effect_image );
+        else           return doEffect( tmp_effect.effect, &bg_image_tag, bg_effect_image );
     }
     else{
         /* ---------------------------------------- */
         /* Delete all tachi iamges if exist */
-        for ( i=0 ; i<3 ; i++ ){
+        for ( int i=0 ; i<3 ; i++ ){
             if ( tachi_image_name[i] ){
                 delete[] tachi_image_name[i];
                 tachi_image_name[i] = NULL;
@@ -3613,18 +3597,12 @@ int ONScripterLabel::bgCommand()
             tachi_image_surface[i] = NULL;
         }
 
-        effect_no = readInt( &p_string_buffer );
-        i = readInt( &p_string_buffer );
-        readStr( &p_string_buffer, tmp_string_buffer );
-        makeEffectStr( buf, effect_no, i, tmp_string_buffer );
-
-        if ( effect_no == 0 ) return setEffect( RET_CONTINUE, buf );
-        else{
-            return setEffect( RET_WAIT_NEXT, buf );
-        }
+        char *buf = new char[ 512 ];
+        sprintf( buf, "bg \"%s\",",tmp_string_buffer );
+        makeEffectStr( &p_string_buffer, buf );
+        if ( tmp_effect.effect == 0 ) return setEffect( RET_CONTINUE, buf );
+        else                          return setEffect( RET_WAIT_NEXT, buf );
     }
-    
-    return RET_CONTINUE;
 }
 
 int ONScripterLabel::autoclickCommand()

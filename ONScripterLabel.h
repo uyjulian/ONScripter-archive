@@ -249,7 +249,8 @@ private:
     int effect_start_time_old;
     bool first_mouse_over_flag;
     
-    void makeEffectStr( char *buf, int no, int duration, char *image );
+    int readEffect( char **buf, struct EffectLink *effect );
+    void makeEffectStr( char **buf, char *dst_buf );
     int  setEffect( int immediate_flag, char *buf );
     int doEffect( int effect_no, struct TaggedInfo *tag, int effect_image );
 
@@ -346,7 +347,7 @@ private:
                      int x3, int y3, int mask_value );
     int enterTextDisplayMode();
     SDL_Surface *loadPixmap( struct TaggedInfo *tag );
-    void drawTaggedSurface( SDL_Surface *dst_surface, SDL_Rect *pos,
+    void drawTaggedSurface( SDL_Surface *dst_surface, SDL_Rect *pos, SDL_Rect *clip,
                            SDL_Surface *src_surface, TaggedInfo *tagged_info );
     void makeMonochromeSurface( SDL_Surface *surface, SDL_Rect *dst_rect=NULL, bool one_color_flag = true );
     void refreshAccumulationSurface( SDL_Surface *surface, SDL_Rect *rect=NULL );

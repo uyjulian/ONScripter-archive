@@ -877,18 +877,47 @@ bool ScriptParser::readStr( char **src_buf, char *dst_buf )
 void ScriptParser::skipToken( void )
 {
     bool quat_flag = false;
+    bool first_flag = true;
+    bool comma_flag = false;
+    char *buf = string_buffer + string_buffer_offset;
 
     while(1){
-        if ( string_buffer[ string_buffer_offset ] == '\0' ||
-             ( !quat_flag && string_buffer[ string_buffer_offset ] == ':' )) break;
-        if ( string_buffer[ string_buffer_offset ] == '"' )
+        if ( *buf == '\0' ||
+             ( !quat_flag && *buf == ':' ) ||
+             ( !quat_flag && *buf == ';' )) break;
+        else if ( !quat_flag && *buf & 0x80 ){
+            buf += 2;
+            break;
+        }
+        else if ( *buf == '"' ){
             quat_flag = !quat_flag;
-        string_buffer_offset++;
+            while( *buf == ' ' || *buf == '\t' ) buf++;
+        }
+        else if ( !quat_flag && (*buf == ' ' || *buf == '\t') ){
+            while( *buf == ' ' || *buf == '\t' ) buf++;
+            if ( *buf == ',' ){
+                buf++;
+                comma_flag = true;
+                while( *buf == ' ' || *buf == '\t' ) buf++;
+            }
+            if ( !first_flag && !comma_flag ) break;
+            first_flag = false;
+            continue;
+        }
+        else if ( !quat_flag && *buf == ',' ){
+            comma_flag = true;
+        }
+        else
+            comma_flag = false;
+        buf++;
     }
-    if ( string_buffer[ string_buffer_offset ] == ':' ){
-        string_buffer_offset++;
-        while( string_buffer[ string_buffer_offset ] == ' ' || string_buffer[ string_buffer_offset ] == '\t' ) string_buffer_offset++;
+    while ( *buf == ':' ){
+        buf++;
+        while( *buf == ' ' || *buf == '\t' ) buf++;
     }
+    if ( *buf == ';' ) while ( *buf != '\0' ) buf++;
+    //printf("skipToken [%s] to [%s]\n",string_buffer + string_buffer_offset, buf );
+    string_buffer_offset = buf - string_buffer;
 }
 
 struct ScriptParser::EffectLink ScriptParser::getEffect( int effect_no )

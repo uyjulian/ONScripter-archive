@@ -49,6 +49,15 @@ static SDL_TimerID timer_id = NULL;
 #define DEFAULT_CURSOR_WAIT    ":l/3,160,2;cursor0.bmp"
 #define DEFAULT_CURSOR_NEWPAGE ":l/3,160,2;cursor1.bmp"
 
+#define IS_KINSOKU(x)	\
+        ( ( *(x) & 0x80 ) && \
+          ( *(x) == (char)0x81 && *((x)+1) == (char)0x41 ) || \
+          ( *(x) == (char)0x81 && *((x)+1) == (char)0x42 ) || \
+          ( *(x) == (char)0x81 && *((x)+1) == (char)0x48 ) || \
+          ( *(x) == (char)0x81 && *((x)+1) == (char)0x49 ) || \
+          ( *(x) == (char)0x81 && *((x)+1) == (char)0x76 ) || \
+          ( *(x) == (char)0x81 && *((x)+1) == (char)0x5b ) )
+
 typedef int (ONScripterLabel::*FuncList)();
 static struct FuncLUT{
     char command[40];
@@ -416,7 +425,7 @@ int ONScripterLabel::eventLoop()
 void ONScripterLabel::keyPressEvent( SDL_KeyboardEvent *event )
 {
     int i;
-    
+
     if ( skip_flag && event->keysym.sym == SDLK_s) skip_flag = false;
 
     if ( trap_flag && (event->keysym.sym == SDLK_RETURN ||
@@ -1252,7 +1261,7 @@ void ONScripterLabel::drawChar( char* text, struct FontInfo *info, bool flush_fl
 
     //printf("draw %x-%x[%s]\n", text[0], text[1], text);
 
-    if ( !surface ) surface = text_surface;
+    //if ( !surface ) surface = text_surface;
     
     if ( !info->font_valid_flag && info->ttf_font ){
         TTF_CloseFont( (TTF_Font*)info->ttf_font );
@@ -1296,7 +1305,8 @@ void ONScripterLabel::drawChar( char* text, struct FontInfo *info, bool flush_fl
         tmp_surface = TTF_RenderGlyph_Blended( (TTF_Font*)info->ttf_font, unicode, color );
         rect.w = tmp_surface->w;
         rect.h = tmp_surface->h;
-        SDL_BlitSurface( tmp_surface, NULL, surface, &rect );
+        if ( surface )
+            SDL_BlitSurface( tmp_surface, NULL, surface, &rect );
         SDL_FreeSurface( tmp_surface );
     }
 
@@ -1308,7 +1318,8 @@ void ONScripterLabel::drawChar( char* text, struct FontInfo *info, bool flush_fl
     rect.x--;
     rect.w = tmp_surface->w;
     rect.h = tmp_surface->h;
-    SDL_BlitSurface( tmp_surface, NULL, surface, &rect );
+    if ( surface )
+        SDL_BlitSurface( tmp_surface, NULL, surface, &rect );
     if ( tmp_surface ) SDL_FreeSurface( tmp_surface );
     
     if ( flush_flag ) flush( rect.x, rect.y, rect.w + 1, rect.h );
@@ -1399,7 +1410,7 @@ void ONScripterLabel::restoreTextBuffer()
         if ( sentence_font.xy[1] * current_text_buffer->num_xy[0] + sentence_font.xy[0] >= end ) break;
         out_text[0] = current_text_buffer->buffer[ i * 2 ];
         out_text[1] = current_text_buffer->buffer[ i * 2 + 1];
-        drawChar( out_text, &sentence_font, false );
+        drawChar( out_text, &sentence_font, false, text_surface );
     }
     sentence_font.xy[0] = xy[0];
     sentence_font.xy[1] = xy[1];
@@ -1789,6 +1800,12 @@ struct ONScripterLabel::ButtonLink *ONScripterLabel::getSelectableSentence( char
     p_text = buffer;
     while( *p_text ){
         if ( *p_text & 0x80 ){
+            /* Kinsoku process */
+            if ( sentence_font.xy[0] + 1 == sentence_font.num_xy[0] &&
+                 IS_KINSOKU( p_text+2 ) ) {
+                sentence_font.xy[0] = 0;
+                sentence_font.xy[1]++;
+            }
             text[0] = *p_text++;
             text[1] = *p_text++;
         }
@@ -1796,7 +1813,7 @@ struct ONScripterLabel::ButtonLink *ONScripterLabel::getSelectableSentence( char
             text[0] = *p_text++;
             text[1] = '\0';
         }
-        drawChar( text, info, false );
+        drawChar( text, info, false, text_surface );
     }
 
     /* ---------------------------------------- */
@@ -1831,6 +1848,12 @@ struct ONScripterLabel::ButtonLink *ONScripterLabel::getSelectableSentence( char
     p_text = buffer;
     while( *p_text ){
         if ( *p_text & 0x80 ){
+            /* Kinsoku process */
+            if ( sentence_font.xy[0] + 1 == sentence_font.num_xy[0] &&
+                 IS_KINSOKU( p_text+2 ) ) {
+                sentence_font.xy[0] = 0;
+                sentence_font.xy[1]++;
+            }
             text[0] = *p_text++;
             text[1] = *p_text++;
         }
@@ -1838,7 +1861,7 @@ struct ONScripterLabel::ButtonLink *ONScripterLabel::getSelectableSentence( char
             text[0] = *p_text++;
             text[1] = '\0';
         }
-        drawChar( text, info, flush_flag );
+        drawChar( text, info, flush_flag, text_surface );
     }
         
     info->xy[0] = current_text_xy[0];
@@ -2029,7 +2052,7 @@ int ONScripterLabel::clickWait( char *out_text )
     if ( skip_flag || draw_one_page_flag ){
         clickstr_state = CLICK_NONE;
         if ( out_text ){
-            drawChar( out_text, &sentence_font, false );
+            drawChar( out_text, &sentence_font, false, text_surface );
             string_buffer_offset += 2;
         }
         else{
@@ -2040,7 +2063,7 @@ int ONScripterLabel::clickWait( char *out_text )
     }
     else{
         clickstr_state = CLICK_WAIT;
-        if ( out_text ) drawChar( out_text, &sentence_font );
+        if ( out_text ) drawChar( out_text, &sentence_font, true, text_surface );
         event_mode = WAIT_MOUSE_MODE | WAIT_KEY_MODE;
         key_pressed_flag = false;
         if ( autoclick_timer > 0 ){
@@ -2058,7 +2081,7 @@ int ONScripterLabel::clickWait( char *out_text )
 int ONScripterLabel::clickNewPage( char *out_text )
 {
     clickstr_state = CLICK_NEWPAGE;
-    if ( out_text ) drawChar( out_text, &sentence_font, false );
+    if ( out_text ) drawChar( out_text, &sentence_font, false, text_surface );
     if ( skip_flag || draw_one_page_flag ) flush();
     
     if ( skip_flag ){
@@ -2318,13 +2341,7 @@ int ONScripterLabel::textCommand( char *text )
         /* ---------------------------------------- */
         /* Kinsoku process */
         if ( sentence_font.xy[0] + 1 == sentence_font.num_xy[0] &&
-             string_buffer[ string_buffer_offset + 2 ] & 0x80 &&
-             (( string_buffer[ string_buffer_offset + 2 ] == (char)0x81 && string_buffer[ string_buffer_offset + 3 ] == (char)0x41 ) ||
-              ( string_buffer[ string_buffer_offset + 2 ] == (char)0x81 && string_buffer[ string_buffer_offset + 3 ] == (char)0x42 ) ||
-              ( string_buffer[ string_buffer_offset + 2 ] == (char)0x81 && string_buffer[ string_buffer_offset + 3 ] == (char)0x48 ) ||
-              ( string_buffer[ string_buffer_offset + 2 ] == (char)0x81 && string_buffer[ string_buffer_offset + 3 ] == (char)0x49 ) ||
-              ( string_buffer[ string_buffer_offset + 2 ] == (char)0x81 && string_buffer[ string_buffer_offset + 3 ] == (char)0x76 ) ||
-              ( string_buffer[ string_buffer_offset + 2 ] == (char)0x81 && string_buffer[ string_buffer_offset + 3 ] == (char)0x5b )) ){
+             IS_KINSOKU( string_buffer + string_buffer_offset + 2 ) ){
             sentence_font.xy[0] = 0;
             sentence_font.xy[1]++;
         }
@@ -2371,12 +2388,12 @@ int ONScripterLabel::textCommand( char *text )
         }
         else{
             if ( skip_flag || draw_one_page_flag || sentence_font.wait_time == 0 ){
-                drawChar( out_text, &sentence_font, false );
+                drawChar( out_text, &sentence_font, false, text_surface );
                 string_buffer_offset += 2;
                 return RET_CONTINUE;
             }
             else{
-                drawChar( out_text, &sentence_font );
+                drawChar( out_text, &sentence_font, true, text_surface );
                 event_mode = WAIT_SLEEP_MODE;
                 startTimer( sentence_font.wait_time );
                 return RET_WAIT;
@@ -2436,12 +2453,12 @@ int ONScripterLabel::textCommand( char *text )
         printf("read Int %d\n",j);
         sprintf( num_buf, "%d", j);
         if ( j < 0 ){
-            drawChar( "„Ÿ", &sentence_font, false );
+            drawChar( "„Ÿ", &sentence_font, false, text_surface );
             j = -j;
         }
         for ( unsigned int i=0 ; i<strlen(num_buf) ; i++ ){
             getSJISFromInteger( out_text, num_buf[i] - '0', false );
-            drawChar( out_text, &sentence_font, false );
+            drawChar( out_text, &sentence_font, false, text_surface );
         }
         string_buffer_offset = p_string_buffer - string_buffer;
         return RET_CONTINUE;
@@ -2466,12 +2483,12 @@ int ONScripterLabel::textCommand( char *text )
         out_text[0] = ch;
         out_text[1] = '\0';
         if ( skip_flag || draw_one_page_flag || sentence_font.wait_time == 0){
-            drawChar( out_text, &sentence_font, false );
+            drawChar( out_text, &sentence_font, false, text_surface );
             string_buffer_offset++;
             return RET_CONTINUE;
         }
         else{
-            drawChar( out_text, &sentence_font );
+            drawChar( out_text, &sentence_font, true, text_surface );
             event_mode = WAIT_SLEEP_MODE;
             startTimer( sentence_font.wait_time );
             printf("dispatch timer %d\n",sentence_font.wait_time);

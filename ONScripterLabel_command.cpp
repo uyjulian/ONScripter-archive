@@ -306,7 +306,7 @@ int ONScripterLabel::selectCommand()
     int xy[2];
     if ( ret != RET_NOMATCH ) return ret;
 
-    //printf("selectCommand %d\n", event_mode);
+    printf("selectCommand %d\n", event_mode);
     char *p_script_buffer = current_link_label_info->current_script;
     readLine( &p_script_buffer );
     int select_mode;
@@ -335,6 +335,7 @@ int ONScripterLabel::selectCommand()
     //p_string_buffer, string_buffer, string_buffer_offset );
     if ( event_mode & (WAIT_MOUSE_MODE | WAIT_BUTTON_MODE) ){
 
+        printf("current_button_state %d\n",current_button_state.button );
         if ( current_button_state.button == 0 ) return RET_WAIT;
         
         event_mode = IDLE_EVENT_MODE;
@@ -573,7 +574,7 @@ int ONScripterLabel::puttextCommand()
             out_text[0] = tmp_string_buffer[ c++ ];
             out_text[1] = '\0';
         }
-        drawChar( out_text, &sentence_font, false );
+        drawChar( out_text, &sentence_font, false, text_surface );
     }
     flush();
     return RET_CONTINUE;

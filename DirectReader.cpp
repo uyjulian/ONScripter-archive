@@ -178,7 +178,6 @@ size_t DirectReader::getFile( char *file_name, unsigned char *buffer )
 #define READ_LENGTH 4096
 size_t DirectReader::decodeNBZ( FILE *fp, size_t offset, unsigned char *buf )
 {
-    printf("decodeNBZ\n");
     unsigned int original_length, count;
 	BZFILE *bfp;
 	unsigned char *unused;
@@ -195,7 +194,6 @@ size_t DirectReader::decodeNBZ( FILE *fp, size_t offset, unsigned char *buf )
             len = BZ2_bzRead( &err, bfp, buf, READ_LENGTH );
         else
             len = BZ2_bzRead( &err, bfp, buf, count );
-        //printf("read %d\n",len);
         count -= len;
 		buf += len;
 	}

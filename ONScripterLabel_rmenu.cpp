@@ -550,9 +550,10 @@ void ONScripterLabel::executeSystemMenu()
 
 void ONScripterLabel::executeSystemSkip()
 {
-    //printf("ONScripterLabel::executeSystemSkip() %d\n", event_mode );
+    //printf("ONScripterLabel::executeSystemSkip() %d %d\n", shelter_event_mode, skip_flag );
     skip_flag = true;
-    shelter_event_mode |= WAIT_SLEEP_MODE;
+    if ( !(shelter_event_mode & WAIT_BUTTON_MODE) )
+        shelter_event_mode |= WAIT_SLEEP_MODE;
     leaveSystemCall();
 }
 
@@ -614,7 +615,7 @@ void ONScripterLabel::executeSystemLoad()
         for ( i=0 ; i<strlen( load_menu_name )/2 ; i++ ){
             out_text[0] = load_menu_name[i*2];
             out_text[1] = load_menu_name[i*2+1];
-            drawChar( out_text, &system_font );
+            drawChar( out_text, &system_font, true, text_surface );
         }
 
         system_font.xy[1] += 2;
@@ -681,7 +682,7 @@ void ONScripterLabel::executeSystemSave()
         for ( i=0 ; i<strlen( save_menu_name )/2 ; i++ ){
             out_text[0] = save_menu_name[i*2];
             out_text[1] = save_menu_name[i*2+1];
-            drawChar( out_text, &system_font );
+            drawChar( out_text, &system_font, true, text_surface );
         }
 
         system_font.xy[1] += 2;

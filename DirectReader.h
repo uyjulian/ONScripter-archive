@@ -42,10 +42,10 @@ public:
     int getNumFiles();
     int getNumAccessed();
 
-    bool getAccessFlag( char *file_name );
+    bool getAccessFlag( const char *file_name );
     struct FileInfo getFileByIndex( int index );
-    size_t getFileLength( char *file_name );
-    size_t getFile( char *file_name, unsigned char *buffer );
+    size_t getFileLength( const char *file_name );
+    size_t getFile( const char *file_name, unsigned char *buffer );
 
 protected:
     char *archive_path;
@@ -61,7 +61,7 @@ protected:
     size_t decodeSPB( FILE *fp, size_t offset, unsigned char *buf );
 
 private:
-    FILE *getFileHandle( char *file_name, int &compression_type, size_t *length );
+    FILE *getFileHandle( const char *file_name, int &compression_type, size_t *length );
 };
 
 #endif // __DIRECT_READER_H__

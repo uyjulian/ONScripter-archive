@@ -81,10 +81,10 @@ struct BaseReader
     virtual int getNumFiles() = 0;
     virtual int getNumAccessed() = 0;
 
-    virtual bool getAccessFlag( char *file_name ) = 0;
+    virtual bool getAccessFlag( const char *file_name ) = 0;
     virtual struct FileInfo getFileByIndex( int index ) = 0;
-    virtual size_t getFileLength( char *file_name ) = 0;
-    virtual size_t getFile( char *file_name, unsigned char *buffer ) = 0;
+    virtual size_t getFileLength( const char *file_name ) = 0;
+    virtual size_t getFile( const char *file_name, unsigned char *buffer ) = 0;
 };
 
 #endif // __BASE_READER_H__

@@ -47,9 +47,9 @@ static struct FuncLUT{
     char command[40];
     FuncList method;
 } func_lut[] = {
-    {"windoweffect",      &ScriptParser::effectCommand},
-    {"windowback",      &ScriptParser::windowbackCommand},
-    {"versionstr",      &ScriptParser::versionstrCommand},
+    {"windoweffect", &ScriptParser::effectCommand},
+    {"windowback", &ScriptParser::windowbackCommand},
+    {"versionstr", &ScriptParser::versionstrCommand},
     {"usewheel", &ScriptParser::usewheelCommand},
     {"underline", &ScriptParser::underlineCommand},
     {"transmode", &ScriptParser::transmodeCommand},
@@ -67,6 +67,7 @@ static struct FuncLUT{
     {"rmenu",    &ScriptParser::rmenuCommand},
     {"return",   &ScriptParser::returnCommand},
     {"numalias", &ScriptParser::numaliasCommand},
+    {"nsadir",    &ScriptParser::nsadirCommand},
     {"nsa",    &ScriptParser::nsaCommand},
     {"notif",    &ScriptParser::ifCommand},
     {"next",    &ScriptParser::nextCommand},
@@ -93,6 +94,7 @@ static struct FuncLUT{
     {"lookbackbutton",      &ScriptParser::lookbackbuttonCommand},
     {"len",      &ScriptParser::lenCommand},
     {"labellog",      &ScriptParser::labellogCommand},
+    {"kidokuskip", &ScriptParser::kidokuskipCommand},
     {"itoa", &ScriptParser::itoaCommand},
     {"intlimit", &ScriptParser::intlimitCommand},
     {"inc",      &ScriptParser::incCommand},
@@ -124,34 +126,25 @@ static struct FuncLUT{
     {"", NULL}
 };
     
-ScriptParser::ScriptParser()
+ScriptParser::ScriptParser( char *path )
 {
     unsigned int i;
     
-    script_buffer = NULL;
-
     debug_level = 0;
 
     archive_path = "";
+    nsa_path = "";
     globalon_flag = false;
     filelog_flag = false;
     labellog_flag = false;
-    num_of_label_accessed = 0;
+    kidokuskip_flag = false;
     rmode_flag = true;
     windowback_flag = false;
     usewheel_flag = false;
-    text_line_flag = false;
     mode_saya_flag = false;
     
-    num_of_labels = 0;
-    label_info = NULL;
-
     string_buffer_offset = 0;
-    string_buffer_length = 512;
-    string_buffer = new char[ string_buffer_length ];
-    tmp_string_buffer  = new char[ string_buffer_length ];
-    line_cache = -1;
-    
+
     /* ---------------------------------------- */
     /* Global definitions */
 #if defined(PDA)
@@ -172,7 +165,7 @@ ScriptParser::ScriptParser()
     jumpf_flag = false;
     srand( time(NULL) );
     z_order = 25;
-    end_with_comma_flag = false;
+    //script_h->end_with_comma_flag = false;
     
     /* ---------------------------------------- */
     /* Lookback related variables */
@@ -274,20 +267,7 @@ ScriptParser::ScriptParser()
     /* System customize related variables */
     textgosub_label = NULL;
 
-    /* ---------------------------------------- */
-    for ( i=0 ; i<VARIABLE_RANGE ; i++ ){
-        num_variables[i] = 0;
-        num_limit_flag[i] = false;
-        str_variables[i] = new char[1];
-        str_variables[i][0] = '\0';
-    }
-
     effect_blank = MINIMUM_TIMER_RESOLUTION;
-    
-    last_name_alias = &root_name_alias;
-    last_name_alias->next = NULL;
-    last_str_alias = &root_str_alias;
-    last_str_alias->next = NULL;
 
     /* ---------------------------------------- */
     /* Effect related variables */
@@ -297,23 +277,17 @@ ScriptParser::ScriptParser()
     last_effect_link = &root_effect_link;
     last_effect_link->next = NULL;
 
-    strcpy( string_buffer, "effect 1,1" );
+    if ( open( path ) ) exit(-1);
+    
     current_mode = DEFINE_MODE;
+    script_h.pushCurrent( "effect 1,1" );
     effectCommand();
-    current_mode = NORMAL_MODE;
+    script_h.popCurrent();
+    //current_mode = NORMAL_MODE;
 }
 
 ScriptParser::~ScriptParser()
 {
-    printf("Deconstructor\n");
-    int i;
-
-    for ( i=0 ; i<num_of_labels ; i++ )
-        delete[] label_info[i].name;
-    if ( label_info ) delete[] label_info;
-    if ( script_buffer ) delete[] script_buffer;
-    delete[] string_buffer;
-    delete[] tmp_string_buffer;
 }
 
 int ScriptParser::open( char *path )
@@ -322,26 +296,38 @@ int ScriptParser::open( char *path )
         archive_path = new char[ strlen(path) + 2 ];
         sprintf( archive_path, "%s%c", path, DELIMITER );
     }
+    script_h.cBR = new DirectReader( archive_path );
+    script_h.cBR->open();
     
-    cBR = new DirectReader( archive_path );
-    cBR->open();
-    
-    if ( readScript() ) return -1;
-    if ( labelScript() ) return -1;
-    
+    if ( script_h.readScript( archive_path ) ) return -1;
+
+    if ( script_h.svga_flag ){
+#if defined(PDA)
+        screen_ratio1 = 2;
+        screen_ratio2 = 5;
+#else
+        screen_ratio1 = 1;
+        screen_ratio2 = 1;
+#endif
+        screen_width  = 800 * screen_ratio1 / screen_ratio2;
+        screen_height = 600 * screen_ratio1 / screen_ratio2;
+    }
+    underline_value = screen_height - 1;
+
     label_stack_depth = 0;
 
     root_link_label_info.previous = NULL;
     root_link_label_info.next = NULL;
     root_link_label_info.current_line = 0;
-    root_link_label_info.offset = 0;
-    root_link_label_info.label_info = lookupLabel("define");
+
+    root_link_label_info.label_info = script_h.lookupLabel("define");
+    script_h.setCurrent( root_link_label_info.label_info.start_address );
+
     current_mode = DEFINE_MODE;
     current_link_label_info = &root_link_label_info;
 
-    last_tilde.label_info = lookupLabel( "start" );
+    last_tilde.label_info = script_h.lookupLabel( "start" );
     last_tilde.current_line = 0;
-    last_tilde.offset = 0;
     
     return 0;
 }
@@ -363,116 +349,6 @@ void ScriptParser::getSJISFromInteger( char *buffer, int no, bool add_space_flag
     buffer[c++] = '\0';
 }
 
-int ScriptParser::readScript()
-{
-    FILE *fp;
-    char file_name[10];
-    int  i, j, file_counter = 0, c;
-    long len;
-    bool encrypt_flag = false;
-    char *p_script_buffer;
-    
-    script_buffer_length = 0;
-    
-    if ( (fp = fopen( "0.txt", "rb" )) != NULL ){
-        do{
-            fseek( fp, 0, SEEK_END );
-            script_buffer_length += ftell( fp ) + 2;
-            sprintf( file_name, "%d.txt", ++file_counter );
-            fclose( fp );
-        }
-        while( (fp = fopen( file_name, "rb" )) != NULL );
-    }
-    else if ( (fp = fopen( "nscript.dat", "rb" )) != NULL ){
-        encrypt_flag = true;
-        fseek( fp, 0, SEEK_END );
-        script_buffer_length += ftell( fp );
-        fclose( fp );
-    }
-    else{
-        fprintf( stderr, "can't open file 0.txt or nscript.dat\n" );
-        return -1;
-    }
-    
-    if ( script_buffer ) delete[] script_buffer;
-    if ( ( script_buffer = new char[ script_buffer_length ]) == NULL ){
-        printf(" *** can't allocate memory for the script ***\n");
-        exit( -1 );
-    }
-    p_script_buffer = script_buffer;
-    
-    if ( encrypt_flag ){
-        fp = fopen( "nscript.dat", "rb" );
-        fseek( fp, 0, SEEK_END );
-        len = ftell( fp );
-        fseek( fp, 0, SEEK_SET );
-        while( len > 0 ){
-            if ( len > READ_LENGTH ) c = READ_LENGTH;
-            else                     c = len;
-            len -= c;
-            fread( p_script_buffer, 1, c, fp );
-            for ( j=0 ; j<c ; j++ ) p_script_buffer[j] ^= 0x84;
-            p_script_buffer += c;
-        }
-        fclose( fp );
-    }
-    else{
-        for ( i=0 ; i<file_counter ; i++ ){
-            sprintf( file_name, "%d.txt", i );
-            fp = fopen( file_name, "rb" );
-            printf("opening %s\n",file_name);
-            fseek( fp, 0, SEEK_END );
-            len = ftell( fp );
-            fseek( fp, 0, SEEK_SET );
-            while( len > 0 ){
-                if ( len > READ_LENGTH ) c = READ_LENGTH;
-                else                     c = len;
-                len -= c;
-                fread( p_script_buffer, 1, c, fp );
-                p_script_buffer += c;
-            }
-            fclose( fp );
-            *p_script_buffer++ = 0x0d;
-            *p_script_buffer++ = 0x0a;
-        }
-    }
-
-    /* ---------------------------------------- */
-    /* 800 x 600 check */
-    if ( !strncmp( script_buffer, ";mode800", 8 ) ){
-#if defined(PDA)
-        screen_ratio1 = 2;
-        screen_ratio2 = 5;
-#else
-        screen_ratio1 = 1;
-        screen_ratio2 = 1;
-#endif
-        screen_width  = 800 * screen_ratio1 / screen_ratio2;
-        screen_height = 600 * screen_ratio1 / screen_ratio2;
-    }
-    underline_value = screen_height - 1;
-         
-    return 0;
-}
-
-void ScriptParser::addStringBuffer( char ch, int string_counter )
-{
-    /* In case of string bufer over flow */
-    if ( string_counter == string_buffer_length ){
-        string_buffer_length += 512;
-        char *tmp_buffer = new char[ string_buffer_length ];
-        memcpy( tmp_buffer, string_buffer, string_counter );
-
-        delete[] string_buffer;
-        string_buffer = tmp_buffer;
-
-        delete[] tmp_string_buffer;
-        tmp_string_buffer = new char[ string_buffer_length ];
-    }
-
-    string_buffer[string_counter] = ch;
-}
-
 unsigned char ScriptParser::convHexToDec( char ch )
 {
     if ( '0' <= ch && ch <= '9' ) return ch - '0';
@@ -481,265 +357,24 @@ unsigned char ScriptParser::convHexToDec( char ch )
     else return 0;
 }
 
-void ScriptParser::readColor( uchar3 *color, char *buf ){
+void ScriptParser::readColor( uchar3 *color, const char *buf ){
     (*color)[0] = convHexToDec( buf[0] ) << 4 | convHexToDec( buf[1] );
     (*color)[1] = convHexToDec( buf[2] ) << 4 | convHexToDec( buf[3] );
     (*color)[2] = convHexToDec( buf[4] ) << 4 | convHexToDec( buf[5] );
-}
-
-int ScriptParser::skipLine( char **buf )
-{
-    char *end_point = script_buffer + script_buffer_length;
-
-    while( 1 ){
-        if ( *buf == end_point ) return -1;
-        if ( *(*buf)++ == 0x0a ) break;
-    }
-
-    return 0;
-}
-
-int ScriptParser::readLine( char **buf, bool raw_flag )
-{
-    char ch;
-    int string_counter=0, no;
-    char *end_point = script_buffer + script_buffer_length;
-    bool head_flag = true;
-    bool text_flag = true;
-    char num_buf[10], num_sjis_buf[3];
-    bool quat_flag = false, comment_flag = false;
-    unsigned int i;
-
-    text_line_flag = false;
-    
-    while( 1 ){
-        if ( *buf == end_point ) return -1;
-        ch = *(*buf)++;
-        
-        if ( head_flag && (ch == ' ' || ch == '\t' || ch == ':' ) ){
-            continue;
-        }
-
-        if ( ch == 0x0d ) continue;
-        if ( ch == 0x0a ) break;
-
-        if ( comment_flag ) continue;
-        if ( raw_flag ){
-            addStringBuffer( ch, string_counter++ );
-            head_flag = false;
-            continue;
-        }
-
-        /* Parser */
-        if ( !quat_flag && ch == ';' ){
-            if ( head_flag ) addStringBuffer( ch, string_counter++ );
-            comment_flag = true;
-        }
-        else if ( (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') ){
-            if ( head_flag ) text_flag = false;
-            if ( !text_flag && !quat_flag && ch >= 'A' && ch <= 'Z' ) ch += 'a' - 'A';
-            addStringBuffer( ch, string_counter++ );
-        }
-        else if ( ch == '$' ){
-            if ( text_flag ){
-                no = readInt( buf );
-                if ( str_variables[no] ){
-                    for ( i=0 ; i<strlen( str_variables[no] ) ; i++ ){
-                        addStringBuffer( str_variables[no][i], string_counter++ );
-                    }
-                }
-                if ( end_with_comma_flag ) addStringBuffer( ',', string_counter++ );
-            }
-            else{
-                addStringBuffer( '$', string_counter++ );
-            }
-        }
-        else if ( ch == '%' || ch == '?'){
-            if ( text_flag ){
-                (*buf)--;
-                no = readInt( buf );
-                if ( no<0 ){
-                    addStringBuffer( "|"[0], string_counter++ );
-                    addStringBuffer( "|"[1], string_counter++ );
-                    sprintf( num_buf, "%d", -no );
-                }
-                else{
-                    sprintf( num_buf, "%d", no );
-                }
-                for ( i=0 ; i<strlen( num_buf ) ; i++ ){
-                    getSJISFromInteger( num_sjis_buf, num_buf[i] - '0', false );
-                    addStringBuffer( num_sjis_buf[0], string_counter++ );
-                    addStringBuffer( num_sjis_buf[1], string_counter++ );
-                }
-                if ( end_with_comma_flag ) addStringBuffer( ',', string_counter++ );
-            }
-            else{
-                addStringBuffer( ch, string_counter++ );
-            }
-        }
-        else if ( ch == '"' ){
-            quat_flag = !quat_flag;
-            addStringBuffer( ch, string_counter++ );
-        }
-        else if ( ch & 0x80 ){
-            addStringBuffer( ch, string_counter++ );
-            ch = *(*buf)++;
-            addStringBuffer( ch, string_counter++ );
-            if ( !quat_flag )
-                text_flag = true;
-        }
-        else if ( (ch == '@' || ch == '\\') && textgosub_label ){
-            addStringBuffer( ch, string_counter++ );
-            if ( !quat_flag ){
-                head_flag = true;
-                text_flag = true;
-                continue;
-            }
-        }
-        else{
-            addStringBuffer( ch, string_counter++ );
-        }
-
-        head_flag = false;
-        if ( ch == ':' ) head_flag = true;
-    }
-
-    addStringBuffer( '\0', string_counter++ );
-
-    string_buffer_offset = 0;
-    while ( string_buffer[ string_counter ] == ' ' || string_buffer[ string_counter ] == '\t' )
-        string_counter++;
-
-    return 0;
-}
-
-int ScriptParser::findLabel( const char *label )
-{
-    int i;
-    char *capital_label = new char[ strlen( label ) + 1 ];
-
-    for ( i=0 ; i<(int)strlen( label )+1 ; i++ ){
-        capital_label[i] = label[i];
-        if ( 'a' <= capital_label[i] && capital_label[i] <= 'z' ) capital_label[i] += 'A' - 'a';
-    }
-
-    for ( i=0 ; i<num_of_labels ; i++ )
-        if ( !strcmp( label_info[i].name, capital_label ) ){
-            delete[] capital_label;
-            return i;
-        }
-
-    delete[] capital_label;
-    return -1;
-}
-
-bool ScriptParser::getLabelAccessFlag( const char *label )
-{
-    int i = findLabel( label );
-    if ( i >= 0 ){
-        return label_info[i].access_flag;
-    }
-
-    return false;
-}
-
-struct ScriptParser::LabelInfo ScriptParser::lookupLabel( const char *label )
-{
-    int i = findLabel( label );
-    if ( i >= 0 ){
-        if ( !label_info[i].access_flag ) num_of_label_accessed++;
-        label_info[i].access_flag = true;
-        return label_info[i];
-    }
-
-    errorAndExit( string_buffer + string_buffer_offset, "Label is not found." );
-    return label_info[0];
-}
-
-struct ScriptParser::LabelInfo ScriptParser::lookupLabelNext( const char *label )
-{
-    int i = findLabel( label );
-    if ( i >= 0 && i+1 < num_of_labels ){
-        if ( !label_info[i+1].access_flag ) num_of_label_accessed++;
-        label_info[i+1].access_flag = true;
-        return label_info[i+1];
-    }
-
-    errorAndExit( string_buffer + string_buffer_offset, "Label is not found." );
-    return label_info[0];
-}
-
-int ScriptParser::labelScript()
-{
-    char *p_script_buffer = script_buffer, *p_script_buffer_old, *p_start_buffer = NULL;
-    char *p_string_buffer = NULL;
-    bool first_flag = true;
-    int  label_counter = -1;
-    
-    num_of_labels = 0;
-
-    p_script_buffer_old = p_script_buffer;
-    while( !readLine( &p_script_buffer, true ) ){
-        if ( string_buffer[0] == '*' ){
-            if ( first_flag ){
-                first_flag = false;
-                p_start_buffer = p_script_buffer_old;
-            }
-            num_of_labels++;
-        }
-        p_script_buffer_old = p_script_buffer;
-    }
-
-    label_info = new struct LabelInfo[ num_of_labels ];
-
-    p_script_buffer = p_start_buffer;
-    while( !readLine( &p_script_buffer, true ) ){
-        if ( string_buffer[0] == '*' ){
-            p_string_buffer = string_buffer + 1;
-            readToken( &p_string_buffer, tmp_string_buffer );
-            label_info[ ++label_counter ].name = new char[ strlen(tmp_string_buffer) + 1 ];
-            for ( unsigned int i=0 ; i<strlen(tmp_string_buffer) + 1 ; i++ ){
-                label_info[ label_counter ].name[i] = tmp_string_buffer[i];
-                if ( 'a' <= label_info[ label_counter ].name[i] && label_info[ label_counter ].name[i] <= 'z' )
-                    label_info[ label_counter ].name[i] += 'A' - 'a';
-            }
-            label_info[ label_counter ].start_address = p_script_buffer;
-            label_info[ label_counter ].num_of_lines  = 0;
-            label_info[ label_counter ].access_flag   = false;
-        }
-        else{
-            label_info[ label_counter ].num_of_lines++;
-        }
-    }
-
-    return 0;
 }
 
 int ScriptParser::parseLine()
 {
     int ret, lut_counter = 0;
 
-    while( string_buffer[ string_buffer_offset ] == ' ' ||
-           string_buffer[ string_buffer_offset ] == '\t' ) string_buffer_offset++;
-    if ( text_line_flag ) return RET_NOMATCH;
-    if ( string_buffer[ string_buffer_offset ] == ':' ){
-        string_buffer_offset++;
-        return RET_CONTINUE;
-    }
-    if ( string_buffer[ string_buffer_offset ] == '\0' || string_buffer[ string_buffer_offset ] == ';' ) return RET_COMMENT;
-    else if ( string_buffer[ string_buffer_offset ] & 0x80 ) return RET_NOMATCH;
+    if ( script_h.getStringBuffer()[0] == ';' ) return RET_COMMENT;
+    else if ( script_h.isText() ) return RET_NOMATCH;
 
-    char *p_string_buffer = string_buffer + string_buffer_offset;
-    if ( debug_level > 0 ) printf("ScriptParser::Parseline %d %d %s\n",text_line_flag, string_buffer_offset,p_string_buffer );
-    readToken( &p_string_buffer, tmp_string_buffer );
+    if ( debug_level > 0 ) printf("ScriptParser::Parseline %s\n", script_h.getStringBuffer() );
 
     while( func_lut[ lut_counter ].method ){
-        if ( !strcmp( func_lut[ lut_counter ].command, tmp_string_buffer ) ){
-            ret = (this->*func_lut[ lut_counter ].method)();
-            if ( ret == RET_CONTINUE || ret == RET_WAIT_NEXT ){
-                skipToken();
-            }
-            break;
+        if ( !strcmp( func_lut[ lut_counter ].command, script_h.getStringBuffer() ) ){
+            return (this->*func_lut[ lut_counter ].method)();
         }
         lut_counter++;
     }
@@ -749,209 +384,33 @@ int ScriptParser::parseLine()
     return ret;
 }
 
-
-bool ScriptParser::readToken( char **src_buf, char *dst_buf, bool skip_space_flag )
+void ScriptParser::skipToken() // skip phrase
 {
-    bool first_flag = true;
-    bool quat_flag = false;
-
-    end_with_comma_flag = false;
-#if 0
-    /* If it reaces to the end of the buffer, just return. */
-    if ( *src_buf >= string_buffer + strlen(string_buffer) ){
-        dst_buf[0] = '\0';
-        return end_with_comma_flag;
+    string_buffer_offset = 0;
+    while( 1 )
+    {
+        if ( script_h.readToken() ) continue;
+        if ( script_h.getStringBuffer()[0] == ':' ) break;
+        if ( script_h.getStringBuffer()[0] == 0x0a ) break;
     }
-#endif
-    /* ---------------------------------------- */
-    /* Get a single word */
-    SKIP_SPACE( *src_buf );
-
-    //printf("token start %c:\n", **src_buf);
-    if ( **src_buf == '"' ){
-        quat_flag = true;
-        (*src_buf)++;
-    }
-    while ( **src_buf != '\0' &&
-            **src_buf != '"' &&
-            (quat_flag || ( **src_buf != ',' &&
-                            **src_buf != ':' &&
-                            **src_buf != ';' &&
-                            **src_buf != '<' &&
-                            **src_buf != '>' &&
-                            **src_buf != '=' &&
-                            **src_buf != '!' &&
-                            **src_buf != '&' &&
-                            **src_buf != ')' &&
-                            !(**src_buf & 0x80) ) ) &&
-            ( quat_flag || skip_space_flag || ( **src_buf != ' ' &&
-                                                **src_buf != '\t' ) ) &&
-            ( quat_flag || first_flag || (**src_buf != '#' &&
-                                          **src_buf != '-' &&
-                                          **src_buf != '*' ) )
-            ){
-        if ( **src_buf & 0x80 ) {
-            *dst_buf++ = *(*src_buf)++;
-            *dst_buf++ = *(*src_buf)++;
-        }
-        else{
-            *dst_buf++ = *(*src_buf)++;
-        }
-        first_flag = false;
-    }
-
-    if ( quat_flag && **src_buf == '"' ) (*src_buf)++;
-    SKIP_SPACE( *src_buf );
-
-    if ( **src_buf == ')' ) (*src_buf)++;
-    SKIP_SPACE( *src_buf );
-    
-    if ( **src_buf == ',' ){
-        end_with_comma_flag = true;
-        (*src_buf)++;
-        SKIP_SPACE( *src_buf );
-    }
-    *dst_buf++ = '\0';
-    
-    return end_with_comma_flag;
 }
 
-bool ScriptParser::readStr( char **src_buf, char *dst_buf )
-{
-    bool condition_flag = false;
-    bool ret;
-    
-    SKIP_SPACE( *src_buf );
-    if ( (*src_buf)[0] == '(' ){
-        condition_flag = true;
-        (*src_buf)++;
-        readStr( src_buf, dst_buf );
-    }
-    else{
-        ret = readToken( src_buf, dst_buf );
-    }
-
-    if ( condition_flag ){ // check condition code
-        if ( cBR->getAccessFlag( dst_buf ) ){
-            ret = readStr( src_buf, dst_buf );
-            char *buf = new char[ strlen( dst_buf ) + 1 ];
-            memcpy( buf, dst_buf, strlen( dst_buf ) + 1 );
-            readStr( src_buf, dst_buf );
-            memcpy( dst_buf, buf, strlen( buf ) + 1 );
-            delete[] buf;
-        }
-        else{
-            readStr( src_buf, dst_buf );
-            ret = readStr( src_buf, dst_buf );
-        }
-    }
-    
-    if ( dst_buf[0] == '$' ){
-        char *p_dst_buf = dst_buf+1;
-        int no = readInt( &p_dst_buf );
-        sprintf( dst_buf, "%s", str_variables[ no ] );
-    }
-    else{
-        /* ---------------------------------------- */
-        /* Solve str aliases */
-        StringAlias *p_str_alias = root_str_alias.next;
-
-        while( p_str_alias ){
-            if ( !strcmp( p_str_alias->alias, (const char*)dst_buf ) ){
-                memcpy( dst_buf, p_str_alias->str, strlen( p_str_alias->str ) + 1 );
-                break;
-            }
-            p_str_alias = p_str_alias->next;
-        }
-    }
-    return ret;
-}
-
-void ScriptParser::skipToken()
-{
-    bool quat_flag = false;
-    bool first_flag = true;
-    bool comma_flag = false;
-    char *buf = string_buffer + string_buffer_offset;
-
-    if ( *buf & 0x80 ){
-        buf += 2;
-    }
-    else while(1){
-        if ( *buf == '\0' ||
-             ( !quat_flag && *buf == ':' ) ||
-             ( !quat_flag && *buf == ';' )) break;
-        else if ( !quat_flag && *buf & 0x80 ){
-            //buf += 2;
-            break;
-        }
-        else if ( *buf == '"' ){
-            quat_flag = !quat_flag;
-        }
-        else if ( !quat_flag && (*buf == ' ' || *buf == '\t') ){
-            SKIP_SPACE( buf );
-            if ( *buf == ',' ){
-                buf++;
-                comma_flag = true;
-                SKIP_SPACE( buf );
-            }
-            if ( !first_flag && !comma_flag ) break;
-            first_flag = false;
-            continue;
-        }
-        else if ( !quat_flag && *buf == ',' ){
-            comma_flag = true;
-        }
-        else if ( !quat_flag && (*buf == '%' || *buf == '$' ) ){
-            buf++;
-            SKIP_SPACE( buf );
-            continue;
-        }
-        else if ( !quat_flag && (*buf == '?' ) ){
-            while ( *(buf++) != '[' );
-            int c = 1;
-            while ( c > 0 ){
-                if ( *buf == '[' ) c++;
-                else if ( *buf == ']' ) c--;
-                buf++;
-            }
-            continue;
-        }
-        else if ( !quat_flag && (*buf == '@' || *buf == '\\') && textgosub_label ){
-            comma_flag = false;
-            break;
-        }
-        else
-            comma_flag = false;
-        buf++;
-    }
-    while ( *buf == ':' ){
-        buf++;
-        SKIP_SPACE( buf );
-    }
-    if ( *buf == ';' ) while ( *buf != '\0' ) buf++;
-    //printf("skipToken [%s] to [%s]\n",string_buffer + string_buffer_offset, buf );
-    string_buffer_offset = buf - string_buffer;
-}
-
-struct ScriptParser::EffectLink ScriptParser::getEffect( int effect_no )
+ScriptParser::EffectLink ScriptParser::getEffect( int effect_no )
 {
     if      ( effect_no == WINDOW_EFFECT ) return window_effect;
-    else if ( effect_no == PRINT_EFFECT )  return print_effect;
     else if ( effect_no == TMP_EFFECT )    return tmp_effect;
-    else if ( effect_no == QUAKE_EFFECT )  return quake_effect;
     
-    EffectLink *p_effect_link = &root_effect_link;
-    while( p_effect_link ){
-        if ( p_effect_link->num == effect_no ) return *p_effect_link;
-        p_effect_link = p_effect_link->next;
+    EffectLink *link = &root_effect_link;
+    while( link ){
+        if ( link->num == effect_no ) return *link;
+        link = link->next;
     }
 
     fprintf( stderr, "no effect was found [%d]\n", effect_no );
     exit(-1);
 }
 
-int ScriptParser::getSystemCallNo( char *buffer )
+int ScriptParser::getSystemCallNo( const char *buffer )
 {
     if      ( !strcmp( buffer, "skip" ) )        return SYSTEM_SKIP;
     else if ( !strcmp( buffer, "reset" ) )       return SYSTEM_RESET;
@@ -999,7 +458,7 @@ void ScriptParser::loadFileLog()
             while( (ch = fgetc( fp )) != '"' ) buf[j++] = ch ^ 0x84;
             buf[j] = '\0';
 
-            cBR->getFileLength( buf );
+            script_h.cBR->getFileLength( buf );
         }
 
         fclose( fp );
@@ -1020,47 +479,17 @@ void ScriptParser::saveFileLog()
         exit( -1 );
     }
 
-    sprintf( buf, "%d", cBR->getNumAccessed() );
+    sprintf( buf, "%d", script_h.cBR->getNumAccessed() );
     for ( i=0 ; i<(int)strlen( buf ) ; i++ ) fputc( buf[i], fp );
     fputc( 0x0a, fp );
     
     SarReader::FileInfo fi;
-    for ( i=0 ; i<cBR->getNumFiles() ; i++ ){
-        fi = cBR->getFileByIndex( i );
+    for ( i=0 ; i<script_h.cBR->getNumFiles() ; i++ ){
+        fi = script_h.cBR->getFileByIndex( i );
         if ( fi.access_flag ){
             fputc( '"', fp );
             for ( j=0 ; j<(int)strlen( fi.name ) ; j++ )
                 fputc( fi.name[j] ^ 0x84, fp );
-            fputc( '"', fp );
-        }
-    }
-    
-    fclose( fp );
-}
-
-void ScriptParser::saveLabelLog()
-{
-    if ( !labellog_flag ) return;
-    printf(" saveLabelLog\n" );
-
-    FILE *fp;
-    int  i;
-    char buf[10];
-
-    if ( ( fp = fopen( "NScrllog.dat", "wb" ) ) == NULL ){
-        fprintf( stderr, "can't write NScrllog.dat\n" );
-        exit( -1 );
-    }
-
-    sprintf( buf, "%d", num_of_label_accessed );
-    for ( i=0 ; i<(int)strlen( buf ) ; i++ ) fputc( buf[i], fp );
-    fputc( 0x0a, fp );
-    
-    for ( i=0 ; i<num_of_labels ; i++ ){
-        if ( label_info[i].access_flag ){
-            fputc( '"', fp );
-            for ( unsigned j=0 ; j<strlen( label_info[i].name ) ; j++ )
-                fputc( label_info[i].name[j] ^ 0x84, fp );
             fputc( '"', fp );
         }
     }
@@ -1127,210 +556,64 @@ void ScriptParser::loadStr( FILE *fp, char **str )
 void ScriptParser::saveVariables( FILE *fp, int from, int to )
 {
     for ( int i=from ; i<to ; i++ ){
-        saveInt( fp, num_variables[i] );
-        saveStr( fp, str_variables[i] );
+        saveInt( fp, script_h.num_variables[i] );
+        saveStr( fp, script_h.str_variables[i] );
     }
 }
 
 void ScriptParser::loadVariables( FILE *fp, int from, int to )
 {
     for ( int i=from ; i<to ; i++ ){
-        loadInt( fp, &num_variables[i] );
-        loadStr( fp, &str_variables[i] );
-        if ( str_variables[i] == NULL ){
-            str_variables[i] = new char[1];
-            str_variables[i][0] = '\0';
+        loadInt( fp, &script_h.num_variables[i] );
+        loadStr( fp, &script_h.str_variables[i] );
+        if ( script_h.str_variables[i] == NULL ){
+            script_h.str_variables[i] = new char[1];
+            script_h.str_variables[i][0] = '\0';
         }
     }
 }
 
-void ScriptParser::errorAndExit( char *str, char *reason )
+void ScriptParser::errorAndExit( const char *str, const char *reason )
 {
     if ( reason )
-        fprintf( stderr, " *** Invalid command [%s]; %s ***\n", str, reason );
+        fprintf( stderr, " *** Parse error at %s:%d [%s]; %s ***\n",
+                 current_link_label_info->label_info.name,
+                 current_link_label_info->current_line,
+                 str, reason );
     else
-        fprintf( stderr, " *** Invalid command [%s] ***\n", str );
+        fprintf( stderr, " *** Parse error at %s:%d [%s] ***\n",
+                 current_link_label_info->label_info.name,
+                 current_link_label_info->current_line,
+                 str );
     exit(-1);
 }
 
-int ScriptParser::decodeArraySub( char **buf, struct ArrayVariable *array )
-{
-    SKIP_SPACE( *buf );
-    
-    (*buf)++; // skip '?'
-    int no = readInt( buf );
-
-    SKIP_SPACE( *buf );
-    array->num_dim = 0;
-    while ( **buf == '[' ){
-        (*buf)++;
-        array->dim[array->num_dim] = readInt( buf );
-        array->num_dim++;
-        SKIP_SPACE( *buf );
-        if ( **buf != ']' ) errorAndExit( *buf );
-        (*buf)++;
-    }
-    for ( int i=array->num_dim ; i<20 ; i++ ) array->dim[i] = 0;
-
-    return no;
-}
-
-int *ScriptParser::decodeArray( char **buf, int offset )
-{
-    struct ArrayVariable array;
-    int dim, i;
-
-    SKIP_SPACE( *buf );
-    int no = decodeArraySub( buf, &array );
-    
-    if ( array_variables[ no ].data == NULL ) errorAndExit( string_buffer + string_buffer_offset );
-    if ( array_variables[ no ].dim[0] <= array.dim[0] ) errorAndExit( string_buffer + string_buffer_offset );
-    dim = array.dim[0];
-    for ( i=1 ; i<array_variables[ no ].num_dim ; i++ ){
-        if ( array_variables[ no ].dim[i] <= array.dim[i] ) errorAndExit( string_buffer + string_buffer_offset );
-        dim = dim * array_variables[ no ].dim[i] + array.dim[i];
-    }
-    if ( array_variables[ no ].dim[i-1] <= array.dim[i-1] + offset ) errorAndExit( string_buffer + string_buffer_offset );
-    dim += offset;
-
-    return &array_variables[ no ].data[ dim ];
-}
-
-int ScriptParser::readInt( char **buf )
-{
-    int no;
-
-    end_with_comma_flag = false;
-    SKIP_SPACE( *buf );
-
-    if ( (*buf)[0] == '\0' || (*buf)[0] == ':' || (*buf)[0] == ';' ){
-        no = 0;
-    }
-    else if ( (*buf)[0] == '%' ){
-        (*buf)++;
-        no = num_variables[ readInt( buf ) ];
-    }
-    else if ( (*buf)[0] == '?' ){
-        no = *decodeArray( buf );
-    }
-    else{
-        char ch, alias_buf[256];
-        int alias_buf_len = 0, alias_no = 0;
-        bool first_flag = true;
-        bool num_alias_flag = true;
-        bool minus_flag = false;
-        
-        while( 1 ){
-            ch = **buf;
-            
-            if ( (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || ch == '_' ){
-                if (ch >= 'A' && ch <= 'Z') ch += 'a' - 'A';
-                if ( !first_flag && num_alias_flag == false ) break;
-                alias_buf[ alias_buf_len++ ] = ch;
-            }
-            else if ( ch >= '0' && ch <= '9' ){
-                if ( first_flag ) num_alias_flag = false;
-                if ( num_alias_flag ) alias_buf[ alias_buf_len++ ] = ch;
-                else alias_no = alias_no * 10 + ch - '0';
-            }
-            else if ( ch == '-' ){
-                if ( first_flag ) num_alias_flag = false;
-                if ( num_alias_flag ) alias_buf[ alias_buf_len++ ] = ch;
-                else minus_flag = true;
-            }
-            else break;
-            (*buf)++;
-            first_flag = false;
-        }
-        if ( minus_flag ) alias_no = -alias_no;
-        
-        /* ---------------------------------------- */
-        /* Solve num aliases */
-        if ( num_alias_flag ){
-            alias_buf[ alias_buf_len ] = '\0';
-            NameAlias *p_name_alias = root_name_alias.next;
-
-            while( p_name_alias ){
-                /* In case of constant */
-                if ( !strcmp( p_name_alias->alias,
-                              (const char*)alias_buf ) ){
-                    alias_no = p_name_alias->num;
-                    break;
-                }
-                p_name_alias = p_name_alias->next;
-            }
-            if ( !p_name_alias ){
-                printf("can't find name alias for %s... assume 0.\n", alias_buf );
-                alias_no = 0;
-            }
-        }
-        no = alias_no;
-    }
-
-    SKIP_SPACE( *buf );
-    if ( **buf == ',' ){
-        end_with_comma_flag = true;
-        (*buf)++;
-        SKIP_SPACE( *buf );
-    }
-    return no;
-}
-
-void ScriptParser::setInt( char *buf, int val, int offset )
-{
-    char *p_buf;
-
-    SKIP_SPACE( buf );
-    if ( buf[0] == '%' ){
-        p_buf = buf + 1;
-        setNumVariable( readInt( &p_buf ) + offset, val );
-    }
-    else if ( buf[0] == '?' ){
-        p_buf = buf;
-        *(decodeArray( &p_buf, offset )) = val;
-    }
-    else{
-        errorAndExit( string_buffer + string_buffer_offset );
-    }
-}
-
-void ScriptParser::setNumVariable( int no, int val )
-{
-    if ( no >= VARIABLE_RANGE ) errorAndExit( string_buffer + string_buffer_offset );
-    if ( num_limit_flag[no] ){
-        if ( val < num_limit_lower[no] )      val = num_limit_lower[no];
-        else if ( val > num_limit_upper[no] ) val = num_limit_upper[no];
-    }
-    num_variables[no] = val;
-}
-
-void ScriptParser::setStr( char **dst, char *src )
+void ScriptParser::setStr( char **dst, const char *src )
 {
     if ( *dst ) delete[] *dst;
     if ( src ){
         *dst = new char[ strlen( src ) + 1 ];
-        memcpy( *dst, src, strlen( src ) + 1 );
+        strcpy( *dst, src );
     }
     else
         *dst = NULL;
 }
 
-int ScriptParser::readEffect( char **buf, struct EffectLink *effect )
+int ScriptParser::readEffect( EffectLink *effect )
 {
     int num = 1;
     
-    effect->effect = readInt( buf );
-    if ( end_with_comma_flag ){
+    effect->effect = script_h.readInt();
+    if ( script_h.end_with_comma_flag ){
         num++;
-        effect->duration = readInt( buf );
-        if ( end_with_comma_flag ){
+        effect->duration = script_h.readInt();
+        if ( script_h.end_with_comma_flag ){
             num++;
-            readStr( buf, tmp_string_buffer );
-            setStr( &effect->image, tmp_string_buffer );
+            const char *buf = script_h.readStr();
+            setStr( &effect->image, buf );
         }
         else
             effect->image = NULL;
-        
     }
     else{
         effect->duration = 0;

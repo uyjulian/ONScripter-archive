@@ -78,7 +78,7 @@ public:
     AnimationInfo();
     ~AnimationInfo();
     void deleteImageName();
-    void setImageName( char *name );
+    void setImageName( const char *name );
     void deleteSurface();
     void remove();
     void removeTag();

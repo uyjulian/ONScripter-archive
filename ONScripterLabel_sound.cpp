@@ -46,13 +46,13 @@ int ONScripterLabel::playMIDIFile()
         return -1;
     }
 
-    unsigned long length = cBR->getFileLength( music_file_name );
+    unsigned long length = script_h.cBR->getFileLength( music_file_name );
     if ( length == 0 ){
         fprintf( stderr, " *** can't find file [%s] ***\n", music_file_name );
         return -1;
     }
     unsigned char *buffer = new unsigned char[length];
-    cBR->getFile( music_file_name, buffer );
+    script_h.cBR->getFile( music_file_name, buffer );
     fwrite( buffer, 1, length, fp );
     delete[] buffer;
 
@@ -103,9 +103,9 @@ int ONScripterLabel::playMP3( int cd_no )
     else{
         unsigned long length;
     
-        length = cBR->getFileLength( music_file_name );
+        length = script_h.cBR->getFileLength( music_file_name );
         mp3_buffer = new unsigned char[length];
-        cBR->getFile( music_file_name, mp3_buffer );
+        script_h.cBR->getFile( music_file_name, mp3_buffer );
         mp3_sample = SMPEG_new_rwops( SDL_RWFromMem( mp3_buffer, length ), NULL, 0 );
     }
 
@@ -142,7 +142,7 @@ int ONScripterLabel::playCDAudio( int cd_no )
     return 0;
 }
 
-int ONScripterLabel::playWave( char *file_name, bool loop_flag, int channel )
+int ONScripterLabel::playWave( const char *file_name, bool loop_flag, int channel )
 {
     unsigned long length;
     unsigned char *buffer;
@@ -151,9 +151,9 @@ int ONScripterLabel::playWave( char *file_name, bool loop_flag, int channel )
     
     if ( channel >= MIX_CHANNELS ) channel = MIX_CHANNELS - 1;
 
-    length = cBR->getFileLength( file_name );
+    length = script_h.cBR->getFileLength( file_name );
     buffer = new unsigned char[length];
-    cBR->getFile( file_name, buffer );
+    script_h.cBR->getFile( file_name, buffer );
 
     if ( wave_sample[channel] ){
         Mix_Pause( channel );
@@ -166,7 +166,7 @@ int ONScripterLabel::playWave( char *file_name, bool loop_flag, int channel )
     else                Mix_Volume( channel, se_volume * 128 / 100 );
 
     if ( debug_level > 0 )
-        printf("playWave %s %d at vol %d\n", file_name, length, (channel==0)?voice_volume:se_volume );
+        printf("playWave %s %ld at vol %d\n", file_name, length, (channel==0)?voice_volume:se_volume );
     
     Mix_PlayChannel( channel, wave_sample[channel], loop_flag?-1:0 );
 

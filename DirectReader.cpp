@@ -116,12 +116,12 @@ struct DirectReader::FileInfo DirectReader::getFileByIndex( int index )
     return fi;
 }
 
-bool DirectReader::getAccessFlag( char *file_name )
+bool DirectReader::getAccessFlag( const char *file_name )
 {
     return false;
 }
 
-FILE *DirectReader::getFileHandle( char *file_name, int &compression_type, size_t *length )
+FILE *DirectReader::getFileHandle( const char *file_name, int &compression_type, size_t *length )
 {
     FILE *fp;
     unsigned int i;
@@ -157,7 +157,7 @@ FILE *DirectReader::getFileHandle( char *file_name, int &compression_type, size_
     return fp;
 }
 
-size_t DirectReader::getFileLength( char *file_name )
+size_t DirectReader::getFileLength( const char *file_name )
 {
     int compression_type;
     size_t len;
@@ -176,7 +176,7 @@ size_t DirectReader::getFileLength( char *file_name )
     return len;
 }
 
-size_t DirectReader::getFile( char *file_name, unsigned char *buffer )
+size_t DirectReader::getFile( const char *file_name, unsigned char *buffer )
 {
     int compression_type;
     size_t len, c, total = 0;

@@ -44,6 +44,7 @@ public:
     uchar3  window_color;
 
     FontInfo();
+    void reset();
     void *openFont( char *font_file, int ratio1, int ratio2 );
     void closeFont();
     int x(); // return current x position

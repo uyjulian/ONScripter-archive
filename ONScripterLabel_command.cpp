@@ -32,21 +32,17 @@
 
 int ONScripterLabel::waveCommand()
 {
-    char *p_string_buffer;
-
-    if ( !strncmp( string_buffer + string_buffer_offset, "waveloop", 8 ) ){
+    if ( script_h.isName( "waveloop" ) ){
         wave_play_once_flag = true;
-        p_string_buffer = string_buffer + string_buffer_offset + 8;
     }
     else{
         wave_play_once_flag = false;
-        p_string_buffer = string_buffer + string_buffer_offset + 4;
     }
 
     wavestopCommand();
 
-    readStr( &p_string_buffer, tmp_string_buffer );
-    playWave( tmp_string_buffer, wave_play_once_flag, DEFAULT_WAVE_CHANNEL );
+    const char *buf = script_h.readStr();
+    playWave( buf, wave_play_once_flag, DEFAULT_WAVE_CHANNEL );
         
     return RET_CONTINUE;
 }
@@ -64,9 +60,7 @@ int ONScripterLabel::wavestopCommand()
 
 int ONScripterLabel::waittimerCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 9;
-
-    int count = readInt( &p_string_buffer ) + internal_timer - SDL_GetTicks();
+    int count = script_h.readInt() + internal_timer - SDL_GetTicks();
     startTimer( count );
     
     return RET_WAIT_NEXT;
@@ -74,19 +68,15 @@ int ONScripterLabel::waittimerCommand()
 
 int ONScripterLabel::waitCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 4;
-
-    startTimer( readInt( &p_string_buffer ) );
+    startTimer( script_h.readInt() );
 
     return RET_WAIT_NEXT;
 }
 
 int ONScripterLabel::vspCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 3;
-
-    int no = readInt( &p_string_buffer );
-    int v  = readInt( &p_string_buffer );
+    int no = script_h.readInt();
+    int v  = script_h.readInt();
     sprite_info[ no ].valid = (v==1)?true:false;
     
     return RET_CONTINUE;
@@ -94,8 +84,7 @@ int ONScripterLabel::vspCommand()
 
 int ONScripterLabel::voicevolCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 8;
-    voice_volume = readInt( &p_string_buffer );
+    voice_volume = script_h.readInt();
 
     if ( wave_sample[0] ) Mix_Volume( 0, se_volume * 128 / 100 );
     
@@ -104,20 +93,19 @@ int ONScripterLabel::voicevolCommand()
 
 int ONScripterLabel::trapCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 4;
-    readStr( &p_string_buffer, tmp_string_buffer );
+    const char *buf = script_h.readStr();
 
-    if ( tmp_string_buffer[0] == '*' ){
+    if ( buf[0] == '*' ){
         trap_flag = true;
         if ( trap_dist ) delete[] trap_dist;
-        trap_dist = new char[ strlen( tmp_string_buffer ) ];
-        memcpy( trap_dist, tmp_string_buffer + 1, strlen( tmp_string_buffer ) );
+        trap_dist = new char[ strlen( buf ) ];
+        memcpy( trap_dist, buf+1, strlen( buf ) );
     }
-    else if ( !strcmp( tmp_string_buffer, "off" ) ){
+    else if ( !strcmp( buf, "off" ) ){
         trap_flag = false;
     }
     else{
-        printf("[%s] is not supported\n", string_buffer + string_buffer_offset );
+        printf("trapCommand: [%s] is not supported\n", buf );
     }
               
     return RET_CONTINUE;
@@ -125,9 +113,7 @@ int ONScripterLabel::trapCommand()
 
 int ONScripterLabel::textspeedCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 9;
-
-    sentence_font.wait_time = readInt( &p_string_buffer );
+    sentence_font.wait_time = script_h.readInt();
 
     return RET_CONTINUE;
 }
@@ -175,40 +161,42 @@ int ONScripterLabel::texecCommand()
 
 int ONScripterLabel::talCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 3;
-    
-    readStr( &p_string_buffer, tmp_string_buffer );
-    char loc = tmp_string_buffer[0];
+    const char *buf = script_h.readStr();
+    char loc = buf[0];
+    int trans = script_h.readInt();
 
-    int no;
+    if ( event_mode & EFFECT_EVENT_MODE ){
+        int num = readEffect( &tmp_effect );
+        if ( num > 1 ) return doEffect( TMP_EFFECT, NULL, TACHI_EFFECT_IMAGE );
+        else           return doEffect( tmp_effect.effect, NULL, TACHI_EFFECT_IMAGE );
+    }
+    else{
+        int no;
+        if      ( loc == 'l' ) no = 0;
+        else if ( loc == 'c' ) no = 1;
+        else if ( loc == 'r' ) no = 2;
 
-    if      ( loc == 'l' ) no = 0;
-    else if ( loc == 'c' ) no = 1;
-    else if ( loc == 'r' ) no = 2;
+        if      ( trans > 255 ) trans = 255;
+        else if ( trans < 0   ) trans = 0;
 
-    int trans = readInt( &p_string_buffer );
+        tachi_info[ no ].trans = trans;
 
-    if      ( trans > 255 ) trans = 255;
-    else if ( trans < 0   ) trans = 0;
-
-    tachi_info[ no ].trans = trans;
-
-    return RET_CONTINUE;
+        readEffect( &tmp_effect );
+        return setEffect( tmp_effect.effect );
+   }
 }
 
 int ONScripterLabel::tablegotoCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 9;
     int count = 0;
-    
-    int no = readInt( &p_string_buffer );
+    int no = script_h.readInt();
 
-    while( end_with_comma_flag ){
-        readStr( &p_string_buffer, tmp_string_buffer );
+    while( script_h.end_with_comma_flag ){
+        const char *buf = script_h.readStr();
         if ( count++ == no ){
-            current_link_label_info->label_info = lookupLabel( tmp_string_buffer + 1 );
+            current_link_label_info->label_info = script_h.lookupLabel( buf+1 );
             current_link_label_info->current_line = 0;
-            current_link_label_info->offset = 0;
+            script_h.setCurrent( current_link_label_info->label_info.start_address );
     
             return RET_JUMP;
         }
@@ -219,10 +207,8 @@ int ONScripterLabel::tablegotoCommand()
 
 int ONScripterLabel::systemcallCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 10;
-
-    readStr( &p_string_buffer, tmp_string_buffer );
-    system_menu_mode = getSystemCallNo( tmp_string_buffer );
+    const char *buf = script_h.readStr();
+    system_menu_mode = getSystemCallNo( buf );
     event_mode = WAIT_SLEEP_MODE;
 
     enterSystemCall();
@@ -241,20 +227,16 @@ int ONScripterLabel::stopCommand()
 
 int ONScripterLabel::spstrCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 5;
-
-    readStr( &p_string_buffer, tmp_string_buffer );
-    decodeExbtnControl( NULL, tmp_string_buffer, false, true );
+    const char *buf = script_h.readStr();
+    decodeExbtnControl( NULL, buf, false, true );
     
     return RET_CONTINUE;
 }
 
 int ONScripterLabel::spbtnCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 5;
-
-    int sprite_no = readInt( &p_string_buffer );
-    int no        = readInt( &p_string_buffer );
+    int sprite_no = script_h.readInt();
+    int no        = script_h.readInt();
 
     if ( sprite_info[ sprite_no ].num_of_cells == 0 ) return RET_CONTINUE;
 
@@ -282,8 +264,7 @@ int ONScripterLabel::skipoffCommand()
 
 int ONScripterLabel::sevolCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 5;
-    se_volume = readInt( &p_string_buffer );
+    se_volume = script_h.readInt();
 
     for ( int i=1 ; i<MIX_CHANNELS ; i++ )
         if ( wave_sample[i] ) Mix_Volume( i, se_volume * 128 / 100 );
@@ -293,61 +274,55 @@ int ONScripterLabel::sevolCommand()
 
 int ONScripterLabel::setwindow2Command()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 10;
-
-    readStr( &p_string_buffer, tmp_string_buffer );
-    if ( tmp_string_buffer[0] == '#' ){
+    const char *buf = script_h.readStr();
+    if ( buf[0] == '#' ){
         sentence_font.is_transparent = true;
-        if ( strlen( tmp_string_buffer ) != 7 ) errorAndExit( string_buffer + string_buffer_offset );
-        readColor( &sentence_font.window_color, tmp_string_buffer + 1 );
+        readColor( &sentence_font.window_color, buf+1 );
     }
     else{
         sentence_font.is_transparent = false;
-        sentence_font_info.setImageName( tmp_string_buffer );
+        sentence_font_info.setImageName( buf );
         parseTaggedString( &sentence_font_info );
         setupAnimationInfo( &sentence_font_info );
     }
-    flush();
+    repaintCommand();
 
     return RET_CONTINUE;
 }
 
 int ONScripterLabel::setwindowCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 9;
-
-    sentence_font.top_xy[0] = readInt( &p_string_buffer );
-    sentence_font.top_xy[1] = readInt( &p_string_buffer );
-    sentence_font.num_xy[0] = readInt( &p_string_buffer );
-    sentence_font.num_xy[1] = readInt( &p_string_buffer );
-    sentence_font.font_size_xy[0] = readInt( &p_string_buffer );
-    sentence_font.font_size_xy[1] = readInt( &p_string_buffer );
-    sentence_font.pitch_xy[0] = readInt( &p_string_buffer ) + sentence_font.font_size_xy[0];
-    sentence_font.pitch_xy[1] = readInt( &p_string_buffer ) + sentence_font.font_size_xy[1];
-    sentence_font.wait_time = readInt( &p_string_buffer );
-    sentence_font.is_bold = readInt( &p_string_buffer )?true:false;
-    sentence_font.is_shadow = readInt( &p_string_buffer )?true:false;
+    sentence_font.top_xy[0] = script_h.readInt();
+    sentence_font.top_xy[1] = script_h.readInt();
+    sentence_font.num_xy[0] = script_h.readInt();
+    sentence_font.num_xy[1] = script_h.readInt();
+    sentence_font.font_size_xy[0] = script_h.readInt();
+    sentence_font.font_size_xy[1] = script_h.readInt();
+    sentence_font.pitch_xy[0] = script_h.readInt() + sentence_font.font_size_xy[0];
+    sentence_font.pitch_xy[1] = script_h.readInt() + sentence_font.font_size_xy[1];
+    sentence_font.wait_time = script_h.readInt();
+    sentence_font.is_bold = script_h.readInt()?true:false;
+    sentence_font.is_shadow = script_h.readInt()?true:false;
 
     sentence_font.openFont( font_file, screen_ratio1, screen_ratio2 );
 
-    readStr( &p_string_buffer, tmp_string_buffer );
-    if ( tmp_string_buffer[0] == '#' ){
+    const char *buf = script_h.readStr();
+    if ( buf[0] == '#' ){
         sentence_font.is_transparent = true;
-        if ( strlen( tmp_string_buffer ) != 7 ) errorAndExit( string_buffer + string_buffer_offset );
-        readColor( &sentence_font.window_color, tmp_string_buffer + 1 );
+        readColor( &sentence_font.window_color, buf + 1 );
 
-        sentence_font_info.pos.x = readInt( &p_string_buffer ) * screen_ratio1 / screen_ratio2;
-        sentence_font_info.pos.y = readInt( &p_string_buffer ) * screen_ratio1 / screen_ratio2;
-        sentence_font_info.pos.w = readInt( &p_string_buffer ) * screen_ratio1 / screen_ratio2 - sentence_font_info.pos.x + 1;
-        sentence_font_info.pos.h = readInt( &p_string_buffer ) * screen_ratio1 / screen_ratio2 - sentence_font_info.pos.y + 1;
+        sentence_font_info.pos.x = script_h.readInt() * screen_ratio1 / screen_ratio2;
+        sentence_font_info.pos.y = script_h.readInt() * screen_ratio1 / screen_ratio2;
+        sentence_font_info.pos.w = script_h.readInt() * screen_ratio1 / screen_ratio2 - sentence_font_info.pos.x + 1;
+        sentence_font_info.pos.h = script_h.readInt() * screen_ratio1 / screen_ratio2 - sentence_font_info.pos.y + 1;
     }
     else{
         sentence_font.is_transparent = false;
-        sentence_font_info.setImageName( tmp_string_buffer );
+        sentence_font_info.setImageName( buf );
         parseTaggedString( &sentence_font_info );
         setupAnimationInfo( &sentence_font_info );
-        sentence_font_info.pos.x = readInt( &p_string_buffer ) * screen_ratio1 / screen_ratio2;
-        sentence_font_info.pos.y = readInt( &p_string_buffer ) * screen_ratio1 / screen_ratio2;
+        sentence_font_info.pos.x = script_h.readInt() * screen_ratio1 / screen_ratio2;
+        sentence_font_info.pos.y = script_h.readInt() * screen_ratio1 / screen_ratio2;
     }
 
     lookbackflushCommand();
@@ -359,66 +334,52 @@ int ONScripterLabel::setwindowCommand()
 
 int ONScripterLabel::setcursorCommand()
 {
-    char *p_string_buffer;
     bool abs_flag;
 
-    if ( !strncmp( string_buffer + string_buffer_offset, "abssetcursor", 12 ) ) {
+    if ( script_h.isName( "abssetcursor" ) ){
         abs_flag = true;
-        p_string_buffer = string_buffer + string_buffer_offset + 12;
     }
     else{
         abs_flag = false;
-        p_string_buffer = string_buffer + string_buffer_offset + 9;
     }
     
-    int no = readInt( &p_string_buffer );
-
-    readStr( &p_string_buffer, tmp_string_buffer );
-    char *buf = new char[ strlen( tmp_string_buffer ) + 1 ];
-    memcpy( buf, tmp_string_buffer, strlen( tmp_string_buffer ) + 1 );
-
-    int x = readInt( &p_string_buffer ) * screen_ratio1 / screen_ratio2;
-    int y = readInt( &p_string_buffer ) * screen_ratio1 / screen_ratio2;
+    int no = script_h.readInt();
+    const char* buf = script_h.readStr();
+    int x = script_h.readInt() * screen_ratio1 / screen_ratio2;
+    int y = script_h.readInt() * screen_ratio1 / screen_ratio2;
 
     loadCursor( no, buf, x, y, abs_flag );
-    delete[] buf;
     
     return RET_CONTINUE;
 }
 
 int ONScripterLabel::selectCommand()
 {
-    int ret = enterTextDisplayMode();
+    int ret = enterTextDisplayMode( RET_WAIT_NOREAD );
     if ( ret != RET_NOMATCH ) return ret;
 
     int xy[2];
-    char *p_script_buffer = current_link_label_info->current_script;
-    readLine( &p_script_buffer );
-    line_cache = -1;
     int select_mode;
     SelectLink *last_select_link;
-    char *p_string_buffer, *p_buf;
+    char *p_buf, *save_buf;
 
-    if ( !strncmp( string_buffer + string_buffer_offset, "selnum", 6 ) ){
-        p_string_buffer = string_buffer + string_buffer_offset + 6;
+    if ( script_h.isName( "selnum" ) ){
         select_mode = SELECT_NUM_MODE;
-        p_buf = p_string_buffer;
-        readInt( &p_string_buffer );
+        p_buf = script_h.getCurrent();
+        script_h.readToken();
+        save_buf = script_h.saveStringBuffer();
     }
-    else if ( !strncmp( string_buffer + string_buffer_offset, "selgosub", 8 ) ){
-        p_string_buffer = string_buffer + string_buffer_offset + 8;
+    else if ( script_h.isName( "selgosub" ) ){
         select_mode = SELECT_GOSUB_MODE;
     }
-    else if ( !strncmp( string_buffer + string_buffer_offset, "select", 6 ) ){
-        p_string_buffer = string_buffer + string_buffer_offset + 6;
+    else if ( script_h.isName( "select" ) ){
         select_mode = SELECT_GOTO_MODE;
     }
-    else if ( !strncmp( string_buffer + string_buffer_offset, "csel", 4 ) ){
-        p_string_buffer = string_buffer + string_buffer_offset + 4;
+    else if ( script_h.isName( "csel" ) ){
         select_mode = SELECT_CSEL_MODE;
     }
 
-    bool comma_flag, first_token_flag = true;
+    bool first_token_flag = true;
     int count = 0;
 
     if ( event_mode & (WAIT_INPUT_MODE | WAIT_BUTTON_MODE) ){
@@ -440,20 +401,18 @@ int ONScripterLabel::selectCommand()
         }
 
         if ( select_mode  == SELECT_GOTO_MODE ){
-            current_link_label_info->label_info = lookupLabel( last_select_link->label );
+            current_link_label_info->label_info = script_h.lookupLabel( last_select_link->label );
             current_link_label_info->current_line = 0;
-            current_link_label_info->offset = 0;
+            script_h.setCurrent( current_link_label_info->label_info.start_address );
             ret = RET_JUMP;
         }
         else if ( select_mode == SELECT_GOSUB_MODE ){
             current_link_label_info->current_line = select_label_info.current_line;
-            string_buffer_offset = select_label_info.offset;
-
-            gosubReal( last_select_link->label );
+            gosubReal( last_select_link->label, false, select_label_info.current_script );
             ret = RET_JUMP;
         }
         else{
-            setInt( p_buf, current_button_state.button - 1 );
+            script_h.setInt( save_buf, current_button_state.button - 1 );
             ret = RET_CONTINUE;
         }
         deleteSelectLink();
@@ -463,6 +422,7 @@ int ONScripterLabel::selectCommand()
         return ret;
     }
     else{
+        bool comma_flag = true;
         if ( select_mode == SELECT_CSEL_MODE ){
             shelter_soveon_flag = saveon_flag;
             saveoffCommand();
@@ -479,48 +439,48 @@ int ONScripterLabel::selectCommand()
 
         last_select_link = &root_select_link;
         select_label_info.current_line = current_link_label_info->current_line;
+        select_label_info.current_script = script_h.getCurrent();
+        const char *buf = script_h.readStr();
         while(1){
-            comma_flag = readStr( &p_string_buffer, tmp_string_buffer );
-            //printf("sel [%s] [%s]\n", p_string_buffer, tmp_string_buffer );
-            if ( tmp_string_buffer[0] != '\0' || comma_flag ){
+            //printf("sel [%s] comma %d\n", buf, comma_flag  );
+            if ( buf[0] != 0x0a ){
+                comma_flag = script_h.end_with_comma_flag;
                 first_token_flag = false;
                 count++;
                 if ( select_mode == SELECT_NUM_MODE || count % 2 ){
-                    if ( select_mode != SELECT_NUM_MODE && !comma_flag ) errorAndExit( string_buffer + string_buffer_offset, "comma is needed here" );
+                    if ( select_mode != SELECT_NUM_MODE && !comma_flag ) errorAndExit( script_h.getStringBuffer(), "select: comma is needed here" );
                     link = new SelectLink();
-                    setStr( &link->text, tmp_string_buffer );
+                    setStr( &link->text, buf );
                     //printf("Select text %s\n", link->text);
                 }
                 if ( select_mode == SELECT_NUM_MODE || !(count % 2) ){
-                    setStr( &link->label, tmp_string_buffer+1 );
+                    setStr( &link->label, buf+1 );
                     //printf("Select label %s\n", link->label );
                     last_select_link->next = link;
                     last_select_link = last_select_link->next;
                 }
+                select_label_info.current_script = script_h.getCurrent();
+                buf = script_h.readStr();
             }
-
-            if ( p_string_buffer[0] == '\0' ){ // end of line
-                text_line_flag = false;
-                if ( first_token_flag ) comma_flag = true;
-
+            else{
+                //if ( first_token_flag ) comma_flag = true;
+                if ( (count & 1) == 1 ) errorAndExit( script_h.getStringBuffer(), "select: label must be in the same line." );
+                //if ( (count & 1) == 0 && !comma_flag ) errorAndExit( script_h.getStringBuffer(), "select: comma is neede here." );
                 do{
-                    readLine( &p_script_buffer, true );
-                    select_label_info.current_line++;
-                }
-                while ( string_buffer[ string_buffer_offset ] == ';' || string_buffer[ string_buffer_offset ] == '\0' );
-                
-                p_string_buffer = string_buffer + string_buffer_offset;
-                if ( *p_string_buffer == ',' ){
-                    if ( comma_flag ) errorAndExit( string_buffer + string_buffer_offset, "double comma" );
-                    p_string_buffer++;
-                }
-                else if ( !comma_flag ) break;
+                    if ( buf[0] == 0x0a ) select_label_info.current_line++;
+                    select_label_info.current_script = script_h.getCurrent();
+                    buf = script_h.readStr();
+                    if ( buf[0] == ',' ){
+                        if ( comma_flag ) errorAndExit( script_h.getStringBuffer(), "double comma" );
+                        else comma_flag = true;
+                    }
+                } while ( buf[0] == 0x0a || buf[0] == ',' );
+
+                if ( !comma_flag ) break;
             }
-            else if (!comma_flag ) break;
             
             if ( first_token_flag ) first_token_flag = false;
         }
-        select_label_info.offset = p_string_buffer - string_buffer;
 
         if ( select_mode != SELECT_CSEL_MODE ){
             last_select_link = root_select_link.next;
@@ -538,13 +498,15 @@ int ONScripterLabel::selectCommand()
         }
 
         if ( select_mode == SELECT_GOTO_MODE || select_mode == SELECT_CSEL_MODE ){ /* Resume */
-            p_script_buffer = current_link_label_info->current_script;
-            readLine( &p_script_buffer );
+            //p_script_buffer = current_link_label_info->current_script;
+            //script_h.setCurrent( p_script_buffer );
+            //script_h.readToken();
+            //readLine( &p_script_buffer );
 
             if ( select_mode == SELECT_CSEL_MODE ){
-                current_link_label_info->label_info = lookupLabel( "customsel" );
+                current_link_label_info->label_info = script_h.lookupLabel( "customsel" );
                 current_link_label_info->current_line = 0;
-                current_link_label_info->offset = 0;
+                script_h.setCurrent( current_link_label_info->label_info.start_address );
 
                 return RET_JUMP;
             }
@@ -561,30 +523,33 @@ int ONScripterLabel::selectCommand()
 
 int ONScripterLabel::savetimeCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 8;
+    int no = script_h.readInt() - 1;
 
-    int no = readInt( &p_string_buffer ) - 1;
-
+    script_h.readToken();
     if ( no >= MAX_SAVE_FILE ){
-        setInt( p_string_buffer, 0 );
+        script_h.setInt( script_h.getStringBuffer(), 0 );
+        for ( int i=0 ; i<4 ; i++ )
+            script_h.readToken();
         return RET_CONTINUE;
     }
     
     searchSaveFiles( no );
 
     if ( !save_file_info[no].valid ){
-        setInt( p_string_buffer, 0 );
+        script_h.setInt( script_h.getStringBuffer(), 0 );
+        for ( int i=0 ; i<4 ; i++ )
+            script_h.readToken();
         return RET_CONTINUE;
     }
 
-    setInt( p_string_buffer, save_file_info[no].month );
-    readInt( &p_string_buffer );
-    setInt( p_string_buffer, save_file_info[no].day );
-    readInt( &p_string_buffer );
-    setInt( p_string_buffer, save_file_info[no].hour );
-    readInt( &p_string_buffer );
-    setInt( p_string_buffer, save_file_info[no].minute );
-    readInt( &p_string_buffer );
+    script_h.setInt( script_h.getStringBuffer(), save_file_info[no].month );
+    script_h.readToken();
+    script_h.setInt( script_h.getStringBuffer(), save_file_info[no].day );
+    script_h.readToken();
+    script_h.setInt( script_h.getStringBuffer(), save_file_info[no].hour );
+    script_h.readToken();
+    script_h.setInt( script_h.getStringBuffer(), save_file_info[no].minute );
+    script_h.readToken();
 
     return RET_CONTINUE;
 }
@@ -598,9 +563,8 @@ int ONScripterLabel::saveonCommand()
 
 int ONScripterLabel::saveoffCommand()
 {
-    if ( saveon_flag ){
+    if ( saveon_flag )
         saveSaveFile( -1 );
-    }
     
     saveon_flag = false;
 
@@ -609,11 +573,10 @@ int ONScripterLabel::saveoffCommand()
 
 int ONScripterLabel::savegameCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 8;
+    int no = script_h.readInt();
 
-    int no = readInt( &p_string_buffer );
     if ( no < 0 )
-        errorAndExit( string_buffer + string_buffer_offset );
+        errorAndExit( script_h.getStringBuffer(), "savegame: the specified number is less than 0" );
     else{
         shelter_event_mode = event_mode;
         saveSaveFile( no );
@@ -624,56 +587,52 @@ int ONScripterLabel::savegameCommand()
 
 int ONScripterLabel::savefileexistCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 13;
-    char *p_buf = p_string_buffer;
-    int val;
-
-    readInt( &p_string_buffer );
-    int no = readInt( &p_string_buffer );
+    script_h.readToken();
+    char *save_buf = script_h.saveStringBuffer();
+    int no = script_h.readInt();
 
     searchSaveFiles( no );
 
+    int val;
     if ( save_file_info[no].valid )
         val = 1;
     else
         val = 0;
 
-    setInt( p_buf, val );
+    script_h.setInt( save_buf, val );
 
     return RET_CONTINUE;
 }
 
 int ONScripterLabel::rndCommand()
 {
-    char *p_string_buffer, *p_buf;
     int  upper, lower;
+    char *save_buf;
     
-    if ( !strncmp( string_buffer + string_buffer_offset, "rnd2", 4 ) ){
-        p_string_buffer = string_buffer + string_buffer_offset + 4;
-        p_buf = p_string_buffer;
-        readInt( &p_string_buffer );
-        lower = readInt( &p_string_buffer );
-        upper = readInt( &p_string_buffer );
+    if ( script_h.isName( "rnd2" ) ){
+        script_h.readToken();
+        save_buf = script_h.saveStringBuffer();
+        
+        lower = script_h.readInt();
+        upper = script_h.readInt();
     }
     else{
-        p_string_buffer = string_buffer + string_buffer_offset + 3;
-        p_buf = p_string_buffer;
-        readInt( &p_string_buffer );
+        script_h.readToken();
+        save_buf = script_h.saveStringBuffer();
+
         lower = 0;
-        upper = readInt( &p_string_buffer ) - 1;
+        upper = script_h.readInt() - 1;
     }
 
-    setInt( p_buf, lower + (int)( (double)(upper-lower+1)*rand()/(RAND_MAX+1.0)) );
+    script_h.setInt( save_buf, lower + (int)( (double)(upper-lower+1)*rand()/(RAND_MAX+1.0)) );
 
     return RET_CONTINUE;
 }
 
 int ONScripterLabel::rmodeCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 5;
-
-    if ( readInt( &p_string_buffer ) == 1 ) rmode_flag = true;
-    else                                    rmode_flag = false;
+    if ( script_h.readInt() == 1 ) rmode_flag = true;
+    else                           rmode_flag = false;
 
     return RET_CONTINUE;
 }
@@ -687,13 +646,20 @@ int ONScripterLabel::resettimerCommand()
 int ONScripterLabel::resetCommand()
 {
     for ( int i=0 ; i<199 ; i++ ){
-        num_variables[i] = 0;
-        if ( str_variables[i] ) delete[] str_variables[i];
-        str_variables[i] = NULL;
+        script_h.num_variables[i] = 0;
+        if ( script_h.str_variables[i] ) delete[] script_h.str_variables[i];
+        script_h.str_variables[i] = NULL;
     }
 
     sentence_font.xy[0] = 0;
     sentence_font.xy[1] = 0;
+    resetSentenceFont();
+    if ( sentence_font.openFont( font_file, screen_ratio1, screen_ratio2 ) == NULL ){
+        fprintf( stderr, "can't open font file: %s\n", font_file );
+        SDL_Quit();
+        exit(-1);
+    }
+    
     text_char_flag = false;
     skip_flag      = false;
     monocro_flag   = false;
@@ -702,10 +668,11 @@ int ONScripterLabel::resetCommand()
     clickstr_state = CLICK_NONE;
     
     deleteLabelLink();
-    current_link_label_info->label_info = lookupLabel( "start" );
+    current_link_label_info->label_info = script_h.lookupLabel( "start" );
     current_link_label_info->current_line = 0;
-    current_link_label_info->offset = 0;
-
+    script_h.setCurrent( current_link_label_info->label_info.start_address );
+    string_buffer_offset = 0;
+    
     barclearCommand();
     prnumclearCommand();
     for ( int i=0 ; i<MAX_SPRITE_NUM ; i++ ){
@@ -717,7 +684,7 @@ int ONScripterLabel::resetCommand()
 
     wavestopCommand();
     stopBGM( false );
-    
+
     SDL_FillRect( background_surface, NULL, SDL_MapRGBA( background_surface->format, 0, 0, 0, 0 ) );
     SDL_BlitSurface( background_surface, NULL, accumulation_surface, NULL );
     SDL_BlitSurface( accumulation_surface, NULL, text_surface, NULL );
@@ -737,53 +704,45 @@ int ONScripterLabel::repaintCommand()
 
 int ONScripterLabel::quakeCommand()
 {
-    char *p_string_buffer;
     int quake_type;
 
-    if ( !strncmp( string_buffer + string_buffer_offset, "quakey", 6 ) ){
+    if      ( script_h.isName( "quakey" ) ){
         quake_type = 0;
-        p_string_buffer = string_buffer + string_buffer_offset + 6;
     }
-    else if ( !strncmp( string_buffer + string_buffer_offset, "quakex", 6 ) ){
+    else if ( script_h.isName( "quakex" ) ){
         quake_type = 1;
-        p_string_buffer = string_buffer + string_buffer_offset + 6;
     }
     else{
         quake_type = 2;
-        p_string_buffer = string_buffer + string_buffer_offset + 5;
     }
 
-    quake_effect.num      = readInt( &p_string_buffer );
-    quake_effect.duration = readInt( &p_string_buffer );
-    if ( quake_effect.duration < quake_effect.num * 4 ) quake_effect.duration = quake_effect.num * 4;
+    tmp_effect.num      = script_h.readInt();
+    tmp_effect.duration = script_h.readInt();
+    if ( tmp_effect.duration < tmp_effect.num * 4 ) tmp_effect.duration = tmp_effect.num * 4;
     
     if ( event_mode & EFFECT_EVENT_MODE ){
         if ( effect_counter == 0 ){
             SDL_BlitSurface( text_surface, NULL, effect_src_surface, NULL );
             SDL_BlitSurface( text_surface, NULL, effect_dst_surface, NULL );
         }
-        quake_effect.effect = CUSTOM_EFFECT_NO + quake_type;
-        return doEffect( QUAKE_EFFECT, NULL, DIRECT_EFFECT_IMAGE );
+        tmp_effect.effect = CUSTOM_EFFECT_NO + quake_type;
+        return doEffect( TMP_EFFECT, NULL, DIRECT_EFFECT_IMAGE );
     }
     else{
-        char *buf = new char[512];
-        if ( quake_type == 0 )      sprintf( buf, "quakey %d, %d", quake_effect.num, quake_effect.duration );
-        else if ( quake_type == 1 ) sprintf( buf, "quakex %d, %d", quake_effect.num, quake_effect.duration );
-        else if ( quake_type == 2 ) sprintf( buf, "quake %d, %d",  quake_effect.num, quake_effect.duration );
-        setEffect( 2, buf ); // 2 is dummy value
-        return RET_WAIT_NEXT;
+        setEffect( 2 ); // 2 is dummy value
+        return RET_WAIT; // RET_WAIT de yoi?
+        //return RET_WAIT_NEXT;
     }
 }
 
 int ONScripterLabel::puttextCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 8;
     int ret = enterTextDisplayMode();
     if ( ret != RET_NOMATCH ) return ret;
     
-    readStr( &p_string_buffer, tmp_string_buffer );
+    const char *buf = script_h.readStr();
 
-    drawString( tmp_string_buffer, sentence_font.color, &sentence_font, false, text_surface, NULL, true );
+    drawString( buf, sentence_font.color, &sentence_font, false, text_surface, NULL, true );
     flush();
 
     return RET_CONTINUE;
@@ -802,49 +761,49 @@ int ONScripterLabel::prnumclearCommand()
 
 int ONScripterLabel::prnumCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 5;
-    char num_buf[12], buf[7];
-    int ptr = 0;
-
-    int no = readInt( &p_string_buffer );
+    int no = script_h.readInt();
     if ( prnum_info[no] ) delete prnum_info[no];
     prnum_info[no] = new AnimationInfo();
     prnum_info[no]->trans_mode = AnimationInfo::TRANS_STRING;
+    prnum_info[no]->abs_flag = true;
     prnum_info[no]->num_of_cells = 1;
     prnum_info[no]->current_cell = 0;
     prnum_info[no]->color_list = new uchar3[ prnum_info[no]->num_of_cells ];
     
-    int param = readInt( &p_string_buffer );
-    prnum_info[no]->pos.x = readInt( &p_string_buffer );
-    prnum_info[no]->pos.y = readInt( &p_string_buffer );
-    prnum_info[no]->font_size_xy[0] = readInt( &p_string_buffer );
-    prnum_info[no]->font_size_xy[1] = readInt( &p_string_buffer );
+    int param = script_h.readInt();
+    prnum_info[no]->pos.x = script_h.readInt();
+    prnum_info[no]->pos.y = script_h.readInt();
+    prnum_info[no]->font_size_xy[0] = script_h.readInt();
+    prnum_info[no]->font_size_xy[1] = script_h.readInt();
 
-    readStr( &p_string_buffer, tmp_string_buffer );
-    if ( tmp_string_buffer[0] != '#' ) errorAndExit( string_buffer + string_buffer_offset, "Color is not specified." );
-    readColor( &prnum_info[no]->color_list[0], tmp_string_buffer + 1 );
+    const char *buf = script_h.readStr();
+    if ( buf[0] != '#' ) errorAndExit( script_h.getStringBuffer(), "prnum: Color is not specified." );
+    readColor( &prnum_info[no]->color_list[0], buf+1 );
+
+    char num_buf[12], buf2[7];
+    int ptr = 0;
 
     sprintf( num_buf, "%3d", param );
     if ( param<0 ){
         if ( param>-10 ) {
-            buf[ptr++] = "Å@"[0];
-            buf[ptr++] = "Å@"[1];
+            buf2[ptr++] = "Å@"[0];
+            buf2[ptr++] = "Å@"[1];
         }
-        buf[ptr++] = "Å|"[0];
-        buf[ptr++] = "Å|"[1];
+        buf2[ptr++] = "Å|"[0];
+        buf2[ptr++] = "Å|"[1];
         sprintf( num_buf, "%d", -param );
     }
     for ( int i=0 ; i<(int)strlen( num_buf ) ; i++ ){
         if ( num_buf[i] == ' ' ) {
-            buf[ptr++] = "Å@"[0];
-            buf[ptr++] = "Å@"[1];
+            buf2[ptr++] = "Å@"[0];
+            buf2[ptr++] = "Å@"[1];
             continue;
         }
-        getSJISFromInteger( &buf[ptr], num_buf[i] - '0', false );
+        getSJISFromInteger( &buf2[ptr], num_buf[i] - '0', false );
         ptr += 2;
         if ( ptr >= 6 ) break; // up to 3 columns (NScripter's restriction)
     }
-    setStr( &prnum_info[no]->file_name, buf );
+    setStr( &prnum_info[no]->file_name, buf2 );
 
     setupAnimationInfo( prnum_info[no] );
 
@@ -853,18 +812,15 @@ int ONScripterLabel::prnumCommand()
 
 int ONScripterLabel::printCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 5;
-
-    if ( event_mode & EFFECT_EVENT_MODE ){
-        int num = readEffect( &p_string_buffer, &print_effect );
-        if ( num > 1 ) return doEffect( PRINT_EFFECT, NULL, TACHI_EFFECT_IMAGE );
-        else           return doEffect( print_effect.effect, NULL, TACHI_EFFECT_IMAGE );
+    if ( event_mode & EFFECT_EVENT_MODE )
+    {
+        int num = readEffect( &tmp_effect );
+        if ( num > 1 ) return doEffect( TMP_EFFECT, NULL, TACHI_EFFECT_IMAGE );
+        else           return doEffect( tmp_effect.effect, NULL, TACHI_EFFECT_IMAGE );
     }
     else{
-        char *buf = new char[512];
-        sprintf( buf, "print " );
-        makeEffectStr( &p_string_buffer, buf );
-        return setEffect( tmp_effect.effect, buf );
+        readEffect( &tmp_effect );
+        return setEffect( tmp_effect.effect );
     }
 }
 
@@ -876,21 +832,15 @@ int ONScripterLabel::playstopCommand()
 
 int ONScripterLabel::playCommand()
 {
-    char *p_string_buffer;
-
-    if ( !strncmp( string_buffer + string_buffer_offset, "playonce", 8 ) ){
+    if ( script_h.isName( "playonce" ) )
         music_play_once_flag = true;
-        p_string_buffer = string_buffer + string_buffer_offset + 8;
-    }
-    else{
+    else
         music_play_once_flag = false;
-        p_string_buffer = string_buffer + string_buffer_offset + 4;
-    }
 
-    readStr( &p_string_buffer, tmp_string_buffer );
+    const char *buf = script_h.readStr();
 
-    if ( tmp_string_buffer[0] == '*' ){
-        int new_cd_track = atoi( tmp_string_buffer + 1 );
+    if ( buf[0] == '*' ){
+        int new_cd_track = atoi( buf + 1 );
 #ifdef CONTINUOUS_PLAY        
         if ( current_cd_track != new_cd_track ) {
 #endif        
@@ -910,18 +860,23 @@ int ONScripterLabel::playCommand()
     else{ // play MIDI
         stopBGM( false );
         
-        setStr( &music_file_name, tmp_string_buffer );
+        setStr( &music_file_name, buf );
         playMIDIFile();
     }
 
     return RET_CONTINUE;
 }
 
+int ONScripterLabel::ofscpyCommand()
+{
+    SDL_BlitSurface( screen_surface, NULL, text_surface, NULL );
+
+    return RET_CONTINUE;
+}
+
 int ONScripterLabel::negaCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 4;
-
-    nega_mode = readInt( &p_string_buffer );
+    nega_mode = script_h.readInt();
     need_refresh_flag = true;
 
     return RET_CONTINUE;
@@ -929,15 +884,10 @@ int ONScripterLabel::negaCommand()
 
 int ONScripterLabel::mspCommand()
 {
-    int no;
-    char *p_string_buffer;
-
-    p_string_buffer = string_buffer + string_buffer_offset + 3;
-
-    no = readInt( &p_string_buffer );
-    sprite_info[ no ].pos.x += readInt( &p_string_buffer ) * screen_ratio1 / screen_ratio2;
-    sprite_info[ no ].pos.y += readInt( &p_string_buffer ) * screen_ratio1 / screen_ratio2;
-    sprite_info[ no ].trans += readInt( &p_string_buffer );
+    int no = script_h.readInt();
+    sprite_info[ no ].pos.x += script_h.readInt() * screen_ratio1 / screen_ratio2;
+    sprite_info[ no ].pos.y += script_h.readInt() * screen_ratio1 / screen_ratio2;
+    sprite_info[ no ].trans += script_h.readInt();
     if ( sprite_info[ no ].trans > 255 ) sprite_info[ no ].trans = 255;
     else if ( sprite_info[ no ].trans < 0 ) sprite_info[ no ].trans = 0;
 
@@ -946,8 +896,7 @@ int ONScripterLabel::mspCommand()
 
 int ONScripterLabel::mp3volCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 6;
-    mp3_volume = readInt( &p_string_buffer );
+    mp3_volume = script_h.readInt();
 
     if ( mp3_sample ) SMPEG_setvolume( mp3_sample, mp3_volume );
 
@@ -956,25 +905,20 @@ int ONScripterLabel::mp3volCommand()
 
 int ONScripterLabel::mp3Command()
 {
-    char *p_string_buffer;
-    
-    if ( !strncmp( string_buffer + string_buffer_offset, "mp3save", 7 ) ){
+    if      ( script_h.isName( "mp3save" ) ){
         music_play_once_flag = true;
-        p_string_buffer = string_buffer + string_buffer_offset + 7;
     }
-    else if ( !strncmp( string_buffer + string_buffer_offset, "mp3loop", 7 ) ){
+    else if ( script_h.isName( "mp3loop" ) ){
         music_play_once_flag = false;
-        p_string_buffer = string_buffer + string_buffer_offset + 7;
     }
     else{
         music_play_once_flag = true;
-        p_string_buffer = string_buffer + string_buffer_offset + 3;
     }
 
     stopBGM( false );
     
-    readStr( &p_string_buffer, tmp_string_buffer );
-    setStr( &music_file_name, tmp_string_buffer );
+    const char *buf = script_h.readStr();
+    setStr( &music_file_name, buf );
 
     playMP3( 0 );
         
@@ -983,19 +927,17 @@ int ONScripterLabel::mp3Command()
 
 int ONScripterLabel::monocroCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 7;
+    const char *buf = script_h.readStr();
 
-    readStr( &p_string_buffer, tmp_string_buffer );
-
-    if ( !strcmp( tmp_string_buffer, "off" ) ){
+    if ( !strcmp( buf, "off" ) ){
         monocro_flag_new = false;
     }
-    else if ( tmp_string_buffer[0] != '#' ){
-        errorAndExit( string_buffer + string_buffer_offset );
+    else if ( buf[0] != '#' ){
+        errorAndExit( script_h.getStringBuffer() );
     }
     else{
         monocro_flag_new = true;
-        readColor( &monocro_color_new, tmp_string_buffer + 1 );
+        readColor( &monocro_color_new, buf + 1 );
     }
     need_refresh_flag = true;
 
@@ -1023,29 +965,23 @@ int ONScripterLabel::menu_fullCommand()
 int ONScripterLabel::lspCommand()
 {
     bool v;
-    int no;
-    char *p_string_buffer;
 
-    if ( !strncmp( string_buffer + string_buffer_offset, "lsph", 4 ) ){
-        p_string_buffer = string_buffer + string_buffer_offset + 4;
+    if ( script_h.isName( "lsph" ) )
         v = false;
-    }
-    else{
-        p_string_buffer = string_buffer + string_buffer_offset + 3;
+    else
         v = true;
-    }
 
-    no = readInt( &p_string_buffer );
+    int no = script_h.readInt();
     sprite_info[ no ].valid = v;
 
-    readStr( &p_string_buffer, tmp_string_buffer );
-    sprite_info[ no ].setImageName( tmp_string_buffer );
+    const char *buf = script_h.readStr();
+    sprite_info[ no ].setImageName( buf );
 
-    sprite_info[ no ].pos.x = readInt( &p_string_buffer ) * screen_ratio1 / screen_ratio2;
-    sprite_info[ no ].pos.y = readInt( &p_string_buffer ) * screen_ratio1 / screen_ratio2;
+    sprite_info[ no ].pos.x = script_h.readInt() * screen_ratio1 / screen_ratio2;
+    sprite_info[ no ].pos.y = script_h.readInt() * screen_ratio1 / screen_ratio2;
 
-    if ( end_with_comma_flag )
-        sprite_info[ no ].trans = readInt( &p_string_buffer );
+    if ( script_h.end_with_comma_flag )
+        sprite_info[ no ].trans = script_h.readInt();
     else
         sprite_info[ no ].trans = 255;
 
@@ -1057,10 +993,8 @@ int ONScripterLabel::lspCommand()
 
 int ONScripterLabel::lookbackflushCommand()
 {
-    int i;
-    
     current_text_buffer = current_text_buffer->next;
-    for ( i=0 ; i<MAX_TEXT_BUFFER-1 ; i++ ){
+    for ( int i=0 ; i<MAX_TEXT_BUFFER-1 ; i++ ){
         current_text_buffer->xy[1] = -1;
         current_text_buffer = current_text_buffer->next;
     }
@@ -1070,22 +1004,18 @@ int ONScripterLabel::lookbackflushCommand()
 
 int ONScripterLabel::locateCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 6;
-
-    sentence_font.xy[0] = readInt( &p_string_buffer );
-    sentence_font.xy[1] = readInt( &p_string_buffer );
+    sentence_font.xy[0] = script_h.readInt();
+    sentence_font.xy[1] = script_h.readInt();
 
     return RET_CONTINUE;
 }
 
 int ONScripterLabel::loadgameCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 8;
-    
-    int no = readInt( &p_string_buffer );
+    int no = script_h.readInt();
 
     if ( no < 0 )
-        errorAndExit( string_buffer + string_buffer_offset );
+        errorAndExit( "loadgame: no < 0." );
 
     if ( loadSaveFile( no ) ) return RET_CONTINUE;
     else {
@@ -1101,15 +1031,13 @@ int ONScripterLabel::loadgameCommand()
 
 int ONScripterLabel::ldCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 2;
-    
-    readStr( &p_string_buffer, tmp_string_buffer );
-    char loc = tmp_string_buffer[0];
+    const char *buf = script_h.readStr();
+    char loc = buf[0];
 
-    readStr( &p_string_buffer, tmp_string_buffer );
+    buf = script_h.readStr();
     
     if ( event_mode & EFFECT_EVENT_MODE ){
-        int num = readEffect( &p_string_buffer, &tmp_effect );
+        int num = readEffect( &tmp_effect );
         if ( num > 1 ) return doEffect( TMP_EFFECT, NULL, TACHI_EFFECT_IMAGE );
         else           return doEffect( tmp_effect.effect, NULL, TACHI_EFFECT_IMAGE );
     }
@@ -1120,7 +1048,7 @@ int ONScripterLabel::ldCommand()
         else if ( loc == 'c' ) no = 1;
         else if ( loc == 'r' ) no = 2;
         
-        tachi_info[ no ].setImageName( tmp_string_buffer );
+        tachi_info[ no ].setImageName( buf );
         parseTaggedString( &tachi_info[ no ] );
         setupAnimationInfo( &tachi_info[ no ] );
         if ( tachi_info[ no ].image_surface )
@@ -1129,10 +1057,8 @@ int ONScripterLabel::ldCommand()
         tachi_info[ no ].pos.x = screen_width * (no+1) / 4 - tachi_info[ no ].pos.w / 2;
         tachi_info[ no ].pos.y = underline_value - tachi_info[ no ].image_surface->h + 1;
 
-        char *buf = new char[512];
-        sprintf( buf, "ld %c, \"%s\",", loc, tmp_string_buffer );
-        makeEffectStr( &p_string_buffer, buf );
-        return setEffect( tmp_effect.effect, buf );
+        readEffect( &tmp_effect );
+        return setEffect( tmp_effect.effect );
     }
 }
 
@@ -1147,106 +1073,117 @@ int ONScripterLabel::jumpbCommand()
 {
     current_link_label_info->label_info = last_tilde.label_info;
     current_link_label_info->current_line = last_tilde.current_line;
-    current_link_label_info->offset = last_tilde.offset;
+
+    script_h.setCurrent( last_tilde.current_script );
 
     return RET_JUMP;
 }
 
 int ONScripterLabel::ispageCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 6;
+    script_h.readToken();
 
-    if ( clickstr_state == CLICK_NEWPAGE ){
-        setInt( p_string_buffer, 1 );
-    }
-    else{
-        setInt( p_string_buffer, 0 );
-    }
+    if ( clickstr_state == CLICK_NEWPAGE )
+        script_h.setInt( script_h.getStringBuffer(), 1 );
+    else
+        script_h.setInt( script_h.getStringBuffer(), 0 );
     
     return RET_CONTINUE;
 }
 
 int ONScripterLabel::isdownCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 6;
+    script_h.readToken();
 
-    if ( current_button_state.down_flag ){
-        setInt( p_string_buffer, 1 );
-    }
-    else{
-        setInt( p_string_buffer, 0 );
-    }
+    if ( current_button_state.down_flag )
+        script_h.setInt( script_h.getStringBuffer(), 1 );
+    else
+        script_h.setInt( script_h.getStringBuffer(), 0 );
     
     return RET_CONTINUE;
 }
 
 int ONScripterLabel::getversionCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 10;
+    script_h.readToken();
     
-    setInt( p_string_buffer, ONSCRIPTER_VERSION );
+    script_h.setInt( script_h.getStringBuffer(), ONSCRIPTER_VERSION );
 
     return RET_CONTINUE;
 }
 
 int ONScripterLabel::gettimerCommand()
 {
-    char *p_string_buffer; 
- 
-    if ( !strncmp( string_buffer + string_buffer_offset, "gettimer", 8 ) ){ 
-        p_string_buffer = string_buffer + string_buffer_offset + 8;
-        setInt( p_string_buffer, SDL_GetTicks() - internal_timer );
+    bool gettimer_flag;
+    
+    if      ( script_h.isName( "gettimer" ) ){
+        gettimer_flag = true;
     }
-    else if ( !strncmp( string_buffer + string_buffer_offset, "getbtntimer", 11 ) ){ 
-        p_string_buffer = string_buffer + string_buffer_offset + 11;
-        setInt( p_string_buffer, btnwait_time );
+    else if ( script_h.isName( "getbtntimer" ) ){
+        gettimer_flag = false;
     }
- 
+
+    script_h.readToken();
+
+    if ( gettimer_flag ){
+        script_h.setInt( script_h.getStringBuffer(), SDL_GetTicks() - internal_timer );
+    }
+    else{
+        script_h.setInt( script_h.getStringBuffer(), btnwait_time );
+    }
+        
     return RET_CONTINUE; 
 }
 
 int ONScripterLabel::getregCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 6;
-    char buf[256], buf2[256], *p_buf;
+    char *path = NULL;
+    const char *buf = script_h.readStr();
+    
+    if ( buf[0] != '$') errorAndExit( script_h.getStringBuffer(), "getreg: no string variable." );
+    char *p_buf = script_h.getStringBuffer()+1;
+    int no = script_h.parseInt( &p_buf );
+
+    buf = script_h.readStr();
+    setStr( &path , buf );
+    buf = script_h.readStr();
+
+    printf("  reading Registry file for [%s] %s\n", path, buf );
+        
+    char reg_buf[256], reg_buf2[256];
     FILE *fp;
     bool found_flag = false;
-    char *path = NULL;
-    
-    SKIP_SPACE( p_string_buffer );
-    
-    if ( p_string_buffer[0] != '$') errorAndExit( string_buffer + string_buffer_offset, "no string variable" );
-    p_string_buffer++;
-    int no = readInt( &p_string_buffer );
 
-    readStr( &p_string_buffer, tmp_string_buffer );
-    setStr( &path , tmp_string_buffer );
-    readStr( &p_string_buffer, tmp_string_buffer );
-
-    printf("  reading Registry file for [%s] %s\n", path, tmp_string_buffer );
-        
     if ( ( fp = fopen( registry_file, "r" ) ) == NULL ){
         fprintf( stderr, "Cannot open file [%s]\n", registry_file );
         return RET_CONTINUE;
     }
-    while( fgets( buf, 256, fp) && !found_flag ){
-        if ( buf[0] == '[' ){
+    while( fgets( reg_buf, 256, fp) && !found_flag ){
+        if ( reg_buf[0] == '[' ){
             unsigned int c=0;
-            while ( buf[c] != ']' && buf[c] != '\0' ) c++;
-            if ( !strncmp( buf + 1, path, (c-1>strlen(path))?(c-1):strlen(path) ) ){
-                while( fgets( buf, 256, fp) ){
-                    p_buf = buf+1;
-                    readStr( &p_buf, buf2 );
-                    if ( strncmp( buf2,
-                                  tmp_string_buffer,
-                                  (strlen(buf2)>strlen(tmp_string_buffer))?strlen(buf2):strlen(tmp_string_buffer) ) ) continue;
+            while ( reg_buf[c] != ']' && reg_buf[c] != '\0' ) c++;
+            if ( !strncmp( reg_buf + 1, path, (c-1>strlen(path))?(c-1):strlen(path) ) ){
+                while( fgets( reg_buf, 256, fp) ){
+                    //p_buf = reg_buf+1;
+                    script_h.pushCurrent( reg_buf+1 );
+                    buf = script_h.readStr( reg_buf2 );
+                    if ( strncmp( reg_buf2,
+                                  buf,
+                                  (strlen(reg_buf2)>strlen(buf))?strlen(reg_buf2):strlen(buf) ) ){
+                        script_h.popCurrent();
+                        continue;
+                    }
                     
-                    readStr( &p_buf, buf2 );
-                    if ( buf2[0] != '=' ) continue;
+                    script_h.readStr( reg_buf2 );
+                    if ( reg_buf2[0] != '=' ){
+                        script_h.popCurrent();
+                        continue;
+                    }
 
-                    readStr( &p_buf, buf2 );
-                    setStr( &str_variables[ no ], buf2 );
-                    printf("  $%d = %s\n", no, str_variables[ no ] );
+                    script_h.readStr( reg_buf2 );
+                    script_h.popCurrent();
+                    setStr( &script_h.str_variables[ no ], reg_buf2 );
+                    printf("  $%d = %s\n", no, script_h.str_variables[ no ] );
                     found_flag = true;
                     break;
                 }
@@ -1262,35 +1199,28 @@ int ONScripterLabel::getregCommand()
 
 int ONScripterLabel::getmouseposCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 11;
-    char *p_buf = p_string_buffer;
-
-    readInt( &p_string_buffer );
-    setInt( p_buf, current_button_state.x * screen_ratio2 / screen_ratio1 );
+    script_h.readToken();
+    script_h.setInt( script_h.getStringBuffer(), current_button_state.x * screen_ratio2 / screen_ratio1 );
     
-    p_buf = p_string_buffer;
-    setInt( p_buf, current_button_state.y * screen_ratio2 / screen_ratio1 );
+    script_h.readToken();
+    script_h.setInt( script_h.getStringBuffer(), current_button_state.y * screen_ratio2 / screen_ratio1 );
     
     return RET_CONTINUE;
 }
 
 int ONScripterLabel::getcursorposCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 12;
-    char *p_buf = p_string_buffer;
-
-    readInt( &p_string_buffer );
-    setInt( p_buf, sentence_font.x() );
+    script_h.readToken();
+    script_h.setInt( script_h.getStringBuffer(), sentence_font.x() );
     
-    p_buf = p_string_buffer;
-    setInt( p_buf, sentence_font.y() );
+    script_h.readToken();
+    script_h.setInt( script_h.getStringBuffer(), sentence_font.y() );
     
     return RET_CONTINUE;
 }
 
 int ONScripterLabel::getcselnumCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 10;
     int count = 0;
 
     SelectLink *link = root_select_link.next;
@@ -1298,8 +1228,8 @@ int ONScripterLabel::getcselnumCommand()
         count++;
         link = link->next;
     }
-    setInt( p_string_buffer, count );
-    //printf("getcselnum num=%d\n", count);
+    script_h.readToken();
+    script_h.setInt( script_h.getStringBuffer(), count );
 
     return RET_CONTINUE;
 }
@@ -1308,9 +1238,9 @@ int ONScripterLabel::gameCommand()
 {
     int i;
     
-    current_link_label_info->label_info = lookupLabel( "start" );
+    current_link_label_info->label_info = script_h.lookupLabel( "start" );
     current_link_label_info->current_line = 0;
-    current_link_label_info->offset = 0;
+    script_h.setCurrent( current_link_label_info->label_info.start_address );
     current_mode = NORMAL_MODE;
 
     sentence_font.wait_time = default_text_speed[text_speed_no];
@@ -1335,10 +1265,10 @@ int ONScripterLabel::gameCommand()
     /* ---------------------------------------- */
     /* Initialize local variables */
     for ( i=0 ; i<200 ; i++ ){
-        num_variables[i] = 0;
-        delete[] str_variables[i];
-        str_variables[i] = new char[1];
-        str_variables[i][0] = '\0';
+        script_h.num_variables[i] = 0;
+        delete[] script_h.str_variables[i];
+        script_h.str_variables[i] = new char[1];
+        script_h.str_variables[i][0] = '\0';
     }
 
     return RET_JUMP;
@@ -1347,18 +1277,15 @@ int ONScripterLabel::gameCommand()
 int ONScripterLabel::exbtnCommand()
 {
     int sprite_no = -1, no;
-    char *p_string_buffer;
     ButtonLink *button;
     
-    if ( !strncmp( string_buffer + string_buffer_offset, "exbtn_d", 7 ) ){
-        p_string_buffer = string_buffer + string_buffer_offset + 7;
+    if ( script_h.isName( "exbtn_d" ) ){
         button = &exbtn_d_button_link;
         if ( button->exbtn_ctl ) delete[] button->exbtn_ctl;
     }
     else{
-        p_string_buffer = string_buffer + string_buffer_offset + 5;
-        sprite_no = readInt( &p_string_buffer );
-        no = readInt( &p_string_buffer );
+        sprite_no = script_h.readInt();
+        no = script_h.readInt();
 
         if ( sprite_info[ sprite_no ].num_of_cells == 0 ) return RET_CONTINUE;
         
@@ -1367,15 +1294,15 @@ int ONScripterLabel::exbtnCommand()
         last_button_link = last_button_link->next;
     }
     //printf("exbtnCommand %s\n",string_buffer + string_buffer_offset);
-    readStr( &p_string_buffer, tmp_string_buffer );
+    const char *buf = script_h.readStr();
 
     //if ( !sprite_info[ sprite_no ].valid ) return RET_CONTINUE;
 
     button->button_type = EX_SPRITE_BUTTON;
     button->sprite_no   = sprite_no;
     button->no          = no;
-    button->exbtn_ctl   = new char[ strlen( tmp_string_buffer ) + 1 ];
-    memcpy( button->exbtn_ctl, tmp_string_buffer, strlen( tmp_string_buffer ) + 1 );
+    button->exbtn_ctl   = new char[ strlen( buf ) + 1 ];
+    strcpy( button->exbtn_ctl, buf );
     
     if ( sprite_no >= 0 &&
          ( sprite_info[ sprite_no ].image_surface || sprite_info[ sprite_no ].trans_mode == AnimationInfo::TRANS_STRING ) ){
@@ -1388,9 +1315,7 @@ int ONScripterLabel::exbtnCommand()
 
 int ONScripterLabel::erasetextwindowCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 15;
-
-    erase_text_window_mode = readInt( &p_string_buffer );
+    erase_text_window_mode = script_h.readInt();
 
     return RET_CONTINUE;
 }
@@ -1399,7 +1324,8 @@ int ONScripterLabel::endCommand()
 {
     saveGlovalData();
     saveFileLog();
-    saveLabelLog();
+    if ( labellog_flag ) script_h.saveLabelLog();
+    if ( kidokuskip_flag ) script_h.saveKidokuData();
     if ( cdrom_info ){
         SDL_CDStop( cdrom_info );
         SDL_CDClose( cdrom_info );
@@ -1414,8 +1340,7 @@ int ONScripterLabel::endCommand()
 
 int ONScripterLabel::dwavestopCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 9;
-    int ch = readInt( &p_string_buffer );
+    int ch = script_h.readInt();
 
     if ( wave_sample[ch] ){
         Mix_Pause( ch );
@@ -1428,18 +1353,14 @@ int ONScripterLabel::dwavestopCommand()
 
 int ONScripterLabel::dwaveCommand()
 {
-    char *p_string_buffer;
-    
-    if ( !strncmp( string_buffer + string_buffer_offset, "dwaveloop", 9 ) ){
+    if ( script_h.isName( "dwaveloop" ) ){
         wave_play_once_flag = true;
-        p_string_buffer = string_buffer + string_buffer_offset + 9;
     }
     else{
         wave_play_once_flag = false;
-        p_string_buffer = string_buffer + string_buffer_offset + 5;
     }
 
-    int ch = readInt( &p_string_buffer );
+    int ch = script_h.readInt();
 
     if ( wave_sample[ch] ){
         Mix_Pause( ch );
@@ -1447,15 +1368,15 @@ int ONScripterLabel::dwaveCommand()
         wave_sample[ch] = NULL;
     }
 
-    readStr( &p_string_buffer, tmp_string_buffer );
-    playWave( tmp_string_buffer, wave_play_once_flag, ch );
+    const char *buf = script_h.readStr();
+    playWave( buf, wave_play_once_flag, ch );
         
     return RET_CONTINUE;
 }
 
 int ONScripterLabel::delayCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 5;
+    int t = script_h.readInt();
 
     if ( event_mode & (WAIT_SLEEP_MODE | WAIT_INPUT_MODE ) ){
         event_mode = IDLE_EVENT_MODE;
@@ -1464,15 +1385,14 @@ int ONScripterLabel::delayCommand()
     else{
         event_mode = WAIT_SLEEP_MODE | WAIT_INPUT_MODE;
         key_pressed_flag = false;
-        startTimer( readInt( &p_string_buffer ) );
+        startTimer( t );
         return RET_WAIT;
     }
 }
 
 int ONScripterLabel::cspCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 3;
-    int no = readInt( &p_string_buffer );
+    int no = script_h.readInt();
 
     if ( no == -1 )
         for ( int i=0 ; i<MAX_SPRITE_NUM ; i++ ){
@@ -1487,9 +1407,7 @@ int ONScripterLabel::cspCommand()
 
 int ONScripterLabel::cselgotoCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 8;
-
-    int csel_no = readInt( &p_string_buffer );
+    int csel_no = script_h.readInt();
 
     int counter = 0;
     SelectLink *link = root_select_link.next;
@@ -1497,11 +1415,12 @@ int ONScripterLabel::cselgotoCommand()
         if ( csel_no == counter++ ) break;
         link = link->next;
     }
-    if ( !link ) errorAndExit( string_buffer + string_buffer_offset, "no select link" );
+    if ( !link ) errorAndExit( "cselgoto: no select link" );
 
-    current_link_label_info->label_info   = lookupLabel( link->label );
+    current_link_label_info->label_info   = script_h.lookupLabel( link->label );
     current_link_label_info->current_line = 0;
-    current_link_label_info->offset       = 0;
+    script_h.setCurrent( current_link_label_info->label_info.start_address );
+    
     saveon_flag = shelter_soveon_flag;
 
     deleteSelectLink();
@@ -1512,14 +1431,12 @@ int ONScripterLabel::cselgotoCommand()
 
 int ONScripterLabel::cselbtnCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 7;
-
-    int csel_no   = readInt( &p_string_buffer );
-    int button_no = readInt( &p_string_buffer );
+    int csel_no   = script_h.readInt();
+    int button_no = script_h.readInt();
 
     FontInfo csel_info = sentence_font;
-    csel_info.top_xy[0] = readInt( &p_string_buffer );
-    csel_info.top_xy[1] = readInt( &p_string_buffer );
+    csel_info.top_xy[0] = script_h.readInt();
+    csel_info.top_xy[1] = script_h.readInt();
     csel_info.xy[0] = csel_info.xy[1] = 0;
 
     int counter = 0;
@@ -1529,7 +1446,7 @@ int ONScripterLabel::cselbtnCommand()
         link = link->next;
     }
     if ( link == NULL || link->text == NULL || *link->text == '\0' )
-        errorAndExit( string_buffer + string_buffer_offset, "no select text" );
+        errorAndExit( "cselbtn: no select text" );
 
     last_button_link->next = getSelectableSentence( link->text, &csel_info );
     last_button_link = last_button_link->next;
@@ -1561,13 +1478,11 @@ int ONScripterLabel::clickCommand()
 
 int ONScripterLabel::clCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 2;
-    
-    readStr( &p_string_buffer, tmp_string_buffer );
-    char loc = tmp_string_buffer[0];
+    const char *buf = script_h.readStr();
+    char loc = buf[0];
     
     if ( event_mode & EFFECT_EVENT_MODE ){
-        int num = readEffect( &p_string_buffer, &tmp_effect );
+        int num = readEffect( &tmp_effect );
         if ( num > 1 ) return doEffect( TMP_EFFECT, NULL, TACHI_EFFECT_IMAGE );
         else           return doEffect( tmp_effect.effect, NULL, TACHI_EFFECT_IMAGE );
     }
@@ -1582,19 +1497,15 @@ int ONScripterLabel::clCommand()
             tachi_info[2].remove();
         }
 
-        char *buf = new char[512];
-        sprintf( buf, "cl %c,", loc );
-        makeEffectStr( &p_string_buffer, buf );
-        return setEffect( tmp_effect.effect, buf );
+        readEffect( &tmp_effect );
+        return setEffect( tmp_effect.effect );
     }
 }
 
 int ONScripterLabel::cellCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 4;
-    
-    int sprite_no = readInt( &p_string_buffer );
-    int no        = readInt( &p_string_buffer );
+    int sprite_no = script_h.readInt();
+    int no        = script_h.readInt();
 
     if ( sprite_info[ sprite_no ].num_of_cells > 0 )
         sprite_info[ sprite_no ].current_cell = no;
@@ -1604,17 +1515,17 @@ int ONScripterLabel::cellCommand()
 
 int ONScripterLabel::captionCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 7;
-
-    readStr( &p_string_buffer, tmp_string_buffer );
-
+    const char* buf = script_h.readStr();
+    char *buf2 = new char[ strlen( buf ) + 1 ];
+    strcpy( buf2, buf );
+    
 #if defined(LINUX) /* convert sjis to euc */
     int i = 0;
-    while ( tmp_string_buffer[i] ) {
-        if ( (unsigned char)tmp_string_buffer[i] > 0x80 ) {
+    while ( buf2[i] ) {
+        if ( (unsigned char)buf2[i] > 0x80 ) {
             unsigned char c1, c2;
-            c1 = tmp_string_buffer[i];
-            c2 = tmp_string_buffer[i+1];
+            c1 = buf2[i];
+            c2 = buf2[i+1];
 
             c1 -= (c1 <= 0x9f) ? 0x71 : 0xb1;
             c1 = c1 * 2 + 1;
@@ -1629,109 +1540,51 @@ int ONScripterLabel::captionCommand()
                 c2 -= 0x1f;
             }
 
-            tmp_string_buffer[i]   = c1 | 0x80;
-            tmp_string_buffer[i+1] = c2 | 0x80;
+            buf2[i]   = c1 | 0x80;
+            buf2[i+1] = c2 | 0x80;
             i++;
         }
         i++;
     }
 #endif
 
-    setStr( &wm_title_string, tmp_string_buffer );
-    setStr( &wm_icon_string,  tmp_string_buffer );
-
+    setStr( &wm_title_string, buf2 );
+    setStr( &wm_icon_string,  buf2 );
+    delete[] buf2;
+    
     SDL_WM_SetCaption( wm_title_string, wm_icon_string );
-
-    return RET_CONTINUE;
-}
-
-
-int ONScripterLabel::btndownCommand()
-{
-    char *p_string_buffer = string_buffer + string_buffer_offset + 7;
-    btndown_flag = (readInt( &p_string_buffer )==1)?true:false;
-
-    return RET_CONTINUE;
-}
-
-int ONScripterLabel::btndefCommand()
-{
-    char *p_string_buffer = string_buffer + string_buffer_offset + 6;
-    readStr( &p_string_buffer, tmp_string_buffer );
-
-    if ( strcmp( tmp_string_buffer, "clear" ) ){
-        btndef_info.remove();
-        if ( tmp_string_buffer[0] != '\0' ){
-            btndef_info.setImageName( tmp_string_buffer );
-            parseTaggedString( &btndef_info );
-            setupAnimationInfo( &btndef_info );
-            SDL_SetAlpha( btndef_info.image_surface, DEFAULT_BLIT_FLAG, SDL_ALPHA_OPAQUE );
-        }
-    }
-    
-    deleteButtonLink();
-    
-    return RET_CONTINUE;
-}
-
-int ONScripterLabel::btnCommand()
-{
-    SDL_Rect src_rect;
-    
-    last_button_link->next = new ButtonLink();
-    last_button_link = last_button_link->next;
-    
-    char *p_string_buffer = string_buffer + string_buffer_offset + 3;
-    last_button_link->button_type  = NORMAL_BUTTON;
-    last_button_link->no           = readInt( &p_string_buffer );
-    last_button_link->image_rect.x = readInt( &p_string_buffer ) * screen_ratio1 / screen_ratio2;
-    last_button_link->image_rect.y = readInt( &p_string_buffer ) * screen_ratio1 / screen_ratio2;
-    last_button_link->image_rect.w = readInt( &p_string_buffer ) * screen_ratio1 / screen_ratio2;
-    last_button_link->image_rect.h = readInt( &p_string_buffer ) * screen_ratio1 / screen_ratio2;
-    last_button_link->select_rect = last_button_link->image_rect;
-
-    src_rect.x = readInt( &p_string_buffer ) * screen_ratio1 / screen_ratio2;
-    src_rect.y = readInt( &p_string_buffer ) * screen_ratio1 / screen_ratio2;
-    src_rect.w = last_button_link->image_rect.w;
-    src_rect.h = last_button_link->image_rect.h;
-
-    last_button_link->image_surface = SDL_CreateRGBSurface( DEFAULT_SURFACE_FLAG, last_button_link->image_rect.w, last_button_link->image_rect.h, 32, rmask, gmask, bmask, amask );
-
-    SDL_BlitSurface( btndef_info.image_surface, &src_rect, last_button_link->image_surface, NULL );
 
     return RET_CONTINUE;
 }
 
 int ONScripterLabel::btnwaitCommand()
 {
-    char *p_string_buffer;
     bool del_flag, textbtn_flag = false, selectbtn_flag = false;
 
-    if ( !strncmp( string_buffer + string_buffer_offset, "btnwait2", 8 ) ){
-        p_string_buffer = string_buffer + string_buffer_offset + 8;
+    if ( script_h.isName( "btnwait2" ) ){
         del_flag = false;
     }
-    else if ( !strncmp( string_buffer + string_buffer_offset, "btnwait", 7 ) ){
-        p_string_buffer = string_buffer + string_buffer_offset + 7;
+    else if ( script_h.isName( "btnwait" ) ){
         del_flag = true;
     }
-    else if ( !strncmp( string_buffer + string_buffer_offset, "textbtnwait", 11 ) ){
-        p_string_buffer = string_buffer + string_buffer_offset + 11;
+    else if ( script_h.isName( "textbtnwait" ) ){
         del_flag = false;
         textbtn_flag = true;
     }
-    else if ( !strncmp( string_buffer + string_buffer_offset, "selectbtnwait", 13 ) ){
-        p_string_buffer = string_buffer + string_buffer_offset + 13;
+    else if ( script_h.isName( "selectbtnwait" ) ){
         del_flag = false;
         selectbtn_flag = true;
     }
 
-    if ( event_mode & WAIT_BUTTON_MODE ){
+    script_h.readToken();
+    
+    if ( event_mode & WAIT_BUTTON_MODE )
+    {
         btnwait_time = SDL_GetTicks() - internal_button_timer;
         btntime_value = 0;
 
         if ( textbtn_flag && skip_flag ) current_button_state.button = 0;
-        setInt( p_string_buffer, current_button_state.button );
+        script_h.setInt( script_h.getStringBuffer(), current_button_state.button );
 
         if ( del_flag ){
             if ( current_button_state.button > 0 ) deleteButtonLink();
@@ -1754,7 +1607,8 @@ int ONScripterLabel::btnwaitCommand()
 
         ButtonLink *p_button_link = root_button_link.next;
         while( p_button_link ){
-            if ( current_button_link.button_type == SPRITE_BUTTON || current_button_link.button_type == EX_SPRITE_BUTTON )
+            if ( current_button_link.button_type == SPRITE_BUTTON ||
+                 current_button_link.button_type == EX_SPRITE_BUTTON )
                 sprite_info[ current_button_link.sprite_no ].current_cell = 0;
             p_button_link = p_button_link->next;
         }
@@ -1827,9 +1681,62 @@ int ONScripterLabel::btnwaitCommand()
 
 int ONScripterLabel::btntimeCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 7;
+    btntime_value = script_h.readInt();
+    
+    return RET_CONTINUE;
+}
 
-    btntime_value = readInt( &p_string_buffer );
+int ONScripterLabel::btndownCommand()
+{
+    btndown_flag = (script_h.readInt()==1)?true:false;
+
+    return RET_CONTINUE;
+}
+
+int ONScripterLabel::btndefCommand()
+{
+    const char *buf = script_h.readStr();
+
+    if ( strcmp( buf, "clear" ) ){
+        btndef_info.remove();
+        if ( buf[0] != '\0' ){
+            btndef_info.setImageName( buf );
+            parseTaggedString( &btndef_info );
+            setupAnimationInfo( &btndef_info );
+            SDL_SetAlpha( btndef_info.image_surface, DEFAULT_BLIT_FLAG, SDL_ALPHA_OPAQUE );
+        }
+    }
+    
+    deleteButtonLink();
+    
+    return RET_CONTINUE;
+}
+
+int ONScripterLabel::btnCommand()
+{
+    SDL_Rect src_rect;
+
+    ButtonLink *b_link = new ButtonLink();
+    
+    b_link->button_type  = NORMAL_BUTTON;
+    b_link->no           = script_h.readInt();
+    b_link->image_rect.x = script_h.readInt() * screen_ratio1 / screen_ratio2;
+    b_link->image_rect.y = script_h.readInt() * screen_ratio1 / screen_ratio2;
+    b_link->image_rect.w = script_h.readInt() * screen_ratio1 / screen_ratio2;
+    b_link->image_rect.h = script_h.readInt() * screen_ratio1 / screen_ratio2;
+    b_link->select_rect = b_link->image_rect;
+
+    src_rect.x = script_h.readInt() * screen_ratio1 / screen_ratio2;
+    src_rect.y = script_h.readInt() * screen_ratio1 / screen_ratio2;
+    src_rect.w = b_link->image_rect.w;
+    src_rect.h = b_link->image_rect.h;
+
+    b_link->image_surface = SDL_CreateRGBSurface( DEFAULT_SURFACE_FLAG, b_link->image_rect.w, b_link->image_rect.h, 32, rmask, gmask, bmask, amask );
+
+    SDL_BlitSurface( btndef_info.image_surface, &src_rect, b_link->image_surface, NULL );
+
+    last_button_link->next = b_link;
+    last_button_link = last_button_link->next;
     
     return RET_CONTINUE;
 }
@@ -1848,17 +1755,16 @@ int ONScripterLabel::brCommand()
 
 int ONScripterLabel::bltCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 3;
     SDL_Rect src_rect, dst_rect, clip, clipped;
 
-    dst_rect.x = readInt( &p_string_buffer ) * screen_ratio1 / screen_ratio2;
-    dst_rect.y = readInt( &p_string_buffer ) * screen_ratio1 / screen_ratio2;
-    dst_rect.w = readInt( &p_string_buffer ) * screen_ratio1 / screen_ratio2;
-    dst_rect.h = readInt( &p_string_buffer ) * screen_ratio1 / screen_ratio2;
-    src_rect.x = readInt( &p_string_buffer ) * screen_ratio1 / screen_ratio2;
-    src_rect.y = readInt( &p_string_buffer ) * screen_ratio1 / screen_ratio2;
-    src_rect.w = readInt( &p_string_buffer ) * screen_ratio1 / screen_ratio2;
-    src_rect.h = readInt( &p_string_buffer ) * screen_ratio1 / screen_ratio2;
+    dst_rect.x = script_h.readInt() * screen_ratio1 / screen_ratio2;
+    dst_rect.y = script_h.readInt() * screen_ratio1 / screen_ratio2;
+    dst_rect.w = script_h.readInt() * screen_ratio1 / screen_ratio2;
+    dst_rect.h = script_h.readInt() * screen_ratio1 / screen_ratio2;
+    src_rect.x = script_h.readInt() * screen_ratio1 / screen_ratio2;
+    src_rect.y = script_h.readInt() * screen_ratio1 / screen_ratio2;
+    src_rect.w = script_h.readInt() * screen_ratio1 / screen_ratio2;
+    src_rect.h = script_h.readInt() * screen_ratio1 / screen_ratio2;
 
     if ( src_rect.w == dst_rect.w && src_rect.h == dst_rect.h ){
 
@@ -1884,12 +1790,10 @@ int ONScripterLabel::bltCommand()
 
 int ONScripterLabel::bgCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 2;
-    
-    readStr( &p_string_buffer, tmp_string_buffer );
+    const char *buf = script_h.readStr();
 
     if ( event_mode & EFFECT_EVENT_MODE ){
-        int num = readEffect( &p_string_buffer, &tmp_effect );
+        int num = readEffect( &tmp_effect );
         if ( num > 1 ) return doEffect( TMP_EFFECT, &bg_info, bg_effect_image );
         else           return doEffect( tmp_effect.effect, &bg_info, bg_effect_image );
     }
@@ -1901,17 +1805,17 @@ int ONScripterLabel::bgCommand()
 
         bg_effect_image = COLOR_EFFECT_IMAGE;
 
-        if ( !strcmp( (const char*)tmp_string_buffer, "white" ) ){
+        if ( !strcmp( (const char*)buf, "white" ) ){
             bg_info.color[0] = bg_info.color[1] = bg_info.color[2] = 0xff;
         }
-        else if ( !strcmp( (const char*)tmp_string_buffer, "black" ) ){
+        else if ( !strcmp( (const char*)buf, "black" ) ){
             bg_info.color[0] = bg_info.color[1] = bg_info.color[2] = 0x00;
         }
-        else if ( tmp_string_buffer[0] == '#' ){
-            readColor( &bg_info.color, tmp_string_buffer + 1 );
+        else if ( buf[0] == '#' ){
+            readColor( &bg_info.color, buf+1 );
         }
         else{
-            setStr( &bg_info.image_name, tmp_string_buffer );
+            setStr( &bg_info.image_name, buf );
             parseTaggedString( &bg_info );
             setupAnimationInfo( &bg_info );
             bg_effect_image = BG_EFFECT_IMAGE;
@@ -1932,10 +1836,8 @@ int ONScripterLabel::bgCommand()
             SDL_FillRect( background_surface, NULL, SDL_MapRGB( effect_dst_surface->format, bg_info.color[0], bg_info.color[1], bg_info.color[2]) );
         }
 
-        char *buf = new char[ 512 ];
-        sprintf( buf, "bg \"%s\",",tmp_string_buffer );
-        makeEffectStr( &p_string_buffer, buf );
-        return setEffect( tmp_effect.effect, buf );
+        readEffect( &tmp_effect );
+        return setEffect( tmp_effect.effect );
     }
 }
 
@@ -1952,29 +1854,28 @@ int ONScripterLabel::barclearCommand()
 
 int ONScripterLabel::barCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 3;
-
-    int no = readInt( &p_string_buffer );
+    int no = script_h.readInt();
     if ( bar_info[no] ) delete bar_info[no];
     bar_info[no] = new AnimationInfo();
     bar_info[no]->trans_mode = AnimationInfo::TRANS_COPY;
+    bar_info[no]->abs_flag = true;
     bar_info[no]->num_of_cells = 1;
     bar_info[no]->current_cell = 0;
     bar_info[no]->alpha_offset = 0;
 
-    int param           = readInt( &p_string_buffer );
-    bar_info[no]->pos.x = readInt( &p_string_buffer ) * screen_ratio1 / screen_ratio2;
-    bar_info[no]->pos.y = readInt( &p_string_buffer ) * screen_ratio1 / screen_ratio2;
+    int param           = script_h.readInt();
+    bar_info[no]->pos.x = script_h.readInt() * screen_ratio1 / screen_ratio2;
+    bar_info[no]->pos.y = script_h.readInt() * screen_ratio1 / screen_ratio2;
                           
-    bar_info[no]->pos.w = readInt( &p_string_buffer ) * screen_ratio1 / screen_ratio2;
-    bar_info[no]->pos.h = readInt( &p_string_buffer ) * screen_ratio1 / screen_ratio2;
-    int max             = readInt( &p_string_buffer );
-    if ( max == 0 ) errorAndExit( string_buffer + string_buffer_offset, "Invalid argument (max = 0)." );
+    bar_info[no]->pos.w = script_h.readInt() * screen_ratio1 / screen_ratio2;
+    bar_info[no]->pos.h = script_h.readInt() * screen_ratio1 / screen_ratio2;
+    int max             = script_h.readInt();
+    if ( max == 0 ) errorAndExit( "bar: max = 0." );
     bar_info[no]->pos.w = bar_info[no]->pos.w * param / max;
 
-    readStr( &p_string_buffer, tmp_string_buffer );
-    if ( tmp_string_buffer[0] != '#' ) errorAndExit( string_buffer + string_buffer_offset, "Color is not specified." );
-    readColor( &bar_info[no]->color, tmp_string_buffer + 1 );
+    const char *buf = script_h.readStr();
+    if ( buf[0] != '#' ) errorAndExit( "bar: Color is not specified." );
+    readColor( &bar_info[no]->color, buf+1 );
     
     bar_info[no]->image_surface = SDL_CreateRGBSurface( DEFAULT_SURFACE_FLAG, bar_info[no]->pos.w, bar_info[no]->pos.h, 32, rmask, gmask, bmask, amask );
     SDL_SetAlpha( bar_info[no]->image_surface, DEFAULT_BLIT_FLAG, SDL_ALPHA_OPAQUE );
@@ -1985,22 +1886,19 @@ int ONScripterLabel::barCommand()
 
 int ONScripterLabel::autoclickCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 9;
-    autoclick_timer = readInt( &p_string_buffer );
+    autoclick_timer = script_h.readInt();
 
     return RET_CONTINUE;
 }
 
 int ONScripterLabel::amspCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 4;
+    int no = script_h.readInt();
+    sprite_info[ no ].pos.x = script_h.readInt() * screen_ratio1 / screen_ratio2;
+    sprite_info[ no ].pos.y = script_h.readInt() * screen_ratio1 / screen_ratio2;
 
-    int no = readInt( &p_string_buffer );
-    sprite_info[ no ].pos.x = readInt( &p_string_buffer ) * screen_ratio1 / screen_ratio2;
-    sprite_info[ no ].pos.y = readInt( &p_string_buffer ) * screen_ratio1 / screen_ratio2;
-
-    if ( end_with_comma_flag )
-        sprite_info[ no ].trans = readInt( &p_string_buffer );
+    if ( script_h.end_with_comma_flag )
+        sprite_info[ no ].trans = script_h.readInt();
 
     if ( sprite_info[ no ].trans > 255 ) sprite_info[ no ].trans = 255;
     else if ( sprite_info[ no ].trans < 0 ) sprite_info[ no ].trans = 0;
@@ -2019,3 +1917,4 @@ int ONScripterLabel::allsphideCommand()
     all_sprite_hide_flag = true;
     return RET_CONTINUE;
 }
+

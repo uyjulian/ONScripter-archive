@@ -30,6 +30,7 @@
 #include <math.h>
 #include <time.h>
 
+#include "ScriptHandler.h"
 #include "NsaReader.h"
 #include "DirectReader.h"
 #include "AnimationInfo.h"
@@ -41,8 +42,6 @@
 
 #define MINIMUM_TIMER_RESOLUTION 1
 
-#define VARIABLE_RANGE 4096
-#define ARRAY_VARIABLE_RANGE 200
 #define MAX_SAVE_FILE 20
 
 #define MAX_TEXT_BUFFER 10
@@ -54,41 +53,13 @@ typedef unsigned char uchar3[3];
 class ScriptParser
 {
 public:
-    struct LabelInfo{
-        char *name;
-        char *start_address;
-        int  num_of_lines;
-        bool access_flag;
-    };
     struct LinkLabelInfo{
         struct LinkLabelInfo *previous, *next;
-        struct LabelInfo label_info;
-        int current_line;
-        int offset;
-        bool end_of_line_flag; // True if here is the end of the line
-        bool new_line_flag; // True if new line is requested after returning from a subroutine
+        ScriptHandler::LabelInfo label_info;
+        int current_line; // line number in the current label
+        bool textgosub_flag; // Set if the current token is in text line, used when encountered an atmark while textgosub
+        int string_buffer_offset;
         char *current_script;
-    };
-    
-    struct NameAlias{
-        struct NameAlias *next;
-        char *alias;
-        int  num;
-
-        NameAlias(){
-            next  = NULL;
-            alias = NULL;
-        };
-    };
-    struct StringAlias{
-        struct StringAlias *next;
-        char *alias;
-        char *str;
-
-        StringAlias(){
-            next  = NULL;
-            alias = str = NULL;
-        };
     };
 
     typedef enum{ SYSTEM_NULL = 0,
@@ -105,10 +76,12 @@ public:
     typedef enum{ RET_COMMENT = 0,
                       RET_NOMATCH = 1,
                       RET_CONTINUE = 2,
-                      RET_CONTINUE_NONEXT = 3,
-                      RET_WAIT = 4,
-                      RET_WAIT_NEXT = 5,
-                      RET_JUMP = 6
+                      RET_CONTINUE_NOREAD = 3,
+                      RET_SKIP_LINE = 4,
+                      RET_WAIT = 5,
+                      RET_WAIT_NEXT = 6,
+                      RET_WAIT_NOREAD = 7,
+                      RET_JUMP = 8
                       } COMMAND_RETURN;
 
     typedef enum{ CLICK_NONE = 0,
@@ -117,19 +90,12 @@ public:
                       CLICK_IGNORE = 3
                       } CLICKSTR_STATE;
 
-    ScriptParser();
+    ScriptParser( char *path );
     ~ScriptParser();
 
     int open( char *path );
-    int skipLine( char **buf );
-    int readLine( char **buf, bool raw_flag = false );
-    bool getLabelAccessFlag( const char *label );
-    struct LabelInfo lookupLabel( const char* label );
-    struct LabelInfo lookupLabelNext( const char* label );
     int parseLine();
 
-    bool readToken( char **src_buf, char *dst_buf, bool skip_space_flag = false );
-    bool readStr( char **src_buf, char *dst_buf );
     FILE *fopen(const char *path, const char *mode);
     void skipToken();
     void saveGlovalData();
@@ -156,6 +122,7 @@ public:
     int rmenuCommand();
     int returnCommand();
     int numaliasCommand();
+    int nsadirCommand();
     int nsaCommand();
     int nextCommand();
     int mulCommand();
@@ -171,6 +138,7 @@ public:
     int lookbackbuttonCommand();
     int lenCommand();
     int labellogCommand();
+    int kidokuskipCommand();
     int itoaCommand();
     int intlimitCommand();
     int incCommand();
@@ -206,10 +174,11 @@ protected:
     int  debug_level;
 
     char *archive_path;
+    char *nsa_path;
     bool globalon_flag;
     bool filelog_flag;
     bool labellog_flag;
-    int num_of_label_accessed;
+    bool kidokuskip_flag;
     int label_stack_depth;
 
     bool jumpf_flag;
@@ -220,11 +189,7 @@ protected:
     bool usewheel_flag;
     bool mode_saya_flag;
     
-    BaseReader *cBR;
-
-    int string_buffer_length, string_buffer_offset;
-    int line_cache;
-    char *string_buffer, *tmp_string_buffer;
+    int string_buffer_offset;
 
     struct LinkLabelInfo root_link_label_info, *current_link_label_info;
 
@@ -234,37 +199,14 @@ protected:
     int screen_width, screen_height;
     char *version_str;
     int underline_value;
-    bool end_with_comma_flag;
 
-    /* ---------------------------------------- */
-    /* Number, string and array variables */
-    typedef enum{ VAR_INT, VAR_STR, VAR_ARRAY } VARIABLE_TYPE;
-    int num_variables[ VARIABLE_RANGE ];
-    int num_limit_upper[ VARIABLE_RANGE ];
-    int num_limit_lower[ VARIABLE_RANGE ];
-    bool num_limit_flag[ VARIABLE_RANGE ];
-    char *str_variables[ VARIABLE_RANGE ];
-    struct ArrayVariable{
-        int num_dim;
-        int dim[20];
-        int *data;
-        ArrayVariable(){
-            data = NULL;
-        };
-    } array_variables[ ARRAY_VARIABLE_RANGE ], tmp_array_variable;
-
-    int decodeArraySub( char **buf, struct ArrayVariable *array );
-    int *decodeArray( char **buf, int offset = 0 );
-    int readInt( char **buf );
-    void setInt( char *buf, int val, int offset = 0 );
-    void setNumVariable( int no, int val );
-    void setStr( char **dst, char *src );
+    void setStr( char **dst, const char *src );
     
-    void gosubReal( char *label, bool atmark_and_textgosub_flag = false );
+    void gosubReal( const char *label, bool textgosub_flag, char *current );
 
     /* ---------------------------------------- */
     /* Effect related variables */
-    typedef enum{ WINDOW_EFFECT = -1, PRINT_EFFECT = -2, TMP_EFFECT = -3, QUAKE_EFFECT = -4  } EFFECT_MODE;
+    typedef enum{ WINDOW_EFFECT = -1, TMP_EFFECT = -2 } EFFECT_MODE;
     struct EffectLink{
         struct EffectLink *next;
         int num;
@@ -280,12 +222,12 @@ protected:
         };
     };
     
-    struct EffectLink root_effect_link, *last_effect_link, window_effect, print_effect, tmp_effect, quake_effect;
+    EffectLink root_effect_link, *last_effect_link, window_effect, tmp_effect;
     
     int effect_blank;
 
-    struct EffectLink getEffect( int effect_no );
-    int readEffect( char **buf, struct EffectLink *effect );
+    EffectLink getEffect( int effect_no );
+    int readEffect( EffectLink *effect );
 
     /* ---------------------------------------- */
     /* Lookback related variables */
@@ -302,7 +244,7 @@ protected:
     /* For loop related variables */
     struct ForInfo{
         struct ForInfo *previous, *next;
-        struct LabelInfo label_info;
+        ScriptHandler::LabelInfo label_info;
         int current_line;
         int offset;
         char *current_script;
@@ -355,7 +297,7 @@ protected:
     char *clickstr_list;
     int  clickstr_line;
     int  clickstr_state;
-    bool text_line_flag;
+    //bool text_line_flag;
 
     /* ---------------------------------------- */
     /* Sound related variables */
@@ -408,13 +350,12 @@ protected:
     uchar3 menu_select_off_color;
     uchar3 menu_select_nofile_color;
 
-    int getSystemCallNo( char *buffer );
+    int getSystemCallNo( const char *buffer );
     void getSJISFromInteger( char *buffer, int no, bool add_space_flag=true );
-    void addStringBuffer( char ch, int string_counter );
     unsigned char convHexToDec( char ch );
-    void readColor( uchar3 *color, char *buf );
+    void readColor( uchar3 *color, const char *buf );
     
-    void errorAndExit( char *str, char *reason=NULL );
+    void errorAndExit( const char *str, const char *reason=NULL );
 
     void saveInt( FILE *fp, int var );
     void loadInt( FILE *fp, int *var );
@@ -426,19 +367,12 @@ protected:
     /* ---------------------------------------- */
     /* System customize related variables */
     char *textgosub_label;
+
+protected:
+    ScriptHandler script_h;
     
 private:
-    char *script_buffer;
-    long script_buffer_length;
-    int num_of_labels;
-    struct LabelInfo *label_info;
 
-    struct NameAlias root_name_alias, *last_name_alias;
-    struct StringAlias root_str_alias, *last_str_alias;
-
-    int readScript();
-    int labelScript();
-    int findLabel( const char* label );
 };
 
 #endif // __SCRIPT_PARSER_H__

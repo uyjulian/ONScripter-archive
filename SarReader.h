@@ -38,9 +38,9 @@ public:
     int getNumFiles();
     int getNumAccessed();
     
-    bool getAccessFlag( char *file_name );
-    size_t getFileLength( char *file_name );
-    size_t getFile( char *file_name, unsigned char *buf );
+    bool getAccessFlag( const char *file_name );
+    size_t getFileLength( const char *file_name );
+    size_t getFile( const char *file_name, unsigned char *buf );
     struct FileInfo getFileByIndex( int index );
     
 protected:
@@ -49,8 +49,8 @@ protected:
     int num_of_sar_archives;
 
     int readArchive( ArchiveInfo *ai, bool nsa_flag = false );
-    int getIndexFromFile( ArchiveInfo *ai, char *file_name );
-    size_t getFileSub( ArchiveInfo *ai, char *file_name, unsigned char *buf );
+    int getIndexFromFile( ArchiveInfo *ai, const char *file_name );
+    size_t getFileSub( ArchiveInfo *ai, const char *file_name, unsigned char *buf );
 };
 
 #endif // __SAR_READER_H__

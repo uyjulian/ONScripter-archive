@@ -25,7 +25,7 @@
 
 int ScriptParser::windowbackCommand()
 {
-    if ( current_mode != DEFINE_MODE ) errorAndExit( string_buffer + string_buffer_offset, "not in the define section" );
+    if ( current_mode != DEFINE_MODE ) errorAndExit( script_h.getStringBuffer(), "not in the define section" );
     windowback_flag = true;
 
     return RET_CONTINUE;
@@ -33,25 +33,19 @@ int ScriptParser::windowbackCommand()
 
 int ScriptParser::versionstrCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 10;
-    int  length[2];
-    
     delete[] version_str;
 
-    printf("versionstr %s\n",p_string_buffer);
-    
-    readStr( &p_string_buffer, tmp_string_buffer );
-    length[0] = strlen(tmp_string_buffer) + strlen("\n");
+    const char *buf = script_h.readStr();
+    char *buf2 = new char[ strlen( buf ) + 1 ];
+    strcpy( buf2, buf );
 
-    char *buf = new char[ length[0] ];
-    memcpy( buf, tmp_string_buffer, length[0] );
+    buf = script_h.readStr();
+    version_str = new char[ strlen( buf2 ) + strlen( buf ) + strlen("\n") * 2 + 1 ];
+    sprintf( version_str, "%s\n%s\n", buf2, buf );
 
-    readStr( &p_string_buffer, tmp_string_buffer );
-    length[1] = strlen(tmp_string_buffer) + strlen("\n");
-    version_str = new char[ length[0] + length[1] + 1 ];
-    sprintf( version_str, "%s\n%s\n", buf, tmp_string_buffer );
+    delete[] buf2;
 
-    delete[] buf;
+    printf("versionstr %s", version_str );
     
     return RET_CONTINUE;
 }
@@ -65,114 +59,106 @@ int ScriptParser::usewheelCommand()
 
 int ScriptParser::underlineCommand()
 {
-    if ( current_mode != DEFINE_MODE ) errorAndExit( string_buffer + string_buffer_offset, "not in the define section" );
-    char *p_string_buffer = string_buffer + string_buffer_offset + 9;
+    if ( current_mode != DEFINE_MODE ) errorAndExit( script_h.getStringBuffer(), "not in the define section" );
 
-    underline_value = readInt( &p_string_buffer ) * screen_ratio1 / screen_ratio2;
+    underline_value = script_h.readInt() * screen_ratio1 / screen_ratio2;
 
     return RET_CONTINUE;
 }
 
 int ScriptParser::transmodeCommand()
 {
-    if ( current_mode != DEFINE_MODE ) errorAndExit( string_buffer + string_buffer_offset, "not in the define section" );
-    char *p_string_buffer = string_buffer + string_buffer_offset + 9;
+    if ( current_mode != DEFINE_MODE ) errorAndExit( script_h.getStringBuffer(), "not in the define section" );
 
-    readStr( &p_string_buffer, tmp_string_buffer );
-    if      ( !strcmp( tmp_string_buffer, "leftup" ) )   trans_mode = AnimationInfo::TRANS_TOPLEFT;
-    else if ( !strcmp( tmp_string_buffer, "copy" ) )     trans_mode = AnimationInfo::TRANS_COPY;
-    else if ( !strcmp( tmp_string_buffer, "alpha" ) )    trans_mode = AnimationInfo::TRANS_ALPHA;
-    else if ( !strcmp( tmp_string_buffer, "righttup" ) ) trans_mode = AnimationInfo::TRANS_TOPRIGHT;
+    const char *buf = script_h.readStr();
+    if      ( !strcmp( buf, "leftup" ) )   trans_mode = AnimationInfo::TRANS_TOPLEFT;
+    else if ( !strcmp( buf, "copy" ) )     trans_mode = AnimationInfo::TRANS_COPY;
+    else if ( !strcmp( buf, "alpha" ) )    trans_mode = AnimationInfo::TRANS_ALPHA;
+    else if ( !strcmp( buf, "righttup" ) ) trans_mode = AnimationInfo::TRANS_TOPRIGHT;
 
     return RET_CONTINUE;
 }
 
 int ScriptParser::timeCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 4;
     time_t t = time(NULL);
     struct tm *tm = localtime( &t );
 
-    setInt( p_string_buffer, tm->tm_hour );
-    readInt( &p_string_buffer );
+    script_h.readToken();
+    script_h.setInt( script_h.getStringBuffer(), tm->tm_hour );
     
-    setInt( p_string_buffer, tm->tm_min );
-    readInt( &p_string_buffer );
+    script_h.readToken();
+    script_h.setInt( script_h.getStringBuffer(), tm->tm_min );
     
-    setInt( p_string_buffer, tm->tm_sec );
-    readInt( &p_string_buffer );
+    script_h.readToken();
+    script_h.setInt( script_h.getStringBuffer(), tm->tm_sec );
 
     return RET_CONTINUE;
 }
 
 int ScriptParser::textgosubCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 9;
-    if ( current_mode != DEFINE_MODE ) errorAndExit( string_buffer + string_buffer_offset, "not in the define section" );
+    if ( current_mode != DEFINE_MODE ) errorAndExit( script_h.getStringBuffer(), "not in the define section" );
 
-    readStr( &p_string_buffer, tmp_string_buffer );
-    setStr( &textgosub_label, tmp_string_buffer+1 );
+    const char *buf = script_h.readStr();
+    setStr( &textgosub_label, buf+1 );
     
     return RET_CONTINUE;
 }
 
 int ScriptParser::subCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 3;
-    char *p_buf = p_string_buffer;
+    int val1 = script_h.readInt();
+    char *save_buf = script_h.saveStringBuffer();
 
-    int val1 = readInt( &p_string_buffer );
-    int val2 = readInt( &p_string_buffer );
-    setInt( p_buf, val1 - val2 );
+    int val2 = script_h.readInt();
+    script_h.setInt( save_buf, val1 - val2 );
 
     return RET_CONTINUE;
 }
 
 int ScriptParser::straliasCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 8;
-    if ( current_mode != DEFINE_MODE ) errorAndExit( string_buffer + string_buffer_offset, "not in the define section" );
-
-    StringAlias *p_str_alias = new StringAlias();
+    if ( current_mode != DEFINE_MODE ) errorAndExit( script_h.getStringBuffer(), "not in the define section" );
     
-    readStr( &p_string_buffer, tmp_string_buffer );
-    setStr( &p_str_alias->alias, tmp_string_buffer );
+    const char *buf = script_h.readStr();
+    char *buf2 = new char[ strlen( buf ) + 1 ];
+    strcpy( buf2, buf );
     
-    readStr( &p_string_buffer, tmp_string_buffer );
-    setStr( &p_str_alias->str, tmp_string_buffer );
+    buf = script_h.readStr();
     
-    last_str_alias->next = p_str_alias;
-    last_str_alias = last_str_alias->next;
-
+    script_h.addStrAlias( buf2, buf );
+    delete[] buf2;
+    
     return RET_CONTINUE;
 }
 
 int ScriptParser::skipCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 4;
-    int skip_num    = readInt( &p_string_buffer );
+    int skip_num    = script_h.readInt();
     int skip_offset = current_link_label_info->current_line + skip_num;
 
     while ( skip_offset >= current_link_label_info->label_info.num_of_lines ){ 
         skip_offset -= current_link_label_info->label_info.num_of_lines + 1;
-        current_link_label_info->label_info = lookupLabelNext( current_link_label_info->label_info.name );
+        current_link_label_info->label_info = script_h.lookupLabelNext( current_link_label_info->label_info.name );
     }
     if ( skip_offset == -1 ) skip_offset = 0; // -1 indicates a label line
     current_link_label_info->current_line = skip_offset;
-    current_link_label_info->offset = 0;
+    
+    script_h.setCurrent( current_link_label_info->label_info.start_address );
+    script_h.skipLine( current_link_label_info->current_line );
 
     return RET_JUMP;
 }
 
 int ScriptParser::selectvoiceCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 11;
-    if ( current_mode != DEFINE_MODE ) errorAndExit( string_buffer + string_buffer_offset, "not in the define section" );
+    if ( current_mode != DEFINE_MODE ) errorAndExit( script_h.getStringBuffer(), "not in the define section" );
 
     for ( int i=0 ; i<SELECTVOICE_NUM ; i++ ){
-        readStr( &p_string_buffer, tmp_string_buffer );
-        if ( tmp_string_buffer[0] != '\0' ){
-            setStr( &selectvoice_file_name[i], tmp_string_buffer );
+        const char *buf = script_h.readStr();
+        if ( buf[0] != '\0' ){
+            setStr( &selectvoice_file_name[i], buf );
         }
         else if ( selectvoice_file_name[i] ){
             delete selectvoice_file_name[i];
@@ -185,47 +171,41 @@ int ScriptParser::selectvoiceCommand()
 
 int ScriptParser::selectcolorCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 11;
+    const char *buf = script_h.readStr();
+    if ( buf[0] != '#' ) errorAndExit( buf, "selectcolor: no preceeding #" );
+    readColor( &sentence_font.on_color, buf+1 );
 
-    readStr( &p_string_buffer, tmp_string_buffer );
-    if ( tmp_string_buffer[0] != '#' ) errorAndExit( string_buffer + string_buffer_offset );
-    readColor( &sentence_font.on_color, tmp_string_buffer + 1 );
-
-    readStr( &p_string_buffer, tmp_string_buffer );
-    if ( tmp_string_buffer[0] != '#' ) errorAndExit( string_buffer + string_buffer_offset );
-    readColor( &sentence_font.off_color, tmp_string_buffer + 1 );
+    buf = script_h.readStr();
+    if ( buf[0] != '#' ) errorAndExit( buf, "selectcolor: no preceeding #" );
+    readColor( &sentence_font.off_color, buf+1 );
     
     return RET_CONTINUE;
 }
 
 int ScriptParser::savenumberCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 10;
-
-    num_save_file = readInt( &p_string_buffer );
+    num_save_file = script_h.readInt();
 
     return RET_CONTINUE;
 }
 
 int ScriptParser::savenameCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 8;
+    const char *buf = script_h.readStr();
+    setStr( &save_menu_name, buf );
 
-    readStr( &p_string_buffer, tmp_string_buffer );
-    setStr( &save_menu_name, tmp_string_buffer );
+    buf = script_h.readStr();
+    setStr( &load_menu_name, buf );
 
-    readStr( &p_string_buffer, tmp_string_buffer );
-    setStr( &load_menu_name, tmp_string_buffer );
-
-    readStr( &p_string_buffer, tmp_string_buffer );
-    setStr( &save_item_name, tmp_string_buffer );
+    buf = script_h.readStr();
+    setStr( &save_item_name, buf );
 
     return RET_CONTINUE;
 }
 
 int ScriptParser::roffCommand()
 {
-    if ( current_mode != DEFINE_MODE ) errorAndExit( string_buffer + string_buffer_offset, "not in the define section" );
+    if ( current_mode != DEFINE_MODE ) errorAndExit( script_h.getStringBuffer(), "not in the define section" );
     rmode_flag = false;
 
     return RET_CONTINUE;
@@ -233,7 +213,6 @@ int ScriptParser::roffCommand()
 
 int ScriptParser::rmenuCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 5;
     MenuLink *menu, *link;
     
     /* ---------------------------------------- */
@@ -250,20 +229,23 @@ int ScriptParser::rmenuCommand()
     menu_link_num   = 0;
     menu_link_width = 0;
 
-    SKIP_SPACE( p_string_buffer );
-    while ( *p_string_buffer ){
+    bool first_flag = true;
+    while ( script_h.end_with_comma_flag || first_flag ){
         MenuLink *menu = new MenuLink();
 
-        readStr( &p_string_buffer, tmp_string_buffer );
-        setStr( &menu->label, tmp_string_buffer );
-        if ( menu_link_width < strlen( tmp_string_buffer ) / 2 ) menu_link_width = strlen( tmp_string_buffer ) / 2;
+        const char *buf = script_h.readStr();
+        setStr( &menu->label, buf );
+        if ( menu_link_width < strlen( buf ) / 2 )
+            menu_link_width = strlen( buf ) / 2;
 
-        readStr( &p_string_buffer, tmp_string_buffer );
-        menu->system_call_no = getSystemCallNo( tmp_string_buffer );
+        buf = script_h.readStr();
+        menu->system_call_no = getSystemCallNo( buf );
 
         link->next = menu;
         link = menu;
         menu_link_num++;
+
+        first_flag = false;
     }
     
     return RET_CONTINUE;
@@ -271,50 +253,58 @@ int ScriptParser::rmenuCommand()
 
 int ScriptParser::returnCommand()
 {
-    if ( --label_stack_depth < 0 ) errorAndExit( string_buffer + string_buffer_offset, "too many returns" );
+    if ( --label_stack_depth < 0 ) errorAndExit( script_h.getStringBuffer(), "too many returns" );
     
     current_link_label_info = current_link_label_info->previous;
 
-    if ( current_link_label_info->next->end_of_line_flag ){
-        current_link_label_info->current_line++;
-        current_link_label_info->offset = 0;
+    if ( current_link_label_info->next->textgosub_flag ){
+        script_h.next_text_line_flag = false;
     }
-    
-    if ( current_link_label_info->next->new_line_flag ){
-        sentence_font.xy[0] = 0;
-        sentence_font.xy[1]++;
+    script_h.setCurrent( current_link_label_info->current_script );
+    if ( current_link_label_info->next->textgosub_flag &&
+         script_h.getStringBuffer()[0] == 0x0a ){
+        script_h.text_line_flag = true;
     }
-    
+
+    string_buffer_offset = current_link_label_info->next->string_buffer_offset;
+
     delete current_link_label_info->next;
     current_link_label_info->next = NULL;
-
-    text_line_flag = false;
 
     return RET_JUMP;
 }
 
 int ScriptParser::numaliasCommand()
 {
-    if ( current_mode != DEFINE_MODE ) errorAndExit( string_buffer + string_buffer_offset, "not in the define section" );
-    char *p_string_buffer = string_buffer + string_buffer_offset + 8;
+    if ( current_mode != DEFINE_MODE ) errorAndExit( "numalias: not in the define section" );
 
-    NameAlias *p_name_alias = new NameAlias();
+    const char *buf = script_h.readStr();
+    int no = script_h.readInt();
+    script_h.addNumAlias( buf, no );
     
-    readStr( &p_string_buffer, tmp_string_buffer );
-    setStr( &p_name_alias->alias, tmp_string_buffer );
-    p_name_alias->num = readInt( &p_string_buffer );
+    return RET_CONTINUE;
+}
 
-    last_name_alias->next = p_name_alias;
-    last_name_alias = last_name_alias->next;
+int ScriptParser::nsadirCommand()
+{
+    if ( current_mode != DEFINE_MODE ) errorAndExit( "nsadir: not in the define section" );
+
+    const char *buf = script_h.readStr();
     
+    if ( strlen(nsa_path) > 0 ){
+        delete[] nsa_path;
+    }
+    nsa_path = new char[ strlen(buf) + 2 ];
+    sprintf( nsa_path, "%s%c", buf, DELIMITER );
+
     return RET_CONTINUE;
 }
 
 int ScriptParser::nsaCommand()
 {
-    delete cBR;
-    cBR = new NsaReader( archive_path );
-    if ( cBR->open() ){
+    delete script_h.cBR;
+    script_h.cBR = new NsaReader( archive_path );
+    if ( script_h.cBR->open( nsa_path ) ){
         printf(" *** failed to open Nsa archive, exitting ...  ***\n");
         exit(-1);
     }
@@ -329,12 +319,12 @@ int ScriptParser::nextCommand()
     
     if ( !break_flag ){
         p_buf = current_for_link->p_int;
-        val   = readInt( &p_buf );
-        setInt( current_for_link->p_int, val + current_for_link->step );
+        val   = script_h.parseInt( &p_buf );
+        script_h.setInt( current_for_link->p_int, val + current_for_link->step );
     }
 
     p_buf = current_for_link->p_int;
-    val   = readInt( &p_buf );
+    val   = script_h.parseInt( &p_buf );
     
     if ( break_flag ||
          current_for_link->step >= 0 && val > current_for_link->to ||
@@ -351,7 +341,7 @@ int ScriptParser::nextCommand()
     else{
         current_link_label_info->label_info   = current_for_link->label_info;
         current_link_label_info->current_line = current_for_link->current_line;
-        current_link_label_info->offset       = current_for_link->offset;
+        script_h.setCurrent( current_for_link->current_script );
         
         return RET_JUMP;
     }
@@ -359,66 +349,59 @@ int ScriptParser::nextCommand()
 
 int ScriptParser::mulCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 3;
-    char *p_buf = p_string_buffer;
+    int val1 = script_h.readInt();
+    char *save_buf = script_h.saveStringBuffer();
 
-    int val1 = readInt( &p_string_buffer );
-    int val2 = readInt( &p_string_buffer );
-    setInt( p_buf, val1 * val2 );
+    int val2 = script_h.readInt();
+    script_h.setInt( save_buf, val1 * val2 );
 
     return RET_CONTINUE;
 }
 
 int ScriptParser::movCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset;
     int count, no;
     
-    if ( !strncmp( string_buffer + string_buffer_offset, "mov10", 5 ) ){
-        p_string_buffer += 5; // strlen("mov10") = 5
+    if ( script_h.isName( "mov10" ) ){
         count = 10;
     }
-    else if ( !strncmp( string_buffer + string_buffer_offset, "movl", 4 ) ){
-        p_string_buffer += 4; // strlen("movl") = 4
+    else if ( script_h.isName( "mov1" ) ){
         count = 20;
     }
-    else if ( string_buffer[string_buffer_offset+3] >= '3' && string_buffer[string_buffer_offset+3] <= '9' ){
-        p_string_buffer += 4; // strlen("mov?") = 4
-        count = string_buffer[string_buffer_offset+3] - '0';
+    else if ( script_h.getStringBuffer()[3] >= '3' && script_h.getStringBuffer()[3] <= '9' ){
+        count = script_h.getStringBuffer()[3] - '0';
     }
     else{
-        p_string_buffer += 3; // strlen("mov") = 3
         count = 1;
     }
 
-    SKIP_SPACE( p_string_buffer );
+    script_h.readToken();
     
-    if ( p_string_buffer[0] == '%' || p_string_buffer[0] == '?' ){
-        char *p_buf = p_string_buffer;
-        readInt( &p_string_buffer );
-        bool loop_flag = end_with_comma_flag;
+    if ( script_h.getStringBuffer()[0] == '%' || script_h.getStringBuffer()[0] == '?' ){
+        char *save_buf = script_h.saveStringBuffer();
+        bool loop_flag = script_h.end_with_comma_flag;
         int i=0;
         while ( i<count && loop_flag ){
-            no = readInt( &p_string_buffer );
-            loop_flag = end_with_comma_flag;
-            setInt( p_buf, no, i++ );
+            no = script_h.readInt();
+            loop_flag = script_h.end_with_comma_flag;
+            script_h.setInt( save_buf, no, i++ );
         }
     }
-    else if ( p_string_buffer[0] == '$'){
-        p_string_buffer++;
-        no = readInt( &p_string_buffer );
+    else if ( script_h.getStringBuffer()[0] == '$'){
+        char *p_buf = script_h.getStringBuffer()+1;
+        no = script_h.parseInt( &p_buf );
 
-        readStr( &p_string_buffer, tmp_string_buffer );
-        setStr( &str_variables[ no ], tmp_string_buffer );
+        const char *buf = script_h.readStr();
+        setStr( &script_h.str_variables[ no ], buf );
     }
-    else errorAndExit( string_buffer + string_buffer_offset );
+    else errorAndExit( script_h.getStringBuffer() );
     
     return RET_CONTINUE;
 }
 
 int ScriptParser::mode_sayaCommand()
 {
-    if ( current_mode != DEFINE_MODE ) errorAndExit( string_buffer + string_buffer_offset, "not in the define section" );
+    if ( current_mode != DEFINE_MODE ) errorAndExit( script_h.getStringBuffer(), "not in the define section" );
     mode_saya_flag = true;
 
     return RET_CONTINUE;
@@ -426,67 +409,63 @@ int ScriptParser::mode_sayaCommand()
 
 int ScriptParser::modCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 3;
-    char *p_buf = p_string_buffer;
+    script_h.readToken();
+    char *p_buf = script_h.saveStringBuffer(), *p_buf2 = p_buf;
 
-    int val1 = readInt( &p_string_buffer );
-    int val2 = readInt( &p_string_buffer );
-    setInt( p_buf, val1 % val2 );
+    int val1 = script_h.parseInt( &p_buf2 );
+    int val2 = script_h.readInt();
+    script_h.setInt( p_buf, val1 % val2 );
 
     return RET_CONTINUE;
 }
 
 int ScriptParser::midCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 3;
-    
-    SKIP_SPACE( p_string_buffer );
+    script_h.readToken();
 
-    if ( p_string_buffer[0] == '$'){
-        p_string_buffer++;
-        int no    = readInt( &p_string_buffer );
-        readStr( &p_string_buffer, tmp_string_buffer );
-        int start = readInt( &p_string_buffer );
-        int len   = readInt( &p_string_buffer );
+    if ( script_h.getStringBuffer()[0] == '$'){
+        char *p_buf = script_h.getStringBuffer()+1;
+        int no = script_h.parseInt( &p_buf );
+        
+        const char *buf = script_h.readStr();
+        int start = script_h.readInt();
+        int len   = script_h.readInt();
 
-        delete[] str_variables[ no ];
-        str_variables[ no ] = new char[ len + 1 ];
-        memcpy( str_variables[ no ], tmp_string_buffer + start, len );
-        str_variables[ no ][ len ] = '\0';
+        delete[] script_h.str_variables[ no ];
+        script_h.str_variables[ no ] = new char[ len + 1 ];
+        memcpy( script_h.str_variables[ no ], buf + start, len );
+        script_h.str_variables[ no ][ len ] = '\0';
     }
-    else errorAndExit( string_buffer + string_buffer_offset );
+    else errorAndExit( script_h.getStringBuffer(), "no string variable" );
 
     return RET_CONTINUE;
 }
 
 int ScriptParser::menusetwindowCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 13;
-
     menu_font.is_valid        = false;
-    menu_font.font_size_xy[0] = readInt( &p_string_buffer );
-    menu_font.font_size_xy[1] = readInt( &p_string_buffer );
-    menu_font.pitch_xy[0]     = readInt( &p_string_buffer ) + menu_font.font_size_xy[0];
-    menu_font.pitch_xy[1]     = readInt( &p_string_buffer ) + menu_font.font_size_xy[1];
-    menu_font.is_bold         = readInt( &p_string_buffer )?true:false;
-    menu_font.is_shadow       = readInt( &p_string_buffer )?true:false;
+    menu_font.font_size_xy[0] = script_h.readInt();
+    menu_font.font_size_xy[1] = script_h.readInt();
+    menu_font.pitch_xy[0]     = script_h.readInt() + menu_font.font_size_xy[0];
+    menu_font.pitch_xy[1]     = script_h.readInt() + menu_font.font_size_xy[1];
+    menu_font.is_bold         = script_h.readInt()?true:false;
+    menu_font.is_shadow       = script_h.readInt()?true:false;
 
-    readStr( &p_string_buffer, tmp_string_buffer );
-    if ( strlen( tmp_string_buffer ) != 7 ) errorAndExit( string_buffer + string_buffer_offset );
-    readColor( &menu_font.window_color, tmp_string_buffer + 1 );
+    const char *buf = script_h.readStr();
+    if ( strlen( buf ) != 7 ) errorAndExit( buf, "menusetwindow: no color" );
+    readColor( &menu_font.window_color, buf+1 );
 
     return RET_CONTINUE;
 }
 
 int ScriptParser::menuselectvoiceCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 15;
-    if ( current_mode != DEFINE_MODE ) errorAndExit( string_buffer + string_buffer_offset, "not in the define section" );
+    if ( current_mode != DEFINE_MODE ) errorAndExit( script_h.getStringBuffer(), "not in the define section" );
 
     for ( int i=0 ; i<MENUSELECTVOICE_NUM ; i++ ){
-        readStr( &p_string_buffer, tmp_string_buffer );
-        if ( tmp_string_buffer[0] != '\0' ){
-            setStr( &menuselectvoice_file_name[i], tmp_string_buffer );
+        const char *buf = script_h.readStr();
+        if ( buf [0] != '\0' ){
+            setStr( &menuselectvoice_file_name[i], buf );
         }
         else if ( menuselectvoice_file_name[i] ){
             delete menuselectvoice_file_name[i];
@@ -500,21 +479,20 @@ int ScriptParser::menuselectvoiceCommand()
 int ScriptParser::menuselectcolorCommand()
 {
     int i;
-    char *p_string_buffer = string_buffer + string_buffer_offset + 15;
 
-    readStr( &p_string_buffer, tmp_string_buffer );
-    if ( tmp_string_buffer[0] != '#' ) errorAndExit( string_buffer + string_buffer_offset );
-    readColor( &menu_font.on_color, tmp_string_buffer + 1 );
+    const char *buf = script_h.readStr();
+    if ( buf[0] != '#' ) errorAndExit( script_h.getStringBuffer(), "no preceeding #" );
+    readColor( &menu_font.on_color, buf+1 );
     for ( i=0 ; i<3 ; i++ ) system_font.on_color[i] = menu_font.on_color[i];
 
-    readStr( &p_string_buffer, tmp_string_buffer );
-    if ( tmp_string_buffer[0] != '#' ) errorAndExit( string_buffer + string_buffer_offset );
-    readColor( &menu_font.off_color, tmp_string_buffer + 1 );
+    buf = script_h.readStr();
+    if ( buf[0] != '#' ) errorAndExit( script_h.getStringBuffer(), "no preceeding #" );
+    readColor( &menu_font.off_color, buf+1 );
     for ( i=0 ; i<3 ; i++ ) system_font.off_color[i] = menu_font.off_color[i];
     
-    readStr( &p_string_buffer, tmp_string_buffer );
-    if ( tmp_string_buffer[0] != '#' ) errorAndExit( string_buffer + string_buffer_offset );
-    readColor( &menu_font.nofile_color, tmp_string_buffer + 1 );
+    buf = script_h.readStr();
+    if ( buf[0] != '#' ) errorAndExit( script_h.getStringBuffer(), "no preceeding #" );
+    readColor( &menu_font.nofile_color, buf+1 );
     for ( i=0 ; i<3 ; i++ ) system_font.nofile_color[i] = menu_font.nofile_color[i];
     
     return RET_CONTINUE;
@@ -522,45 +500,38 @@ int ScriptParser::menuselectcolorCommand()
 
 int ScriptParser::lookbackspCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 10;
-
     for ( int i=0 ; i<2 ; i++ )
-        lookback_sp[i] = readInt( &p_string_buffer );
+        lookback_sp[i] = script_h.readInt();
 
     return RET_CONTINUE;
 }
 
 int ScriptParser::lookbackcolorCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 13;
-
-    readStr( &p_string_buffer, tmp_string_buffer );
-    if ( tmp_string_buffer[0] != '#' ) errorAndExit( string_buffer + string_buffer_offset );
-    readColor( &lookback_color, tmp_string_buffer + 1 );
+    const char *buf = script_h.readStr();
+    if ( buf[0] != '#' ) errorAndExit( script_h.getStringBuffer(), "no preceeding #" );
+    readColor( &lookback_color, buf+1 );
 
     return RET_CONTINUE;
 }
 
 int ScriptParser::lookbackbuttonCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 14;
-
     for ( int i=0 ; i<4 ; i++ ){
-        readStr( &p_string_buffer, tmp_string_buffer );
-        setStr( &lookback_image_name[i], tmp_string_buffer );
+        const char *buf = script_h.readStr();
+        setStr( &lookback_image_name[i], buf );
     }
     return RET_CONTINUE;
 }
 
 int ScriptParser::lenCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 3;
-    char *p_buf = p_string_buffer;
+    script_h.readToken();
+    char *p_buf = script_h.saveStringBuffer();
     
-    readInt( &p_string_buffer );
-    readStr( &p_string_buffer, tmp_string_buffer );
+    const char *buf = script_h.readStr();
 
-    setInt( p_buf, strlen( tmp_string_buffer ) );
+    script_h.setInt( p_buf, strlen( buf ) );
 
     return RET_CONTINUE;
 }
@@ -568,228 +539,204 @@ int ScriptParser::lenCommand()
 int ScriptParser::labellogCommand()
 {
     printf(" labellogCommand\n" );
-    FILE *fp;
-    int i, j, ch, count = 0;
-    char buf[100];
-    
-    if ( ( fp = fopen( "NScrllog.dat", "rb" ) ) != NULL ){
-        while( (ch = fgetc( fp )) != 0x0a ){
-            count = count * 10 + ch - '0';
-        }
 
-        for ( i=0 ; i<count ; i++ ){
-            fgetc( fp );
-            j = 0;
-            while( (ch = fgetc( fp )) != '"' ) buf[j++] = ch ^ 0x84;
-            buf[j] = '\0';
-            lookupLabel( buf );
-        }
-        
-        fclose( fp );
-    }
+    script_h.loadLabelLog();
+
     labellog_flag = true;
     return RET_CONTINUE;
 }
 
-int ScriptParser::ifCommand()
+int ScriptParser::kidokuskipCommand()
 {
-    char *p_string_buffer;
-    int left_value, right_value;
-    bool if_flag, condition_flag = true, f;
-    char eval_str[3], *token_start, *tmp_buffer;
-
-    if ( string_buffer[0] == 'n' ){ // notif command
-        if_flag = false;
-        p_string_buffer = string_buffer + string_buffer_offset + 5;
-    }
-    else{
-        if_flag = true;
-        p_string_buffer = string_buffer + string_buffer_offset + 2;
-    }
-
-    while(1){
-        SKIP_SPACE( p_string_buffer );
-
-        if ( *p_string_buffer == 'f' ){ // fchk
-            readStr( &p_string_buffer, tmp_string_buffer );
-            readStr( &p_string_buffer, tmp_string_buffer );
-            f = cBR->getAccessFlag( tmp_string_buffer );
-            //printf("fchk %s(%d,%d) ", tmp_string_buffer, cBR->getAccessFlag( tmp_string_buffer ), condition_flag );
-        }
-        else if ( *p_string_buffer == 'l' ){ // lchk
-            readStr( &p_string_buffer, tmp_string_buffer );
-            readStr( &p_string_buffer, tmp_string_buffer );
-            f = getLabelAccessFlag( tmp_string_buffer+1 );
-            //printf("lchk %s(%d,%d) ", tmp_string_buffer, getLabelAccessFlag( tmp_string_buffer+1 ), condition_flag );
-        }
-        else if ( *p_string_buffer == '$' || *p_string_buffer == '"' ){
-            readStr( &p_string_buffer, tmp_string_buffer );
-            tmp_buffer = new char[ strlen( tmp_string_buffer ) + 1 ];
-            memcpy( tmp_buffer, tmp_string_buffer, strlen( tmp_string_buffer ) + 1 );
-            
-            SKIP_SPACE( p_string_buffer );
-            token_start = p_string_buffer;
-            while ( *p_string_buffer == '>' || *p_string_buffer == '<' ||
-                    *p_string_buffer == '=' || *p_string_buffer == '!' ) p_string_buffer++;
-            memcpy( eval_str, token_start, p_string_buffer-token_start );
-            eval_str[ p_string_buffer-token_start ] = '\0';
-            //printf("%s ", eval_str );
-
-            readStr( &p_string_buffer, tmp_string_buffer );
-
-            int val = strcmp( tmp_buffer, tmp_string_buffer );
-            if ( !strcmp( eval_str, ">=" ) )      f = (val >= 0);
-            else if ( !strcmp( eval_str, "<=" ) ) f = (val <= 0);
-            else if ( !strcmp( eval_str, "==" ) ) f = (val == 0);
-            else if ( !strcmp( eval_str, "!=" ) ) f = (val != 0);
-            else if ( !strcmp( eval_str, "<>" ) ) f = (val != 0);
-            else if ( !strcmp( eval_str, "<" ) )  f = (val <  0);
-            else if ( !strcmp( eval_str, ">" ) )  f = (val >  0);
-            else if ( !strcmp( eval_str, "=" ) )  f = (val == 0);
-
-            delete[] tmp_buffer;
-        }
-        else{
-            left_value = readInt( &p_string_buffer );
-            //printf("%s(%d) ", tmp_string_buffer, left_value );
-
-            SKIP_SPACE( p_string_buffer );
-            token_start = p_string_buffer;
-            while ( *p_string_buffer == '>' || *p_string_buffer == '<' ||
-                    *p_string_buffer == '=' || *p_string_buffer == '!' ) p_string_buffer++;
-            memcpy( eval_str, token_start, p_string_buffer-token_start );
-            eval_str[ p_string_buffer-token_start ] = '\0';
-            //printf("%s ", eval_str );
-
-            right_value = readInt( &p_string_buffer );
-            //printf("%s(%d) ", tmp_string_buffer, right_value );
-
-            if ( !strcmp( eval_str, ">=" ) )      f = (left_value >= right_value);
-            else if ( !strcmp( eval_str, "<=" ) ) f = (left_value <= right_value);
-            else if ( !strcmp( eval_str, "==" ) ) f = (left_value == right_value);
-            else if ( !strcmp( eval_str, "!=" ) ) f = (left_value != right_value);
-            else if ( !strcmp( eval_str, "<>" ) ) f = (left_value != right_value);
-            else if ( !strcmp( eval_str, "<" ) )  f = (left_value <  right_value);
-            else if ( !strcmp( eval_str, ">" ) )  f = (left_value >  right_value);
-            else if ( !strcmp( eval_str, "=" ) )  f = (left_value == right_value);
-        }
-        condition_flag &= (if_flag)?(f):(!f);
-        SKIP_SPACE( p_string_buffer );
-
-        if ( *p_string_buffer == '&' ){
-            //printf("& " );
-            while ( *p_string_buffer == '&' ) p_string_buffer++;
-            continue;
-        }
-        else break;
-    };
-
-    /* Execute command */
-    if ( condition_flag ){
-        //printf(" = true (%d, %d)\n", if_flag, condition_flag );
-        string_buffer_offset = p_string_buffer - string_buffer;
-        return RET_CONTINUE_NONEXT;
-    }
-    else{
-        //printf(" = false\n");
-        while ( *p_string_buffer != '\0' ) p_string_buffer++;
-        string_buffer_offset = p_string_buffer - string_buffer;
-        return RET_CONTINUE;
-    }
+    //kidokuskip_flag = true;
+    script_h.loadKidokuData();
+    
+    return RET_CONTINUE;
 }
 
 int ScriptParser::itoaCommand()
 {
+    script_h.readToken();
+    if ( script_h.getStringBuffer()[0] != '$' ) errorAndExit( script_h.getStringBuffer(), "no string variable" );
+
+    char *p_buf = script_h.getStringBuffer() + 1;
+    int no  = script_h.parseInt( &p_buf );
+    int val = script_h.readInt();
+
     char val_str[20];
-    char *p_string_buffer = string_buffer + string_buffer_offset + 4;
-    
-    SKIP_SPACE( p_string_buffer );
-    if ( p_string_buffer[0] != '$' ) errorAndExit( string_buffer + string_buffer_offset );
-
-    p_string_buffer++;
-    int no  = readInt( &p_string_buffer );
-    int val = readInt( &p_string_buffer );
-
     sprintf( val_str, "%d", val );
-    setStr( &str_variables[ no ], val_str );
+    setStr( &script_h.str_variables[ no ], val_str );
     
     return RET_CONTINUE;
 }
 
 int ScriptParser::intlimitCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 8;
-    int no = readInt( &p_string_buffer );
+    int no = script_h.readInt();
 
-    num_limit_flag[ no ]  = true;
-    num_limit_lower[ no ] = readInt( &p_string_buffer );
-    num_limit_upper[ no ] = readInt( &p_string_buffer );
+    script_h.num_limit_flag[ no ]  = true;
+    script_h.num_limit_lower[ no ] = script_h.readInt();
+    script_h.num_limit_upper[ no ] = script_h.readInt();
 
     return RET_CONTINUE;
 }
 
 int ScriptParser::incCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 3;
-    char *p_buf = p_string_buffer;
-
-    int val = readInt( &p_string_buffer );
-    setInt( p_buf, val + 1 );
+    int val = script_h.readInt();
+    script_h.setInt( script_h.getStringBuffer(), val + 1 );
 
     return RET_CONTINUE;
 }
 
+int ScriptParser::ifCommand()
+{
+    int left_value, right_value;
+    bool if_flag, condition_flag = true, f;
+    char *tmp_buffer;
+
+    if ( script_h.isName( "notif" ) )
+        if_flag = false;
+    else
+        if_flag = true;
+
+    script_h.readToken();
+
+    while(1){
+        if ( script_h.getStringBuffer()[0] == 'f' ){ // fchk
+            const char *buf = script_h.readStr();
+            f = script_h.cBR->getAccessFlag( buf );
+            //printf("fchk %s(%d,%d) ", tmp_string_buffer, cBR->getAccessFlag( tmp_string_buffer ), condition_flag );
+        }
+        else if ( script_h.getStringBuffer()[0] == 'l' ){ // lchk
+            const char *buf = script_h.readStr();
+            f = script_h.getLabelAccessFlag( buf+1 );
+            //printf("lchk %s(%d,%d) ", tmp_string_buffer, getLabelAccessFlag( tmp_string_buffer+1 ), condition_flag );
+        }
+        else if ( script_h.getStringBuffer()[0] == '$' || script_h.getStringBuffer()[0] == '"' ){
+            const char *buf = script_h.readStr( NULL, true ); // reread
+            tmp_buffer = new char[ strlen( buf ) + 1 ];
+            memcpy( tmp_buffer, buf, strlen( buf ) + 1 );
+            
+            //SKIP_SPACE( p_string_buffer );
+            script_h.readToken();
+            const char *save_buf = script_h.saveStringBuffer();
+
+            buf = script_h.readStr();
+
+            int val = strcmp( tmp_buffer, buf );
+            if ( !strcmp( save_buf, ">=" ) )      f = (val >= 0);
+            else if ( !strcmp( save_buf, "<=" ) ) f = (val <= 0);
+            else if ( !strcmp( save_buf, "==" ) ) f = (val == 0);
+            else if ( !strcmp( save_buf, "!=" ) ) f = (val != 0);
+            else if ( !strcmp( save_buf, "<>" ) ) f = (val != 0);
+            else if ( !strcmp( save_buf, "<" ) )  f = (val <  0);
+            else if ( !strcmp( save_buf, ">" ) )  f = (val >  0);
+            else if ( !strcmp( save_buf, "=" ) )  f = (val == 0);
+
+            delete[] tmp_buffer;
+        }
+        else{
+            left_value = script_h.readInt( true );
+            //printf("left (%d) ", left_value );
+
+            script_h.readToken();
+            const char *save_buf = script_h.saveStringBuffer();
+            //printf("op %s ", save_buf );
+
+            right_value = script_h.readInt();
+            //printf("right (%d) ", right_value );
+
+            if ( !strcmp( save_buf, ">=" ) )      f = (left_value >= right_value);
+            else if ( !strcmp( save_buf, "<=" ) ) f = (left_value <= right_value);
+            else if ( !strcmp( save_buf, "==" ) ) f = (left_value == right_value);
+            else if ( !strcmp( save_buf, "!=" ) ) f = (left_value != right_value);
+            else if ( !strcmp( save_buf, "<>" ) ) f = (left_value != right_value);
+            else if ( !strcmp( save_buf, "<" ) )  f = (left_value <  right_value);
+            else if ( !strcmp( save_buf, ">" ) )  f = (left_value >  right_value);
+            else if ( !strcmp( save_buf, "=" ) )  f = (left_value == right_value);
+        }
+        condition_flag &= (if_flag)?(f):(!f);
+        //SKIP_SPACE( p_string_buffer );
+
+        char *current = script_h.getCurrent();
+        script_h.readToken();
+        if ( script_h.getStringBuffer()[0] == '&' ){
+            //printf("& " );
+            //while ( *p_string_buffer == '&' ) p_string_buffer++;
+            //char *current = script_h.getCurrent();
+            script_h.readToken();
+            continue;
+        }
+        script_h.setCurrent( current );
+        break;
+    };
+
+    /* Execute command */
+    if ( condition_flag ){
+        //printf(" = true (%d, %d)\n", if_flag, condition_flag );
+        //string_buffer_offset = p_string_buffer - string_buffer;
+        return RET_CONTINUE;
+    }
+    else{
+        //printf(" = false\n");
+        //script_h.skipLine();
+        //while ( *p_string_buffer != '\0' ) p_string_buffer++;
+        //string_buffer_offset = p_string_buffer - string_buffer;
+        return RET_SKIP_LINE;
+    }
+}
+
 int ScriptParser::humanzCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 6;
-    z_order = readInt( &p_string_buffer );
+    z_order = script_h.readInt();
     
     return RET_CONTINUE;
 }
 
 int ScriptParser::gotoCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 4;
-    readStr( &p_string_buffer, tmp_string_buffer );
+    const char *buf = script_h.readStr();
 
-    current_link_label_info->label_info = lookupLabel( tmp_string_buffer + 1 );
+    current_link_label_info->label_info = script_h.lookupLabel( buf+1 );
     current_link_label_info->current_line = 0;
-    current_link_label_info->offset = 0;
+    script_h.setCurrent( current_link_label_info->label_info.start_address );
     
     return RET_JUMP;
 }
 
-void ScriptParser::gosubReal( char *label, bool atmark_and_textgosub_flag )
+void ScriptParser::gosubReal( const char *label, bool textgosub_flag, char *current )
 {
     label_stack_depth++;
     
+    current_link_label_info->current_script = current;
+
     LinkLabelInfo *info = new LinkLabelInfo();
     info->previous = current_link_label_info;
     info->next = NULL;
-    info->label_info = lookupLabel( label );
+    info->label_info = script_h.lookupLabel( label );
     info->current_line = 0;
-    info->offset = 0;
-    info->end_of_line_flag = (string_buffer[ string_buffer_offset ] == '\0');
-    info->new_line_flag = atmark_and_textgosub_flag && info->end_of_line_flag;
-
-    current_link_label_info->next = info;
-    current_link_label_info->offset = string_buffer_offset;
+    info->textgosub_flag = textgosub_flag;
+    info->string_buffer_offset = string_buffer_offset;
+    script_h.setCurrent( info->label_info.start_address );
     
+    current_link_label_info->next = info;
     current_link_label_info = current_link_label_info->next;
 }
 
 int ScriptParser::gosubCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 5;
-    readStr( &p_string_buffer, tmp_string_buffer );
-    skipToken();
-    gosubReal( tmp_string_buffer + 1 );
+    const char *buf = script_h.readStr();
+    //skipToken();
+    gosubReal( buf+1, false, script_h.next_script );
 
     return RET_JUMP;
 }
 
 int ScriptParser::globalonCommand()
 {
+    if ( current_mode != DEFINE_MODE ) errorAndExit( script_h.getStringBuffer(), "not in the define section" );
+
     globalon_flag = true;
     return RET_CONTINUE;
 }
@@ -797,26 +744,25 @@ int ScriptParser::globalonCommand()
 int ScriptParser::forCommand()
 {
     for_stack_depth++;
-    char *p_string_buffer = string_buffer + string_buffer_offset + 3;
     ForInfo *info = new ForInfo();
 
-    setStr( &info->p_int, p_string_buffer );
-    readInt( &p_string_buffer );
+    script_h.readToken();
+    setStr( &info->p_int, script_h.getStringBuffer() );
     
-    if ( *p_string_buffer != '=' ) errorAndExit( string_buffer + string_buffer_offset, "no =" );
-    p_string_buffer++;
+    script_h.readToken();
+    if ( script_h.getStringBuffer()[0] != '=' ) errorAndExit( script_h.getStringBuffer(), "for: no =" );
 
-    setInt( info->p_int, readInt( &p_string_buffer ) );
+    script_h.setInt( info->p_int, script_h.readInt() );
     
-    readStr( &p_string_buffer, tmp_string_buffer );
-    if ( strcmp( tmp_string_buffer, "to" ) ) errorAndExit( string_buffer + string_buffer_offset, "no to" );
+    const char *buf = script_h.readStr();
+    if ( strcmp( buf, "to" ) ) errorAndExit( script_h.getStringBuffer(), "for: no to" );
     
-    info->to = readInt( &p_string_buffer );
+    info->to = script_h.readInt();
 
-    SKIP_SPACE( p_string_buffer );
-    if ( !strncmp( p_string_buffer, "step", 4 ) ){
-        readStr( &p_string_buffer, tmp_string_buffer );
-        info->step = readInt( &p_string_buffer );
+    script_h.readToken();
+    if ( !strncmp( script_h.getStringBuffer(), "step", 4 ) ){
+        info->step = script_h.readInt();
+        script_h.readToken();
     }
     else{
         info->step = 1;
@@ -824,16 +770,9 @@ int ScriptParser::forCommand()
     
     /* ---------------------------------------- */
     /* Step forward callee's label info */
-    SKIP_SPACE( p_string_buffer );
     info->label_info = current_link_label_info->label_info;
-    if ( *p_string_buffer == ':' ){
-        info->current_line = current_link_label_info->current_line;
-        info->offset = p_string_buffer + 1 - string_buffer;
-    }
-    else{
-        info->current_line = current_link_label_info->current_line + 1;
-        info->offset = 0;
-    }
+    info->current_line = current_link_label_info->current_line;
+    info->current_script = script_h.getCurrent();
 
     info->previous = current_for_link;
     current_for_link->next = info;
@@ -842,13 +781,12 @@ int ScriptParser::forCommand()
     //printf("stack %d forCommand %d = %d to %d step %d\n", for_stack_depth,
     //info->var_no, *info->p_var, info->to, info->step );
 
-    string_buffer_offset = p_string_buffer - string_buffer;
-    return RET_CONTINUE;
+    return RET_CONTINUE_NOREAD;
 }
 
 int ScriptParser::filelogCommand()
 {
-    if ( current_mode != DEFINE_MODE ) errorAndExit( string_buffer + string_buffer_offset );
+    if ( current_mode != DEFINE_MODE ) errorAndExit( script_h.getStringBuffer() );
 
     filelog_flag = true;
     return RET_CONTINUE;
@@ -856,156 +794,141 @@ int ScriptParser::filelogCommand()
 
 int ScriptParser::effectblankCommand()
 {
-    if ( current_mode != DEFINE_MODE ) errorAndExit( string_buffer + string_buffer_offset );
-    char *p_string_buffer = string_buffer + string_buffer_offset + 11;
+    if ( current_mode != DEFINE_MODE ) errorAndExit( script_h.getStringBuffer() );
     
-    effect_blank = readInt( &p_string_buffer );
+    effect_blank = script_h.readInt();
 
     return RET_CONTINUE;
 }
 
 int ScriptParser::effectCommand()
 {
-    bool window_effect_flag = false;
-    char *p_string_buffer;
-    struct EffectLink *elink;
+    EffectLink *elink;
 
-    if ( !strncmp( string_buffer + string_buffer_offset, "windoweffect", 12 ) ) window_effect_flag = true;
-    
-    if ( window_effect_flag ){
-        p_string_buffer = string_buffer + string_buffer_offset + 12;
+    if ( script_h.isName( "windoweffect") )
+    {
         elink = &window_effect;
     }
     else{
-        if ( current_mode != DEFINE_MODE ) errorAndExit( string_buffer + string_buffer_offset, "not in the define section" );
+        if ( current_mode != DEFINE_MODE ) errorAndExit( script_h.getStringBuffer(), "not in the define section" );
 
-        last_effect_link->next = new EffectLink();
+        elink = new EffectLink();
+        elink->num = script_h.readInt();
+
+        last_effect_link->next = elink;
         last_effect_link = last_effect_link->next;
-        p_string_buffer = string_buffer + string_buffer_offset + 6;
-        elink = last_effect_link;
     }
     
-    if ( !window_effect_flag ) elink->num = readInt( &p_string_buffer );
-    readEffect( &p_string_buffer, elink );
+    readEffect( elink );
 
     return RET_CONTINUE;
 }
 
 int ScriptParser::divCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 3;
-    char *p_buf = p_string_buffer;
+    int val1 = script_h.readInt();
+    char *save_buf = script_h.saveStringBuffer();
 
-    int val1 = readInt( &p_string_buffer );
-    int val2 = readInt( &p_string_buffer );
-    setInt( p_buf, val1 / val2 );
+    int val2 = script_h.readInt();
+    script_h.setInt( save_buf, val1 / val2 );
 
     return RET_CONTINUE;
 }
 
 int ScriptParser::dimCommand()
 {
-    if ( current_mode != DEFINE_MODE ) errorAndExit( string_buffer + string_buffer_offset, "not in the define section" );
-    char *p_string_buffer = string_buffer + string_buffer_offset + 3;
+    if ( current_mode != DEFINE_MODE ) errorAndExit( script_h.getStringBuffer(), "not in the define section" );
 
-    struct ArrayVariable array;
+    struct ScriptHandler::ArrayVariable array;
     int dim = 1;
-    
-    int no = decodeArraySub( &p_string_buffer, &array );
 
-    array_variables[ no ].num_dim = array.num_dim;
+    script_h.readToken();
+    char *p_buf = script_h.getCurrent();
+    int no = script_h.decodeArraySub( &p_buf, &array );
+
+    script_h.array_variables[ no ].num_dim = array.num_dim;
     //printf("dimCommand no=%d dim=%d\n",no,array.num_dim);
     for ( int i=0 ; i<array.num_dim ; i++ ){
         //printf("%d ",array.dim[i]);
-        array_variables[ no ].dim[i] = array.dim[i]+1;
+        script_h.array_variables[ no ].dim[i] = array.dim[i]+1;
         dim *= (array.dim[i]+1);
-        array_variables[ no ].data = new int[ dim ];
-        memset( array_variables[ no ].data, 0, sizeof(int) * dim );
+        script_h.array_variables[ no ].data = new int[ dim ];
+        memset( script_h.array_variables[ no ].data, 0, sizeof(int) * dim );
     }
 
-    string_buffer_offset = p_string_buffer - string_buffer;
     return RET_CONTINUE;
 }
 
 int ScriptParser::defvoicevolCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 11;
-    voice_volume = readInt( &p_string_buffer );
+    voice_volume = script_h.readInt();
 
     return RET_CONTINUE;
 }
 
 int ScriptParser::defsevolCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 8;
-    se_volume = readInt( &p_string_buffer );
+    se_volume = script_h.readInt();
 
     return RET_CONTINUE;
 }
 
 int ScriptParser::defmp3volCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 9;
-    mp3_volume = readInt( &p_string_buffer );
+    mp3_volume = script_h.readInt();
 
     return RET_CONTINUE;
 }
 
 int ScriptParser::defaultspeedCommand()
 {
-    if ( current_mode != DEFINE_MODE ) errorAndExit( string_buffer + string_buffer_offset, "not in the define section" );
-    char *p_string_buffer = string_buffer + string_buffer_offset + 12;
+    if ( current_mode != DEFINE_MODE ) errorAndExit( script_h.getStringBuffer(), "not in the define section" );
 
-    for ( int i=0 ; i<3 ; i++ ) default_text_speed[i] = readInt( &p_string_buffer );
+    for ( int i=0 ; i<3 ; i++ ) default_text_speed[i] = script_h.readInt();
 
     return RET_CONTINUE;
 }
 
 int ScriptParser::decCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 3;
-    char *p_buf = p_string_buffer;
-
-    int val = readInt( &p_string_buffer );
-    setInt( p_buf, val - 1 );
+    int val = script_h.readInt();
+    script_h.setInt( script_h.getStringBuffer(), val - 1 );
 
     return RET_CONTINUE;
 }
 
 int ScriptParser::dateCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 4;
     time_t t = time(NULL);
     struct tm *tm = localtime( &t );
 
-    setInt( p_string_buffer, tm->tm_year + 1900 );
-    readInt( &p_string_buffer );
+    script_h.readToken();
+    script_h.setInt( script_h.getStringBuffer(), tm->tm_year + 1900 );
 
-    setInt( p_string_buffer, tm->tm_mon + 1 );
-    readInt( &p_string_buffer );
+    script_h.readToken();
+    script_h.setInt( script_h.getStringBuffer(), tm->tm_mon + 1 );
 
-    setInt( p_string_buffer, tm->tm_mday );
-    readInt( &p_string_buffer );
+    script_h.readToken();
+    script_h.setInt( script_h.getStringBuffer(), tm->tm_mday );
 
     return RET_CONTINUE;
 }
 
 int ScriptParser::cmpCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 3;
-    char *p_buf = p_string_buffer, *tmp_buffer;
+    script_h.readToken();
+    char *save_buf = script_h.saveStringBuffer();
 
-    readInt( &p_string_buffer );
+    const char *buf = script_h.readStr();
+    char *tmp_buffer = new char[ strlen( buf ) + 1 ];
+    strcpy( tmp_buffer, buf );
 
-    readStr( &p_string_buffer, tmp_string_buffer );
-    tmp_buffer = new char[ strlen( tmp_string_buffer ) + 1 ];
-    memcpy( tmp_buffer, tmp_string_buffer, strlen( tmp_string_buffer ) + 1 );
-    readStr( &p_string_buffer, tmp_string_buffer );
+    buf = script_h.readStr();
 
-    int val = strcmp( tmp_buffer, tmp_string_buffer );
+    int val = strcmp( tmp_buffer, buf );
     if      ( val > 0 ) val = 1;
     else if ( val < 0 ) val = -1;
-    setInt( p_buf, val );
+    script_h.setInt( save_buf, val );
 
     delete[] tmp_buffer;
     
@@ -1014,13 +937,12 @@ int ScriptParser::cmpCommand()
 
 int ScriptParser::clickvoiceCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 10;
-    if ( current_mode != DEFINE_MODE ) errorAndExit( string_buffer + string_buffer_offset, "not in the define section" );
+    if ( current_mode != DEFINE_MODE ) errorAndExit( script_h.getStringBuffer(), "not in the define section" );
 
     for ( int i=0 ; i<CLICKVOICE_NUM ; i++ ){
-        readStr( &p_string_buffer, tmp_string_buffer );
-        if ( tmp_string_buffer[0] != '\0' ){
-            setStr( &clickvoice_file_name[i], tmp_string_buffer );
+        const char *buf = script_h.readStr();
+        if ( buf[0] != '\0' ){
+            setStr( &clickvoice_file_name[i], buf );
         }
         else if ( clickvoice_file_name[i] ){
             delete clickvoice_file_name[i];
@@ -1033,15 +955,13 @@ int ScriptParser::clickvoiceCommand()
 
 int ScriptParser::clickstrCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 8;
+    const char *buf = script_h.readStr();
 
-    readStr( &p_string_buffer, tmp_string_buffer );
-
-    clickstr_num = strlen( tmp_string_buffer ) / 2;
+    clickstr_num = strlen( buf ) / 2;
     clickstr_list = new char[clickstr_num * 2];
-    for ( int i=0 ; i<clickstr_num*2 ; i++ ) clickstr_list[i] = tmp_string_buffer[i];
+    for ( int i=0 ; i<clickstr_num*2 ; i++ ) clickstr_list[i] = buf[i];
 
-    clickstr_line = readInt( &p_string_buffer );
+    clickstr_line = script_h.readInt();
            
     return RET_CONTINUE;
 }
@@ -1049,13 +969,12 @@ int ScriptParser::clickstrCommand()
 int ScriptParser::breakCommand()
 {
     printf("breakCommand\n");
-    char *p_string_buffer = string_buffer + string_buffer_offset + 5;
 
-    readStr( &p_string_buffer, tmp_string_buffer );
-    if ( tmp_string_buffer[0] == '*' ){
-        current_link_label_info->label_info = lookupLabel( tmp_string_buffer + 1 );
+    const char *buf = script_h.readStr();
+    if ( buf[0] == '*' ){
+        current_link_label_info->label_info = script_h.lookupLabel( buf+1 );
         current_link_label_info->current_line = 0;
-        current_link_label_info->offset = 0;
+        script_h.setCurrent( current_link_label_info->label_info.start_address );
         
         return RET_JUMP;
     }
@@ -1067,32 +986,32 @@ int ScriptParser::breakCommand()
 
 int ScriptParser::atoiCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 4;
-    char *p_buf = p_string_buffer;
+    script_h.readToken();
+    char *save_buf = script_h.saveStringBuffer();
     
-    readInt( &p_string_buffer );
-    readStr( &p_string_buffer, tmp_string_buffer );
+    const char *buf = script_h.readStr();
         
-    setInt( p_buf, atoi( tmp_string_buffer ) );
+    script_h.setInt( save_buf, atoi( buf ) );
     
     return RET_CONTINUE;
 }
 
 int ScriptParser::arcCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 3;
-    readStr( &p_string_buffer, tmp_string_buffer );
+    const char *buf = script_h.readStr();
+    char *buf2 = new char[ strlen( buf ) + 1 ];
+    strcpy( buf2, buf );
 
     int i = 0;
-    while ( tmp_string_buffer[i] != '|' && tmp_string_buffer[i] != '\0' ) i++;
-    tmp_string_buffer[i] = '\0';
+    while ( buf2[i] != '|' && buf2[i] != '\0' ) i++;
+    buf2[i] = '\0';
 
-    if ( strcmp( cBR->getArchiveName(), "sar" ) ){
-        delete cBR;
-        cBR = new SarReader( archive_path );
+    if ( strcmp( script_h.cBR->getArchiveName(), "sar" ) ){
+        delete script_h.cBR;
+        script_h.cBR = new SarReader( archive_path );
     }
-    if ( cBR->open( tmp_string_buffer ) ){
-        printf(" *** failed to open archive %s ...  ***\n", tmp_string_buffer );
+    if ( script_h.cBR->open( buf2 ) ){
+        printf(" *** failed to open archive %s ...  ***\n", buf2 );
         //exit(-1);
     }
     return RET_CONTINUE;
@@ -1100,31 +1019,32 @@ int ScriptParser::arcCommand()
 
 int ScriptParser::addCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 3;
     char *tmp_buffer;
     int no;
+
+    script_h.readToken();
+    char *save_buf = script_h.saveStringBuffer();
     
-    SKIP_SPACE( p_string_buffer );
+    if ( script_h.getStringBuffer()[0] == '%' || script_h.getStringBuffer()[0] == '?' ){
+        char *p_buf = script_h.getStringBuffer();
+        no = script_h.parseInt( &p_buf );
 
-    if ( p_string_buffer[0] == '%' || p_string_buffer[0] == '?' ){
-        char *p_buf = p_string_buffer;
-        no = readInt( &p_string_buffer );
-
-        setInt( p_buf, no + readInt( &p_string_buffer ) );
+        script_h.setInt( save_buf, no + script_h.readInt() );
     }
-    else if ( p_string_buffer[0] == '$'){
-        p_string_buffer++;
-        no = readInt( &p_string_buffer );
-        readStr( &p_string_buffer, tmp_string_buffer );
-        tmp_buffer = str_variables[ no ];
-        str_variables[ no ] = new char[ strlen( tmp_buffer ) + strlen( tmp_string_buffer ) + 1 ];
-        memcpy( str_variables[ no ], tmp_buffer, strlen( tmp_buffer ) );
-        memcpy( str_variables[ no ] + strlen( tmp_buffer ), tmp_string_buffer, strlen( tmp_string_buffer ) + 1 );
+    else if ( script_h.getStringBuffer()[0] == '$'){
+        char *p_buf = script_h.getStringBuffer()+1;
+        no = script_h.parseInt( &p_buf );
+
+        const char *buf = script_h.readStr();
+        tmp_buffer = script_h.str_variables[ no ];
+
+        script_h.str_variables[ no ] = new char[ strlen( tmp_buffer ) + strlen( buf ) + 1 ];
+        strcpy( script_h.str_variables[ no ], tmp_buffer );
+        strcat( script_h.str_variables[ no ], buf );
 
         delete[] tmp_buffer;
     }
-    else errorAndExit( string_buffer + string_buffer_offset );
+    else errorAndExit( "add: no variable." );
 
     return RET_CONTINUE;
 }
-

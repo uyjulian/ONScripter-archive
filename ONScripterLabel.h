@@ -53,6 +53,8 @@
 
 #define DEFAULT_WAVE_CHANNEL 1
 
+#define DEFAULT_FONT_SIZE 26
+
 class ONScripterLabel : public ScriptParser
 {
 public:
@@ -109,6 +111,7 @@ public:
     int playstopCommand();
     int playonceCommand();
     int playCommand();
+    int ofscpyCommand();
     int negaCommand();
     int mspCommand();
     int mp3volCommand();
@@ -297,10 +300,11 @@ private:
 
     int current_over_button;
 
+    void resetSentenceFont();
     void deleteButtonLink();
     void refreshMouseOverButton();
     int refreshSprite( SDL_Surface *surface, int sprite_no, bool active_flag, int cell_no, bool draw_flag, bool change_flag );
-    int decodeExbtnControl( SDL_Surface *surface, char *ctl_str, bool draw_flag, bool change_flag );
+    int decodeExbtnControl( SDL_Surface *surface, const char *ctl_str, bool draw_flag, bool change_flag );
     void drawExbtn( char *ctl_str );
     
     /* ---------------------------------------- */
@@ -333,7 +337,7 @@ private:
     int estimateNextDuration( AnimationInfo *anim, SDL_Rect *rect, int minimum );
     void resetRemainingTime( int t );
     void stopAnimation( int click );
-    void loadCursor( int no, char *str, int x, int y, bool abs_flag = false );
+    void loadCursor( int no, const char *str, int x, int y, bool abs_flag = false );
     
     /* ---------------------------------------- */
     /* Lookback related variables */
@@ -351,7 +355,7 @@ private:
     bool text_on_flag;
 
     void drawChar( char* text, FontInfo *info, bool flush_flag, SDL_Surface *surface, bool buffering_flag = true, SDL_Rect *clip=NULL );
-    void drawString( char *str, uchar3 color, FontInfo *info, bool flush_flag, SDL_Surface *surface, SDL_Rect *rect = NULL, bool buffering_flag = false, SDL_Rect *clip=NULL );
+    void drawString( const char *str, uchar3 color, FontInfo *info, bool flush_flag, SDL_Surface *surface, SDL_Rect *rect = NULL, bool buffering_flag = false, SDL_Rect *clip=NULL );
     void restoreTextBuffer( SDL_Surface *surface = NULL );
     int clickWait( char *out_text );
     int clickNewPage( char *out_text );
@@ -359,7 +363,6 @@ private:
     
     /* ---------------------------------------- */
     /* Effect related variables */
-    char *effect_command;
     int effect_counter; // counter in each effect
     int effect_timer_resolution;
     int effect_start_time;
@@ -367,8 +370,7 @@ private:
     SDL_Surface *effect_mask_surface;
     bool first_mouse_over_flag;
     
-    void makeEffectStr( char **buf, char *dst_buf );
-    int  setEffect( int effect_no, char *buf );
+    int  setEffect( int effect_no );
     int  doEffect( int effect_no, AnimationInfo *anim, int effect_image );
 
     /* ---------------------------------------- */
@@ -415,7 +417,7 @@ private:
     int playMIDI();
     int playMP3( int cd_no );
     int playCDAudio( int cd_no );
-    int playWave( char *file_name, bool loop_flag, int channel );
+    int playWave( const char *file_name, bool loop_flag, int channel );
     void stopBGM( bool continue_flag );
     void playClickVoice();
     
@@ -443,7 +445,7 @@ private:
                      SDL_Surface *src2_surface, int x2, int y2,
                      SDL_Surface *mask_surface, int x3,
                      int trans_mode, unsigned char mask_value = 255, unsigned int effect_value=0, SDL_Rect *clip=NULL, uchar3 *direct_color=NULL );
-    int enterTextDisplayMode();
+    int enterTextDisplayMode( int ret_wait = RET_WAIT );
     int resizeSurface( SDL_Surface *src, SDL_Rect *src_rect, SDL_Surface *dst, SDL_Rect *dst_rect );
     SDL_Surface *loadImage( char *file_name );
     void drawTaggedSurface( SDL_Surface *dst_surface, AnimationInfo *anim, SDL_Rect *clip );

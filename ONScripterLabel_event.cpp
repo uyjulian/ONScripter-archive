@@ -117,9 +117,10 @@ void midiCallback( int sig )
 void ONScripterLabel::trapHandler()
 {
     trap_flag = false;
-    current_link_label_info->label_info = lookupLabel( trap_dist );
+    current_link_label_info->label_info = script_h.lookupLabel( trap_dist );
     current_link_label_info->current_line = 0;
-    current_link_label_info->offset = 0;
+    script_h.setCurrent( current_link_label_info->label_info.start_address );
+    string_buffer_offset = 0;
     stopAnimation( clickstr_state );
     event_mode = IDLE_EVENT_MODE;
     advancePhase();
@@ -232,7 +233,7 @@ void ONScripterLabel::variableEditMode( SDL_KeyboardEvent *event )
 
           case EDIT_VARIABLE_INDEX_MODE:
             variable_edit_index = variable_edit_num;
-            variable_edit_num = num_variables[ variable_edit_index ];
+            variable_edit_num = script_h.num_variables[ variable_edit_index ];
             if ( variable_edit_num < 0 ){
                 variable_edit_num = -variable_edit_num;
                 variable_edit_sign = -1;
@@ -243,7 +244,7 @@ void ONScripterLabel::variableEditMode( SDL_KeyboardEvent *event )
             break;
 
           case EDIT_VARIABLE_NUM_MODE:
-            setNumVariable( variable_edit_index, variable_edit_sign * variable_edit_num );
+            script_h.setNumVariable( variable_edit_index, variable_edit_sign * variable_edit_num );
             break;
 
           case EDIT_MP3_VOLUME_MODE:
@@ -295,7 +296,7 @@ void ONScripterLabel::variableEditMode( SDL_KeyboardEvent *event )
 
           case EDIT_VARIABLE_NUM_MODE:
             sprintf( var_index, "%%%d", variable_edit_index );
-            var_name = var_index; p = num_variables[ variable_edit_index ]; break;
+            var_name = var_index; p = script_h.num_variables[ variable_edit_index ]; break;
 
           case EDIT_MP3_VOLUME_MODE:
             var_name = "MP3 Volume"; p = mp3_volume; break;
@@ -498,7 +499,7 @@ void ONScripterLabel::timerEvent( void )
 
         if ( display_mode & TEXT_DISPLAY_MODE &&
              erase_text_window_mode != 0 &&
-             strncmp( effect_command, "quake", 5 ) ){
+             strncmp( script_h.getStringBuffer(), "quake", 5 ) ){
 
             if ( effect_counter == 0 ){
                 flush();
@@ -513,16 +514,20 @@ void ONScripterLabel::timerEvent( void )
             advancePhase();
             return;
         }
-        string_buffer_offset = 0;
-        memcpy( string_buffer, effect_command, strlen(effect_command) + 1 );
+        
+        char *current = script_h.getCurrent();
         ret = this->parseLine();
-        if ( ret == RET_CONTINUE ){
-            line_cache = -1;
-            delete[] effect_command;
+
+        if ( ret == RET_CONTINUE || ret == RET_CONTINUE_NOREAD){
+            if ( ret == RET_CONTINUE ){
+                script_h.readToken(); // skip tailing \0 and mark kidoku
+                string_buffer_offset = 0;
+            }
             if ( effect_blank == 0 || effect_counter == 0 ) goto timerEventTop;
             startTimer( effect_blank );
         }
         else{
+            script_h.setCurrent( current );
             advancePhase();
         }
         return;
@@ -598,7 +603,8 @@ int ONScripterLabel::eventLoop()
           case SDL_QUIT:
             saveGlovalData();
             saveFileLog();
-            saveLabelLog();
+            if ( labellog_flag ) script_h.saveLabelLog();
+            if ( kidokuskip_flag ) script_h.saveKidokuData();
             if ( cdrom_info ){
                 SDL_CDStop( cdrom_info );
                 SDL_CDClose( cdrom_info );

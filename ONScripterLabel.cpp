@@ -25,8 +25,6 @@
 
 extern void initSJIS2UTF16();
 
-#define FONT_SIZE 26
-
 #define DEFAULT_DECODEBUF 16384
 #define DEFAULT_AUDIOBUF  4096
 
@@ -88,6 +86,7 @@ static struct FuncLUT{
     {"playstop",   &ONScripterLabel::playstopCommand},
     {"playonce",   &ONScripterLabel::playCommand},
     {"play",   &ONScripterLabel::playCommand},
+    {"ofscpy", &ONScripterLabel::ofscpyCommand},
     {"nega", &ONScripterLabel::negaCommand},
     {"msp", &ONScripterLabel::mspCommand},
     {"mp3vol", &ONScripterLabel::mp3volCommand},
@@ -183,10 +182,11 @@ int ONScripterLabel::SetVideoMode()
 }
 
 ONScripterLabel::ONScripterLabel( bool cdaudio_flag, char *default_font, char *default_registry, char *default_archive_path, bool edit_flag )
+        :ScriptParser( default_archive_path )
 {
     int i;
 
-    if ( open( default_archive_path ) ) exit(-1);
+    //if ( open( default_archive_path ) ) exit(-1);
 
     printf("ONScripter\n");
 
@@ -337,21 +337,7 @@ ONScripterLabel::ONScripterLabel( bool cdaudio_flag, char *default_font, char *d
     erase_text_window_mode = 1;
     text_on_flag = true;
 
-    sentence_font.font_size_xy[0] = FONT_SIZE;
-    sentence_font.font_size_xy[1] = FONT_SIZE;
-    sentence_font.top_xy[0] = 8;
-    sentence_font.top_xy[1] = 16;// + sentence_font.font_size;
-    sentence_font.num_xy[0] = 23;
-    sentence_font.num_xy[1] = 16;
-    sentence_font.pitch_xy[0] = sentence_font.font_size_xy[0];
-    sentence_font.pitch_xy[1] = 2 + sentence_font.font_size_xy[1];
-    sentence_font.wait_time = default_text_speed[text_speed_no];
-    sentence_font.window_color[0] = sentence_font.window_color[1] = sentence_font.window_color[2] = 0x99;
-    sentence_font_info.pos.x = 0;
-    sentence_font_info.pos.y = 0;
-    sentence_font_info.pos.w = screen_width;
-    sentence_font_info.pos.h = screen_height;
-    
+    resetSentenceFont();
     if ( sentence_font.openFont( font_file, screen_ratio1, screen_ratio2 ) == NULL ){
         fprintf( stderr, "can't open font file: %s\n", font_file );
         SDL_Quit();
@@ -376,8 +362,26 @@ ONScripterLabel::ONScripterLabel( bool cdaudio_flag, char *default_font, char *d
     }
 }
 
-ONScripterLabel::~ONScripterLabel( )
+ONScripterLabel::~ONScripterLabel()
 {
+}
+
+void ONScripterLabel::resetSentenceFont()
+{
+    sentence_font.font_size_xy[0] = DEFAULT_FONT_SIZE;
+    sentence_font.font_size_xy[1] = DEFAULT_FONT_SIZE;
+    sentence_font.top_xy[0] = 8;
+    sentence_font.top_xy[1] = 16;// + sentence_font.font_size;
+    sentence_font.num_xy[0] = 23;
+    sentence_font.num_xy[1] = 16;
+    sentence_font.pitch_xy[0] = sentence_font.font_size_xy[0];
+    sentence_font.pitch_xy[1] = 2 + sentence_font.font_size_xy[1];
+    sentence_font.wait_time = default_text_speed[text_speed_no];
+    sentence_font.window_color[0] = sentence_font.window_color[1] = sentence_font.window_color[2] = 0x99;
+    sentence_font_info.pos.x = 0;
+    sentence_font_info.pos.y = 0;
+    sentence_font_info.pos.w = screen_width;
+    sentence_font_info.pos.h = screen_height;
 }
 
 void ONScripterLabel::flush( SDL_Rect *rect )
@@ -492,142 +496,132 @@ void ONScripterLabel::executeLabel()
         printf("*****  executeLabel %s:%d:%d *****\n",
                current_link_label_info->label_info.name,
                current_link_label_info->current_line,
-               current_link_label_info->offset );
+               string_buffer_offset );
+    int ret;
 
-    int i, ret;
-    bool first_read_flag = true;
-
-    char *p_script_buffer = current_link_label_info->label_info.start_address;
-    for ( i=0 ; i<current_link_label_info->current_line  ; i++ ) skipLine( &p_script_buffer );
-
-    i = current_link_label_info->current_line;
-    while ( i<current_link_label_info->label_info.num_of_lines ){
-        if ( line_cache != i ){
-            line_cache = i;
-            current_link_label_info->current_script = p_script_buffer;
-            ret = readLine( &p_script_buffer );
-            if ( first_read_flag ){
-                first_read_flag = false;
-                string_buffer_offset = current_link_label_info->offset;
-            }
-            if ( ret || string_buffer[0] == ';' ){
-                i++;
-                continue;
-            }
-        }
-        else if ( first_read_flag ){
-            first_read_flag = false;
-            skipLine( &p_script_buffer );
-            string_buffer_offset = current_link_label_info->offset;
-        }
-        
-        current_link_label_info->current_line = i;
-        current_link_label_info->offset = string_buffer_offset;
-
-        if ( string_buffer[string_buffer_offset] == '~' ){
+    while ( current_link_label_info->current_line<current_link_label_info->label_info.num_of_lines ){
+        //printf("line %d/%d\n", current_link_label_info->current_line,current_link_label_info->label_info.num_of_lines );
+        const char *s_buf = script_h.getStringBuffer();
+        if ( s_buf[string_buffer_offset] == '~' )
+        {
             last_tilde.label_info = current_link_label_info->label_info;
             last_tilde.current_line = current_link_label_info->current_line;
-            last_tilde.offset = current_link_label_info->offset;
+            last_tilde.current_script = script_h.getCurrent();
+
             if ( jumpf_flag ) jumpf_flag = false;
-            skipToken();
-            if ( string_buffer[string_buffer_offset] == '\0' ){
-                i++;
+#if 0
+            if ( script_h.string_buffer[string_buffer_offset] == 0x0a ){
+                current_link_label_info->current_line++;
                 text_line_flag = false;
             }
+#endif            
+            script_h.readToken(); string_buffer_offset = 0;
             continue;
         }
-        if ( jumpf_flag || break_flag && strncmp( string_buffer + string_buffer_offset, "next", 4 ) ){
-            skipToken();
-            if ( string_buffer[string_buffer_offset] == '\0' ){
-                i++;
-                text_line_flag = false;
+        if ( jumpf_flag || break_flag && strncmp( &s_buf[string_buffer_offset], "next", 4 ) )
+        {
+            if ( s_buf[string_buffer_offset] == 0x0a ){
+                current_link_label_info->current_line++;
             }
+            script_h.readToken(); string_buffer_offset = 0;
             continue;
         }
 
+        char *current = script_h.getCurrent();
         ret = ScriptParser::parseLine();
         if ( ret == RET_NOMATCH ) ret = this->parseLine();
 
+        s_buf = script_h.getStringBuffer();
         if ( ret == RET_COMMENT ){
-            i++;
+            if ( s_buf[0] == 0x0a ) current_link_label_info->current_line++;
+            script_h.readToken(); string_buffer_offset = 0;
             continue;
         }
         else if ( ret == RET_JUMP ){
-            line_cache = -1;
+            string_buffer_offset = 0;
             goto executeLabelTop;
         }
-        else if ( ret == RET_CONTINUE || ret == RET_CONTINUE_NONEXT ){
-            if ( string_buffer[ string_buffer_offset ] == '\0' ){
-                current_link_label_info->current_script = p_script_buffer;
+        else if ( ret == RET_CONTINUE || ret == RET_CONTINUE_NOREAD ){
+            if ( s_buf[ string_buffer_offset ] == 0x0a ){
+                current_link_label_info->current_line++;
+            }
+            if ( ret == RET_CONTINUE )
+            {
+                script_h.readToken(); // skip tailing \0 and mark kidoku
                 string_buffer_offset = 0;
-                i++;
             }
         }
-        else if ( ret == RET_WAIT ){
+        else if ( ret == RET_SKIP_LINE ){
+            current_link_label_info->current_line++;
+            script_h.skipLine();
+            string_buffer_offset = 0;
+        }
+        else if ( ret == RET_WAIT || ret == RET_WAIT_NOREAD ){
+            if ( ret == RET_WAIT )
+                script_h.setCurrent( current );
             return;
         }
         else if ( ret == RET_WAIT_NEXT ){
-            if ( string_buffer[ string_buffer_offset ] == '\0' ){
-                current_link_label_info->current_script = p_script_buffer;
-                current_link_label_info->current_line = i+1;
-                current_link_label_info->offset = 0;
+            if ( s_buf[ string_buffer_offset ] == 0x0a ){
+                current_link_label_info->current_line++;
             }
-            else
-                current_link_label_info->offset = string_buffer_offset;
+            script_h.readToken();
+            string_buffer_offset = 0;
             return;
         }
     }
 
-    current_link_label_info->label_info = lookupLabelNext( current_link_label_info->label_info.name );
+    current_link_label_info->label_info = script_h.lookupLabelNext( current_link_label_info->label_info.name );
     current_link_label_info->current_line = 0;
-    current_link_label_info->offset = 0;
-    line_cache = -1;
 
-    if ( current_link_label_info->label_info.start_address != NULL ) goto executeLabelTop;
+    if ( current_link_label_info->label_info.start_address != NULL ){
+        script_h.setCurrent( current_link_label_info->label_info.start_address );
+        string_buffer_offset = 0;
+        goto executeLabelTop;
+    }
     else fprintf( stderr, " ***** End *****\n");
 }
 
 int ONScripterLabel::parseLine( )
 {
     int ret, lut_counter = 0;
-    char *p_string_buffer = string_buffer + string_buffer_offset;
+    const char *s_buf = script_h.getStringBuffer();
 
-    readToken( &p_string_buffer, tmp_string_buffer );
-    if ( !text_line_flag ){
+    if ( !script_h.isText() ){
         while( func_lut[ lut_counter ].method ){
-            if ( !strcmp( func_lut[ lut_counter ].command, tmp_string_buffer ) ){
-                ret = (this->*func_lut[ lut_counter ].method)();
-                if ( ret == RET_CONTINUE || ret == RET_WAIT_NEXT ){
-                    skipToken();
-                }
-                return ret;
+            if ( !strcmp( func_lut[ lut_counter ].command, s_buf ) ){
+                return (this->*func_lut[ lut_counter ].method)();
             }
             lut_counter++;
         }
 
-        if ( string_buffer[string_buffer_offset] != '@' && string_buffer[string_buffer_offset] != '\\' &&
-             string_buffer[string_buffer_offset] != '/' && string_buffer[string_buffer_offset] != '!' &&
-             string_buffer[string_buffer_offset] != '#' && string_buffer[string_buffer_offset] != '_' &&
-             string_buffer[string_buffer_offset] != '%' && !(string_buffer[string_buffer_offset] & 0x80 ) ){
-            printf(" command [%s] is not supported yet!!\n", &string_buffer[string_buffer_offset] );
+        if ( s_buf[0] != 0x0a && s_buf[0] != '@' && s_buf[0] != '\\' &&
+             s_buf[0] != '/'  && s_buf[0] != '!' && s_buf[0] != '#'  &&
+             s_buf[0] != '_'  && s_buf[0] != '%' && !(s_buf[0] & 0x80 ) ){
+            printf(" command [%s] is not supported yet!!\n", s_buf );
             skipToken();
             return RET_CONTINUE;
         }
     }
 
     /* Text */
-    text_line_flag = true;
-    ret = textCommand();
-    if ( string_buffer[ string_buffer_offset ] == '\0' ){
-        if ( !new_line_skip_flag && text_char_flag ){
+    //text_line_flag = true;
+    if ( s_buf[string_buffer_offset] != 0x0a )
+        ret = textCommand();
+    else
+        ret = RET_CONTINUE;
+
+    if ( script_h.getStringBuffer()[string_buffer_offset] == 0x0a ){
+        if ( !new_line_skip_flag && script_h.text_line_flag ){
             sentence_font.xy[0] = 0;
             sentence_font.xy[1]++;
             text_char_flag = false;
         }
 
         event_mode = IDLE_EVENT_MODE;
+        new_line_skip_flag = false;
     }
-    new_line_skip_flag = false;
+
     return ret;
 }
 
@@ -726,14 +720,14 @@ SDL_Surface *ONScripterLabel::loadImage( char *file_name )
     SDL_Surface *ret = NULL, *tmp;
 
     if ( !file_name ) return NULL;
-    length = cBR->getFileLength( file_name );
+    length = script_h.cBR->getFileLength( file_name );
     if ( length == 0 ){
         fprintf( stderr, " *** can't find file [%s] ***\n", file_name );
         return NULL;
     }
     //printf(" ... loading %s length %ld\n", file_name, length );
     buffer = new unsigned char[length];
-    cBR->getFile( file_name, buffer );
+    script_h.cBR->getFile( file_name, buffer );
     tmp = IMG_Load_RW(SDL_RWFromMem( buffer, length ),1);
     if ( !tmp ){
         fprintf( stderr, " *** can't load file [%s] ***\n", file_name );
@@ -816,16 +810,16 @@ void ONScripterLabel::deleteSelectLink()
     root_select_link.next = NULL;
 }
 
-int ONScripterLabel::enterTextDisplayMode()
+int ONScripterLabel::enterTextDisplayMode( int ret_wait )
 {
     if ( !(display_mode & TEXT_DISPLAY_MODE) ){
         if ( event_mode & EFFECT_EVENT_MODE ){
             if ( doEffect( WINDOW_EFFECT, NULL, DIRECT_EFFECT_IMAGE ) == RET_CONTINUE ){
                 display_mode |= TEXT_DISPLAY_MODE;
                 text_on_flag = true;
-                return RET_CONTINUE;
+                return RET_CONTINUE_NOREAD;
             }
-            return RET_WAIT;
+            return ret_wait;
         }
         else{
             flush();
@@ -835,10 +829,10 @@ int ONScripterLabel::enterTextDisplayMode()
             SDL_BlitSurface( accumulation_surface, NULL, effect_dst_surface, NULL );
             restoreTextBuffer( effect_dst_surface );
 
-            char *buf = new char[ strlen( string_buffer + string_buffer_offset ) + 1 ];
-            memcpy( buf, string_buffer + string_buffer_offset, strlen( string_buffer + string_buffer_offset ) + 1 );
-            int ret = setEffect( window_effect.effect, buf );
-            if ( ret == RET_WAIT_NEXT ) return RET_WAIT;
+            //char *buf = new char[ strlen( string_buffer + string_buffer_offset ) + 1 ];
+            //memcpy( buf, string_buffer + string_buffer_offset, strlen( string_buffer + string_buffer_offset ) + 1 );
+            int ret = setEffect( window_effect.effect );
+            if ( ret == RET_WAIT_NEXT ) return ret_wait;
             return ret;
         }
     }
@@ -1299,14 +1293,14 @@ void ONScripterLabel::refreshSurface( SDL_Surface *surface, SDL_Rect *clip, int 
         }
     }
 
-    if ( !( refresh_mode & REFRESH_SAYA_MODE ) ) {
-        for ( i=0 ; i<MAX_PARAM_NUM ; i++ ) {
+    if ( !( refresh_mode & REFRESH_SAYA_MODE ) ){
+        for ( i=0 ; i<MAX_PARAM_NUM ; i++ ){
             if ( bar_info[i] ) {
                 drawTaggedSurface( surface, bar_info[i], clip );
             }
         }
-        for ( i=0 ; i<MAX_PARAM_NUM ; i++ ) {
-            if ( prnum_info[i] ) {
+        for ( i=0 ; i<MAX_PARAM_NUM ; i++ ){
+            if ( prnum_info[i] ){
                 drawTaggedSurface( surface, prnum_info[i], clip );
             }
         }
@@ -1356,7 +1350,7 @@ int ONScripterLabel::refreshSprite( SDL_Surface *surface, int sprite_no, bool ac
     return area;
 }
 
-int ONScripterLabel::decodeExbtnControl( SDL_Surface *surface, char *ctl_str, bool draw_flag, bool change_flag )
+int ONScripterLabel::decodeExbtnControl( SDL_Surface *surface, const char *ctl_str, bool draw_flag, bool change_flag )
 {
     int num, sprite_no, area = 0;
     bool active_flag;
@@ -1404,7 +1398,7 @@ void ONScripterLabel::drawExbtn( char *ctl_str )
     }
 }
 
-void ONScripterLabel::loadCursor( int no, char *str, int x, int y, bool abs_flag )
+void ONScripterLabel::loadCursor( int no, const char *str, int x, int y, bool abs_flag )
 {
     cursor_info[ no ].setImageName( str );
     cursor_info[ no ].pos.x = x;

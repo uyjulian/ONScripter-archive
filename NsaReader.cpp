@@ -43,25 +43,27 @@ NsaReader::~NsaReader()
 {
 }
 
-int NsaReader::open( char *name )
+int NsaReader::open( char *nsa_path )
 {
     int i;
-    char archive_name[256];
+    char archive_name[256], archive_name2[256];
 
     if ( !SarReader::open() ) return 0;
 
     sar_flag = false;
-    if ( ( archive_info.file_handle = fopen( NSA_ARCHIVE_NAME, "rb" ) ) == NULL ){
-        fprintf( stderr, "can't open file %s\n", NSA_ARCHIVE_NAME );
+    if ( !nsa_path ) nsa_path = "";
+    sprintf( archive_name, "%s%s", nsa_path, NSA_ARCHIVE_NAME );
+    if ( ( archive_info.file_handle = fopen( archive_name, "rb" ) ) == NULL ){
+        fprintf( stderr, "can't open file %s\n", archive_name );
         return -1;
     }
 
     readArchive( &archive_info, true );
 
     for ( i=0 ; i<MAX_EXTRA_ARCHIVE ; i++ ){
-        sprintf( archive_name, NSA_ARCHIVE_NAME2, i+1 );
+        sprintf( archive_name2, NSA_ARCHIVE_NAME2, i+1 );
+        sprintf( archive_name, "%s%s", nsa_path, archive_name2 );
         if ( ( archive_info2[i].file_handle = fopen( archive_name, "rb" ) ) == NULL ){
-            //fprintf( stderr, "can't open file %s\n", archive_name );
             return 0;
         }
         num_of_nsa_archives = i+1;
@@ -92,7 +94,7 @@ int NsaReader::getNumAccessed(){
     return total;
 }
 
-bool NsaReader::getAccessFlag( char *file_name )
+bool NsaReader::getAccessFlag( const char *file_name )
 {
     int i, j;
 
@@ -107,7 +109,7 @@ bool NsaReader::getAccessFlag( char *file_name )
     return false;
 }
 
-size_t NsaReader::getFileLengthSub( ArchiveInfo *ai, char *file_name )
+size_t NsaReader::getFileLengthSub( ArchiveInfo *ai, const char *file_name )
 {
     char str[30];
     int width, height;
@@ -131,7 +133,7 @@ size_t NsaReader::getFileLengthSub( ArchiveInfo *ai, char *file_name )
     return width * height * 3 + strlen( str );
 }
 
-size_t NsaReader::getFileLength( char *file_name )
+size_t NsaReader::getFileLength( const char *file_name )
 {
     if ( sar_flag ) return SarReader::getFileLength( file_name );
 
@@ -149,7 +151,7 @@ size_t NsaReader::getFileLength( char *file_name )
     return 0;
 }
 
-size_t NsaReader::getFileSub( ArchiveInfo *ai, char *file_name, unsigned char *buffer )
+size_t NsaReader::getFileSub( ArchiveInfo *ai, const char *file_name, unsigned char *buffer )
 {
     int i = getIndexFromFile( ai, file_name );
     if ( i == ai->num_of_files ) return 0;
@@ -170,7 +172,7 @@ size_t NsaReader::getFileSub( ArchiveInfo *ai, char *file_name, unsigned char *b
     return 0;
 }
 
-size_t NsaReader::getFile( char *file_name, unsigned char *buffer )
+size_t NsaReader::getFile( const char *file_name, unsigned char *buffer )
 {
     int i;
     size_t ret;

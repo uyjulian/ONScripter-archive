@@ -55,10 +55,10 @@ void AnimationInfo::deleteImageName(){
     image_name = NULL;
 }
 
-void AnimationInfo::setImageName( char *name ){
+void AnimationInfo::setImageName( const char *name ){
     deleteImageName();
     image_name = new char[ strlen(name) + 1 ];
-    memcpy( image_name, name, strlen(name) + 1 );
+    strcpy( image_name, name );
 }
 
 void AnimationInfo::deleteSurface(){
@@ -70,6 +70,7 @@ void AnimationInfo::deleteSurface(){
 
 void AnimationInfo::remove(){
     valid = false;
+    trans = 255;
     deleteImageName();
     deleteSurface();
     removeTag();

@@ -10,9 +10,9 @@ GUI_OBJS = ONScripterLabel$(OBJSUFFIX) ONScripterLabel_command$(OBJSUFFIX) ONScr
 SAR_OBJS = sardec$(OBJSUFFIX) DirectReader$(OBJSUFFIX) BaseReader$(OBJSUFFIX) SarReader$(OBJSUFFIX)
 NSA_OBJS = nsadec$(OBJSUFFIX) DirectReader$(OBJSUFFIX) BaseReader$(OBJSUFFIX) SarReader$(OBJSUFFIX) NsaReader$(OBJSUFFIX)
 DECODER_OBJS = BaseReader$(OBJSUFFIX) DirectReader$(OBJSUFFIX) SarReader$(OBJSUFFIX) NsaReader$(OBJSUFFIX)
-ONSCRIPTER_OBJS = onscripter$(OBJSUFFIX) $(DECODER_OBJS) ScriptParser$(OBJSUFFIX) ScriptParser_command$(OBJSUFFIX) \
+ONSCRIPTER_OBJS = onscripter$(OBJSUFFIX) $(DECODER_OBJS) ScriptHandler$(OBJSUFFIX) ScriptParser$(OBJSUFFIX) ScriptParser_command$(OBJSUFFIX) \
 	$(GUI_OBJS) sjis2utf16$(OBJSUFFIX) $(EXT_OBJS)
-PARSER_HEADER = BaseReader.h SarReader.h NsaReader.h DirectReader.h ScriptParser.h AnimationInfo.h FontInfo.h
+PARSER_HEADER = BaseReader.h SarReader.h NsaReader.h DirectReader.h ScriptHandler.h ScriptParser.h AnimationInfo.h FontInfo.h
 ONSCRIPTER_HEADER = ONScripterLabel.h $(PARSER_HEADER)
 
 ALL: $(TARGET)
@@ -37,6 +37,7 @@ BaseReader$(OBJSUFFIX):   BaseReader.h
 SarReader$(OBJSUFFIX):    BaseReader.h SarReader.h 
 NsaReader$(OBJSUFFIX):    BaseReader.h SarReader.h NsaReader.h 
 DirectReader$(OBJSUFFIX): BaseReader.h DirectReader.h
+ScriptHandler$(OBJSUFFIX): ScriptHandler.h
 ScriptParser$(OBJSUFFIX): $(PARSER_HEADER)
 ScriptParser_command$(OBJSUFFIX): $(PARSER_HEADER)
 

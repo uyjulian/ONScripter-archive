@@ -33,23 +33,23 @@ public:
     NsaReader( char *path=NULL );
     ~NsaReader();
 
-    int open( char *name=NULL );
+    int open( char *nsa_path=NULL );
     char *getArchiveName() const;
     int getNumFiles();
     int getNumAccessed();
     
-    size_t getFileLength( char *file_name );
-    size_t getFile( char *file_name, unsigned char *buf );
+    size_t getFileLength( const char *file_name );
+    size_t getFile( const char *file_name, unsigned char *buf );
     struct FileInfo getFileByIndex( int index );
-    bool getAccessFlag( char *file_name );
+    bool getAccessFlag( const char *file_name );
     
 private:
     bool sar_flag;
     struct ArchiveInfo archive_info2[MAX_EXTRA_ARCHIVE];
     int num_of_nsa_archives;
 
-    size_t getFileLengthSub( ArchiveInfo *ai, char *file_name );
-    size_t getFileSub( ArchiveInfo *ai, char *file_name, unsigned char *buffer );
+    size_t getFileLengthSub( ArchiveInfo *ai, const char *file_name );
+    size_t getFileSub( ArchiveInfo *ai, const char *file_name, unsigned char *buffer );
     size_t decodeLZSS( struct ArchiveInfo *ai, int no, unsigned char *buffer );
 };
 

@@ -168,7 +168,7 @@ int SarReader::getNumAccessed(){
     return num;
 }
 
-bool SarReader::getAccessFlag( char *file_name )
+bool SarReader::getAccessFlag( const char *file_name )
 {
     ArchiveInfo *info = archive_info.next;
     int j;
@@ -184,7 +184,7 @@ bool SarReader::getAccessFlag( char *file_name )
     return info->fi_list[j].access_flag;
 }
 
-int SarReader::getIndexFromFile( ArchiveInfo *ai, char *file_name )
+int SarReader::getIndexFromFile( ArchiveInfo *ai, const char *file_name )
 {
     unsigned int i, len;
 
@@ -204,7 +204,7 @@ int SarReader::getIndexFromFile( ArchiveInfo *ai, char *file_name )
     return i;
 }
 
-size_t SarReader::getFileLength( char *file_name )
+size_t SarReader::getFileLength( const char *file_name )
 {
     size_t ret;
     if ( ( ret = DirectReader::getFileLength( file_name ) ) ) return ret;
@@ -226,7 +226,7 @@ size_t SarReader::getFileLength( char *file_name )
     return info->fi_list[j].original_length;
 }
 
-size_t SarReader::getFileSub( ArchiveInfo *ai, char *file_name, unsigned char *buf )
+size_t SarReader::getFileSub( ArchiveInfo *ai, const char *file_name, unsigned char *buf )
 {
     int i = getIndexFromFile( ai, file_name );
     if ( i == ai->num_of_files ) return 0;
@@ -242,7 +242,7 @@ size_t SarReader::getFileSub( ArchiveInfo *ai, char *file_name, unsigned char *b
     return fread( buf, 1, ai->fi_list[i].length, ai->file_handle );
 }
 
-size_t SarReader::getFile( char *file_name, unsigned char *buf )
+size_t SarReader::getFile( const char *file_name, unsigned char *buf )
 {
     size_t ret;
     if ( ( ret = DirectReader::getFile( file_name, buf ) ) ) return ret;

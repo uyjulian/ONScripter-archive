@@ -27,18 +27,17 @@
 #define EFFECT_STRIPE_CURTAIN_WIDTH (24 * screen_ratio1 / screen_ratio2)
 #define EFFECT_QUAKE_AMP (12 * screen_ratio1 / screen_ratio2)
 
-int ONScripterLabel::setEffect( int effect_no, char *buf )
+int ONScripterLabel::setEffect( int effect_no )
 {
     if ( effect_no == 0 ){
-        delete[] buf;
         return RET_CONTINUE;
     }
 
     effect_counter = 0;
-    effect_command = buf;
     event_mode = EFFECT_EVENT_MODE;
     advancePhase();
-    return RET_WAIT_NEXT;
+    //return RET_WAIT_NEXT;
+    return RET_WAIT; // RET_WAIT de yoi?
 }
 
 int ONScripterLabel::doEffect( int effect_no, AnimationInfo *anim, int effect_image )
@@ -319,7 +318,7 @@ int ONScripterLabel::doEffect( int effect_no, AnimationInfo *anim, int effect_im
         break;
     }
 
-    //printf("%d / %d\n", effect_counter, effect.duration);
+    //printf("effect conut %d / dur %d\n", effect_counter, effect.duration);
         
     effect_counter += effect_timer_resolution;
     if ( effect_counter < effect.duration ){
@@ -353,18 +352,5 @@ int ONScripterLabel::doEffect( int effect_no, AnimationInfo *anim, int effect_im
         if ( effect.effect == 1 ) effect_counter = 0;
         event_mode = IDLE_EVENT_MODE;
         return RET_CONTINUE;
-    }
-}
-
-void ONScripterLabel::makeEffectStr( char **buf, char *dst_buf )
-{
-    int num = readEffect( buf, &tmp_effect );
-
-    sprintf( dst_buf + strlen(dst_buf), "%d", tmp_effect.effect );
-    if ( num >= 2 ){
-        sprintf( dst_buf + strlen(dst_buf), ",%d", tmp_effect.duration );
-        if ( num >= 3 ){
-            sprintf( dst_buf + strlen(dst_buf), ",%s", tmp_effect.image );
-        }
     }
 }

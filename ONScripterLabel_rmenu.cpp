@@ -35,7 +35,7 @@
 
 #define SAVEFILE_MAGIC_NUMBER "ONS"
 #define SAVEFILE_VERSION_MAJOR 1
-#define SAVEFILE_VERSION_MINOR 4
+#define SAVEFILE_VERSION_MINOR 5
 
 #define READ_LENGTH 4096
 
@@ -226,23 +226,36 @@ int ONScripterLabel::loadSaveFile( int no )
 
     while( 1 ){
         loadStr( fp, &str );
-        current_link_label_info->label_info = lookupLabel( str );
+        current_link_label_info->label_info = script_h.lookupLabel( str );
         
         loadInt( fp, &current_link_label_info->current_line );
-        loadInt( fp, &current_link_label_info->offset );
-        if ( file_version >= 102 ){
-            loadInt( fp, &j );
-            current_link_label_info->end_of_line_flag = (j==1)?true:false;
+
+        int offset;
+        loadInt( fp, &offset );
+            
+        script_h.setCurrent( current_link_label_info->label_info.start_address, false );
+        script_h.skipLine( current_link_label_info->current_line );
+        current_link_label_info->current_script = script_h.getCurrent() + offset;
+
+        if ( file_version <= 104 )
+        {
+            if ( file_version >= 102 ){
+                loadInt( fp, &j );
+                //current_link_label_info->end_of_line_flag = (j==1)?true:false;
+            }
+            else{
+                //current_link_label_info->end_of_line_flag = false;
+            }
+            //current_link_label_info->new_line_flag = false;
+
+            loadInt( fp, &address );
+            //current_link_label_info->current_script =
+            //  current_link_label_info->label_info.start_address + address;
         }
         else{
-            current_link_label_info->end_of_line_flag = false;
+            loadInt( fp, &string_buffer_offset );
         }
-        current_link_label_info->new_line_flag = false;
         
-        loadInt( fp, &address );
-        current_link_label_info->current_script =
-            current_link_label_info->label_info.start_address + address;
-
         if ( fgetc( fp ) == 0 ) break;
 
         current_link_label_info->next = new LinkLabelInfo();
@@ -251,6 +264,7 @@ int ONScripterLabel::loadSaveFile( int no )
         current_link_label_info->next = NULL;
         label_stack_depth++;
     }
+    script_h.setCurrent( current_link_label_info->current_script );
 
     int tmp_event_mode = fgetc( fp );
     
@@ -491,15 +505,22 @@ int ONScripterLabel::saveSaveFile( int no )
     
     /* ---------------------------------------- */
     /* Save link label info */
+    current_link_label_info->current_script = script_h.next_script;
     LinkLabelInfo *info = &root_link_label_info;
 
     while( info ){
         fprintf( fp, "%s", info->label_info.name );
         fputc( 0, fp );
         saveInt( fp, info->current_line );
-        saveInt( fp, info->offset );
-        saveInt( fp, info->end_of_line_flag?1:0 );
-        saveInt( fp, info->current_script - info->label_info.start_address );
+
+        script_h.pushCurrent( info->label_info.start_address, false );
+        script_h.skipLine( info->current_line );
+        saveInt( fp, info->current_script - script_h.getCurrent() );
+        script_h.popCurrent();
+        saveInt( fp, string_buffer_offset );
+        //saveInt( fp, info->offset );
+        //saveInt( fp, info->end_of_line_flag?1:0 );
+        //saveInt( fp, info->current_script - info->label_info.start_address );
         if ( info->next ) fputc( 1, fp );
         info = info->next;
     }
@@ -923,7 +944,7 @@ void ONScripterLabel::executeSystemYesNo()
                       yesno_caller == SYSTEM_MENU ){
 
                 resetCommand();
-                line_cache = -1;
+                //line_cache = -1;
                 event_mode = WAIT_SLEEP_MODE;
                 leaveSystemCall( false );
             }

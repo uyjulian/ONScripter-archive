@@ -280,6 +280,10 @@ int ONScripterLabel::loadSaveFile( int no )
     loadStr( fp, &mp3_file_name );
     if ( current_cd_track >= 0 || mp3_file_name ) playMP3( current_cd_track );
 
+    /* ---------------------------------------- */
+    /* Load rmode flag */
+    rmode_flag = (fgetc( fp )==1)?true:false;
+    
     fclose( fp );
 
     return 0;
@@ -393,6 +397,10 @@ int ONScripterLabel::saveSaveFile( int no )
     mp3_play_once_flag?fputc(1,fp):fputc(0,fp);
     saveStr( fp, mp3_file_name );
     
+    /* ---------------------------------------- */
+    /* Save rmode flag */
+    rmode_flag?fputc(1,fp):fputc(0,fp);
+
     fclose( fp );
 
     return 0;

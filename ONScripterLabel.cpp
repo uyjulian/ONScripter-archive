@@ -92,6 +92,7 @@ static struct FuncLUT{
     {"jumpf", &ONScripterLabel::jumpfCommand},
     {"jumpb", &ONScripterLabel::jumpbCommand},
     {"getversion", &ONScripterLabel::getversionCommand},
+    {"gettimer", &ONScripterLabel::gettimerCommand},
     {"game", &ONScripterLabel::gameCommand},
     {"end", &ONScripterLabel::endCommand},
     {"dwavestop", &ONScripterLabel::dwavestopCommand},
@@ -1897,7 +1898,7 @@ void ONScripterLabel::refreshAccumulationSruface( SDL_Surface *surface )
     
     SDL_BlitSurface( background_surface, NULL, surface, NULL );
 
-    for ( i=z_order+1 ; i<MAX_SPRITE_NUM ; i++ ){
+    for ( i=MAX_SPRITE_NUM-1 ; i>z_order ; i-- ){
         if ( sprite_info[i].valid ){
             if ( sprite_info[i].image_surface ){
                 w = sprite_info[i].image_surface->w;
@@ -1925,7 +1926,7 @@ void ONScripterLabel::refreshAccumulationSruface( SDL_Surface *surface )
                                &tag );
         }
     }
-    for ( i=0 ; i<=z_order ; i++ ){
+    for ( i=z_order ; i>=0 ; i-- ){
         if ( sprite_info[i].valid ){
             if ( sprite_info[i].image_surface ){
                 w = sprite_info[i].image_surface->w;
@@ -3083,13 +3084,31 @@ int ONScripterLabel::jumpbCommand()
 int ONScripterLabel::getversionCommand()
 {
     char *p_string_buffer = string_buffer + string_buffer_offset + 10; // strlen("getversion") = 10
+
     readToken( &p_string_buffer, tmp_string_buffer );
-    
-    assert ( tmp_string_buffer[0] == '%' );
+    if ( tmp_string_buffer[0] != '%' ) errorAndExit( string_buffer + string_buffer_offset );
+
     int no = atoi( tmp_string_buffer + 1 );
+    if ( no >= VARIABLE_RANGE ) errorAndExit( string_buffer + string_buffer_offset );
+
     setNumVariable( no, ONSCRITER_VERSION );
-    printf("getversionCommand %d\n", num_variables[ no ] );
+    //printf("getversionCommand %d\n", num_variables[ no ] );
     return RET_CONTINUE;
+}
+
+int ONScripterLabel::gettimerCommand()
+{
+    char *p_string_buffer = string_buffer + string_buffer_offset + 8; // strlen("gettimer") = 8 
+ 
+    readToken( &p_string_buffer, tmp_string_buffer ); 
+    if ( tmp_string_buffer[0] != '%' ) errorAndExit( string_buffer + string_buffer_offset );
+ 
+    int no = atoi( tmp_string_buffer + 1 ); 
+    if ( no >= VARIABLE_RANGE ) errorAndExit( string_buffer + string_buffer_offset );
+ 
+    setNumVariable( no, SDL_GetTicks() - internal_timer ); 
+ 
+    return RET_CONTINUE; 
 }
 
 int ONScripterLabel::gameCommand()

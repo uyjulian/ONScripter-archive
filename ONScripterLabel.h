@@ -92,6 +92,7 @@ public:
     int jumpfCommand();
     int jumpbCommand();
     int getversionCommand();
+    int gettimerCommand();
     int gameCommand();
     int endCommand();
     int dwavestopCommand();

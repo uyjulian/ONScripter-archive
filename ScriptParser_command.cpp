@@ -725,14 +725,6 @@ int ScriptParser::gosubCommand()
 
 int ScriptParser::globalonCommand()
 {
-    printf(" globalonCommand\n" );
-    FILE *fp;
-
-    if ( ( fp = fopen( "global.sav", "rb" ) ) != NULL ){
-        printf("read from global.sav\n");
-        loadVariables( fp, 200, VARIABLE_RANGE );
-        fclose( fp );
-    }
     globalon_flag = true;
     return RET_CONTINUE;
 }

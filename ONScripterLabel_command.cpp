@@ -1244,6 +1244,15 @@ int ONScripterLabel::gameCommand()
         setupAnimationInfo( &lookback_info[i] );
     }
     
+    /* ---------------------------------------- */
+    /* Read global variables if available */
+    FILE *fp;
+
+    if ( ( fp = fopen( "global.sav", "rb" ) ) != NULL ){
+        loadVariables( fp, 200, VARIABLE_RANGE );
+        fclose( fp );
+    }
+
     return RET_JUMP;
 }
 

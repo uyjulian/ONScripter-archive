@@ -28,6 +28,7 @@ void optionHelp()
     printf( "Usage: onscripter [option ...]\n" );
     printf( "      --cdaudio\t\tuse CD audio if available\n");
     printf( "      --font font_file\t\tuse font_file as a default font\n");
+    printf( "      --registry registry_file\t\tuse registry_file as a default registry file\n");
     printf( "  -h, --help\t\tdisplay this help and exit\n");
     printf( "  -v, --version\t\toutput version information and exit\n");
     exit(0);
@@ -46,6 +47,7 @@ int main( int argc, char **argv )
 {
     bool cdaudio_flag = false;
     char *default_font = NULL;
+    char *default_registry = NULL;
     
     /* ---------------------------------------- */
     /* Parse options */
@@ -68,6 +70,13 @@ int main( int argc, char **argv )
                 default_font = new char[ strlen( argv[0] ) + 1 ];
                 memcpy( default_font, argv[0], strlen( argv[0] ) + 1 );
             }
+            else if ( !strcmp( argv[0]+1, "-registry" ) ){
+                argc--;
+                argv++;
+                if ( default_registry ) delete[] default_registry;
+                default_registry = new char[ strlen( argv[0] ) + 1 ];
+                memcpy( default_registry, argv[0], strlen( argv[0] ) + 1 );
+            }
             else{
                 optionHelp();
             }
@@ -81,7 +90,7 @@ int main( int argc, char **argv )
     
     /* ---------------------------------------- */
     /* Run ONScripter */
-    ONScripterLabel *ons = new ONScripterLabel( cdaudio_flag, default_font );
+    ONScripterLabel *ons = new ONScripterLabel( cdaudio_flag, default_font, default_registry );
     ons->eventLoop();
     
     exit(0);

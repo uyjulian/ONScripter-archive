@@ -46,7 +46,7 @@
 class ONScripterLabel : public ScriptParser
 {
 public:
-    ONScripterLabel( bool cdaudio_flag, char *default_font );
+    ONScripterLabel( bool cdaudio_flag, char *default_font, char *default_registry );
     ~ONScripterLabel();
 
     bool skip_flag;
@@ -97,6 +97,7 @@ public:
     int jumpbCommand();
     int getversionCommand();
     int gettimerCommand();
+    int getregCommand();
     int gameCommand();
     int exbtnCommand();
     int erasetextwindowCommand();
@@ -326,9 +327,13 @@ private:
     AnimationInfo lookback_info[4];
     
     /* ---------------------------------------- */
+    /* Registry related variables */
+    char *registry_file;
+    
+    /* ---------------------------------------- */
     /* Text related variables */
     AnimationInfo sentence_font_info;
-    char *font_name;
+    char *font_file;
     bool erase_text_window_flag;
 
     void drawChar( char* text, struct FontInfo *info, bool flush_flag = true, SDL_Surface *surface = NULL, bool buffering_flag = true );
@@ -354,6 +359,7 @@ private:
 
     /* ---------------------------------------- */
     /* Select related variables */
+    typedef enum{ SELECT_GOTO_MODE=0, SELECT_GOSUB_MODE=1, SELECT_NUM_MODE=2 } SELECT_MODE;
     struct SelectLink{
         struct SelectLink *next;
         char *text;

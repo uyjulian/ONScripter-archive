@@ -30,7 +30,8 @@ extern void initSJIS2UTF16();
 #define DEFAULT_DECODEBUF 16384
 #define DEFAULT_AUDIOBUF  4096
 
-#define FONT_NAME "default.ttf"
+#define FONT_FILE "default.ttf"
+#define REGISTRY_FILE "registry.txt"
 
 #define DEFAULT_TEXT_SPEED1 40 // Low speed
 #define DEFAULT_TEXT_SPEED2 20 // Middle speed
@@ -94,6 +95,7 @@ static struct FuncLUT{
     {"jumpb", &ONScripterLabel::jumpbCommand},
     {"getversion", &ONScripterLabel::getversionCommand},
     {"gettimer", &ONScripterLabel::gettimerCommand},
+    {"getreg", &ONScripterLabel::getregCommand},
     {"game", &ONScripterLabel::gameCommand},
     {"exbtn_d", &ONScripterLabel::exbtnCommand},
     {"exbtn", &ONScripterLabel::exbtnCommand},
@@ -144,7 +146,7 @@ int ONScripterLabel::SetVideoMode()
 	return(0);
 }
 
-ONScripterLabel::ONScripterLabel( bool cdaudio_flag, char *default_font )
+ONScripterLabel::ONScripterLabel( bool cdaudio_flag, char *default_font, char *default_registry )
 {
     int i;
 
@@ -255,15 +257,16 @@ ONScripterLabel::ONScripterLabel( bool cdaudio_flag, char *default_font )
     for ( i=0 ; i<MIX_CHANNELS ; i++ ) wave_sample[i] = NULL;
     
     /* ---------------------------------------- */
+    /* Initialize registry */
+    registry_file = NULL;
+    if ( default_registry ) setStr( &registry_file, default_registry );
+    else                    setStr( &registry_file, REGISTRY_FILE );
+
+    /* ---------------------------------------- */
     /* Initialize font */
-    if ( default_font ){
-        font_name = new char[ strlen( default_font ) + 1 ];
-        memcpy( font_name, default_font, strlen( default_font ) + 1 );
-    }
-    else{
-        font_name = new char[ strlen( FONT_NAME ) + 1 ];
-        memcpy( font_name, FONT_NAME, strlen( FONT_NAME ) + 1 );
-    }
+    font_file = NULL;
+    if ( default_font ) setStr( &font_file, default_font );
+    else                setStr( &font_file, FONT_FILE );
     
     text_char_flag = false;
     default_text_speed[0] = DEFAULT_TEXT_SPEED1;
@@ -273,9 +276,9 @@ ONScripterLabel::ONScripterLabel( bool cdaudio_flag, char *default_font )
     
     new_line_skip_flag = false;
     erase_text_window_flag = true;
-    sentence_font.ttf_font = (void*)TTF_OpenFont( font_name, FONT_SIZE );
+    sentence_font.ttf_font = (void*)TTF_OpenFont( font_file, FONT_SIZE );
     if ( !sentence_font.ttf_font ){
-        fprintf( stderr, "can't open font file: %s\n", font_name );
+        fprintf( stderr, "can't open font file: %s\n", font_file );
         SDL_Quit();
         exit(-1);
     }

@@ -25,7 +25,7 @@
 
 int ScriptParser::underlineCommand()
 {
-    if ( current_mode != DEFINE_MODE ) errorAndExit( string_buffer + string_buffer_offset );
+    if ( current_mode != DEFINE_MODE ) errorAndExit( string_buffer + string_buffer_offset, "not in the define section" );
     char *p_string_buffer = string_buffer + string_buffer_offset + 9; // strlen("underline") = 9
 
     underline_value = readInt( &p_string_buffer );
@@ -60,7 +60,7 @@ int ScriptParser::versionstrCommand()
 
 int ScriptParser::transmodeCommand()
 {
-    if ( current_mode != DEFINE_MODE ) errorAndExit( string_buffer + string_buffer_offset );
+    if ( current_mode != DEFINE_MODE ) errorAndExit( string_buffer + string_buffer_offset, "not in the define section" );
     char *p_string_buffer = string_buffer + string_buffer_offset + 9; // strlen("transmode") = 9
 
     readStr( &p_string_buffer, tmp_string_buffer );
@@ -109,7 +109,7 @@ int ScriptParser::subCommand()
 int ScriptParser::straliasCommand()
 {
     char *p_string_buffer = string_buffer + string_buffer_offset + 8; // strlen("stralias") = 8
-    if ( current_mode != DEFINE_MODE ) errorAndExit( string_buffer + string_buffer_offset );
+    if ( current_mode != DEFINE_MODE ) errorAndExit( string_buffer + string_buffer_offset, "not in the define section" );
 
     StringAlias *p_str_alias = new StringAlias();
     
@@ -193,7 +193,7 @@ int ScriptParser::savenameCommand()
 
 int ScriptParser::roffCommand()
 {
-    if ( current_mode != DEFINE_MODE ) errorAndExit( string_buffer + string_buffer_offset );
+    if ( current_mode != DEFINE_MODE ) errorAndExit( string_buffer + string_buffer_offset, "not in the define section" );
     rmode_flag = false;
 
     return RET_CONTINUE;
@@ -241,7 +241,7 @@ int ScriptParser::rmenuCommand()
 
 int ScriptParser::returnCommand()
 {
-    if ( --label_stack_depth < 0 ) errorAndExit( string_buffer + string_buffer_offset );
+    if ( --label_stack_depth < 0 ) errorAndExit( string_buffer + string_buffer_offset, "too many returns" );
     
     current_link_label_info = current_link_label_info->previous;
     delete current_link_label_info->next;
@@ -252,7 +252,7 @@ int ScriptParser::returnCommand()
 
 int ScriptParser::numaliasCommand()
 {
-    if ( current_mode != DEFINE_MODE ) errorAndExit( string_buffer + string_buffer_offset );
+    if ( current_mode != DEFINE_MODE ) errorAndExit( string_buffer + string_buffer_offset, "not in the define section" );
     char *p_string_buffer = string_buffer + string_buffer_offset + 8; // strlen("numalias") = 8
     NameAlias *p_name_alias = new NameAlias();
     
@@ -366,10 +366,7 @@ int ScriptParser::movCommand()
         no = readInt( &p_string_buffer );
 
         readStr( &p_string_buffer, tmp_string_buffer );
-        delete[] str_variables[ no ];
-        str_variables[ no ] = new char[ strlen( tmp_string_buffer ) + 1 ];
-        memcpy( str_variables[ no ], tmp_string_buffer, strlen( tmp_string_buffer ) + 1 );
-        //printf("movCommand %d, %s\n", no, tmp_string_buffer );
+        setStr( &str_variables[ no ], tmp_string_buffer );
     }
     else errorAndExit( string_buffer + string_buffer_offset );
     
@@ -842,7 +839,7 @@ int ScriptParser::effectCommand()
         elink = &window_effect;
     }
     else{
-        if ( current_mode != DEFINE_MODE ) errorAndExit( string_buffer + string_buffer_offset );
+        if ( current_mode != DEFINE_MODE ) errorAndExit( string_buffer + string_buffer_offset, "not in the define section" );
 
         last_effect_link->next = new EffectLink();
         last_effect_link = last_effect_link->next;
@@ -870,7 +867,7 @@ int ScriptParser::divCommand()
 
 int ScriptParser::dimCommand()
 {
-    if ( current_mode != DEFINE_MODE ) errorAndExit( string_buffer + string_buffer_offset );
+    if ( current_mode != DEFINE_MODE ) errorAndExit( string_buffer + string_buffer_offset, "not in the define section" );
     char *p_string_buffer = string_buffer + string_buffer_offset + 3; // strlen("dim") = 3
 
     struct ArrayVariable array;

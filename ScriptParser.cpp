@@ -943,6 +943,21 @@ void ScriptParser::skipToken()
         else if ( !quat_flag && *buf == ',' ){
             comma_flag = true;
         }
+        else if ( !quat_flag && (*buf == '%' || *buf == '$' ) ){
+            buf++;
+            SKIP_SPACE( buf );
+            continue;
+        }
+        else if ( !quat_flag && (*buf == '?' ) ){
+            while ( *(buf++) != '[' );
+            int c = 1;
+            while ( c > 0 ){
+                if ( *buf == '[' ) c++;
+                else if ( *buf == ']' ) c--;
+                buf++;
+            }
+            continue;
+        }
         else
             comma_flag = false;
         buf++;
@@ -1138,9 +1153,12 @@ void ScriptParser::loadVariables( FILE *fp, int from, int to )
     }
 }
 
-void ScriptParser::errorAndExit( char *str )
+void ScriptParser::errorAndExit( char *str, char *reason )
 {
-    fprintf( stderr, " *** Invalid command [%s] ***\n", str );
+    if ( reason )
+        fprintf( stderr, " *** Invalid command [%s]; %s ***\n", str, reason );
+    else
+        fprintf( stderr, " *** Invalid command [%s] ***\n", str );
     exit(-1);
 }
 

@@ -352,7 +352,7 @@ protected:
     unsigned char convHexToDec( char ch );
     void readColor( uchar3 *color, char *buf );
     
-    void errorAndExit( char *str );
+    void errorAndExit( char *str, char *reason=NULL );
 
     void saveInt( FILE *fp, int var );
     void loadInt( FILE *fp, int *var );

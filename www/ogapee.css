@@ -47,3 +47,5 @@ width: 80%;
 text-align: center;
 align: center;
 }
+
+PRE { text-indent: 0; }

@@ -27,7 +27,7 @@ href="http://www2.osk.3web.ne.jp/~naokikun/index.htm">高橋直樹</a>氏が開発したゲ
 
 <p>ONScripter で何ができるのかについてはαβεさんの[<A HREF="http://abe.platina.sakura.ne.jp/onscripter/">ONScripter のスゝメ</A>]を参照してください。</p>
 
-<p>現在はベータ版<A HREF="onscripter-beta-20020318.tar.gz">onscripter-beta-20020318.tar.gz</A>を配布しております。<br>
+<p>現在はベータ版<A HREF="onscripter-beta-20020318a.tar.gz">onscripter-beta-20020318a.tar.gz</A>を配布しております。<br>
 ベータ版ゆえデバッグ出力・assert 等が有効になっていますが、正式版になったら取り除きます。<br>
 (一つ前のベータ版<A HREF="onscripter-beta-20020317a.tar.gz">onscripter-beta-20020317a.tar.gz</A>)</p>
 
@@ -117,13 +117,12 @@ href="http://www2.osk.3web.ne.jp/~naokikun/index.htm">高橋直樹</a>氏が開発したゲ
 
 <OL>
   <LI> (<FONT color="#ff8800">中</FONT>)sprite の透明度サポート
-  <LI> (<FONT color="#ff8800">中</FONT>)select が複数行にまたがるときに、先頭が * ではじまるとラベルの先頭として解釈されてしますバグをとる。
   <LI> (<FONT color="#ff8800">中</FONT>)blt の拡大縮小に対応。
   <LI> (<FONT color="#ff8800">中</FONT>)雪をスムーズに降らせる
   <LI> (<FONT color="#ff8800">中</FONT>)立ち絵・スプライト・カーソルに汎用に使えるアニメーション機構の実装
-  <LI> (<FONT color="#ff8800">中</FONT>)レジストリをエミュレートする機構を付ける。
   <LI> (<FONT color="#ff8800">中</FONT>)画像読み込み時の m 指定に対応。
   <LI> (<FONT color="#ff8800">中</FONT>)erasetextwindow off 時の選択画面での表示の正常化。
+  <LI> (<FONT color="#ff8800">中</FONT>)textgosub, texec を実装したいが後者の仕様が分からない。なにこれ？
   <LI> (<FONT color="#00ff00">低</FONT>)save/load 時に確認画面を表示する
   <LI> (<FONT color="#00ff00">低</FONT>)archive の検索の高速化
   <LI> (<FONT color="#00ff00">低</FONT>)一文字毎に readLine するのをなんとかする（かも）
@@ -181,6 +180,8 @@ href="http://www2.osk.3web.ne.jp/~naokikun/index.htm">高橋直樹</a>氏が開発したゲ
 
 <p> また、コンソール画面で Ctl-c することで ONScripter を終了できます。その場合、グローバル変数等は保存されるので、終了する場合はゲームのメニューから終了するか、これで強制終了するかしてください。</p>
 
+</td></tr><tr><td>
+
 <h3> 起動オプションについて </h3>
 
 <p> 以下に示すオプションを指定できます。ただし、オプション無しがデフォルト動作です。</p>
@@ -191,7 +192,40 @@ href="http://www2.osk.3web.ne.jp/~naokikun/index.htm">高橋直樹</a>氏が開発したゲ
 <tr><td>-v,--version</td><td>バージョンを表示して終了。</td></tr>
 <tr><td>--cdaudio</td><td>CD Audio 演奏モードに変更。CD Audio が使えなかったとしても MP3 ファイルは使用しません。</td></tr>
 <tr><td>--font font_file</td><td>使用するフォントの path を指定。</td></tr>
+<tr><td>--registry registry_file</td><td>使用する registry file を指定。</td></tr>
 </table>
+
+</td></tr><tr><td>
+
+<h3> レジストリ読み込みについて </h3>
+
+<p> getreg コマンドは Windows の registry から指定されたデータを取得し
+ます。ONScripter では、テキストファイル registry.txt にデータを記述し、
+これを読み込むことでこの機能を実現します。</p>
+
+<P>registry.txt の書式は次の通りです。大文字・小文字は区別されます。ま
+た余計なスペース等を入れないようにして下さい。漢字が使われている場合、
+文字コードが Shift JIS になることに注意してください。</P>
+
+<table border=1>
+<TR><TD>
+<pre>
+[software\StudioOGA\ONScripter]
+"INSTALL"="FULL"
+
+[software\StudioOGA\のまど]
+"Download log file"="c:\nomad_down.log"
+"Upload log file"="c:\nomad_up.log"
+</pre>
+</TD></TR>
+</table>
+
+<P>ONScripter 起動時に --registry オプションを指定することで、
+registry.txt を一カ所にまとめておくことができます。--registry を指定し
+ない場合は、現在のディレクトリの registry.txt を読みにいきます。</P>
+
+
+</td></tr><tr><td>
 
 <h3> TrueType font による漢字表示について </h3>
 

@@ -170,7 +170,7 @@ int ONScripterLabel::loadSaveFile( int no )
     }
     
     if ( sentence_font.ttf_font ) TTF_CloseFont( (TTF_Font*)sentence_font.ttf_font );
-    sentence_font.ttf_font = (void*)TTF_OpenFont( font_name, sentence_font.font_size );
+    sentence_font.ttf_font = (void*)TTF_OpenFont( font_file, sentence_font.font_size );
 
     loadInt( fp, &clickstr_state );
     loadInt( fp, &j );
@@ -808,7 +808,6 @@ void ONScripterLabel::setupLookbackButton()
                         lookback_info[3].image_surface, 0, 0,
                         0, 0, -lookback_info[3].tag.trans_mode );
     }
-    refreshMouseOverButton();
 }
 
 void ONScripterLabel::executeSystemLookback()
@@ -846,5 +845,6 @@ void ONScripterLabel::executeSystemLookback()
     for ( i=0 ; i<3 ; i++ ) sentence_font.color[i] = color[i];
     setupLookbackButton();
     SDL_BlitSurface( text_surface, NULL, select_surface, NULL );
+    refreshMouseOverButton();
     flush();
 }

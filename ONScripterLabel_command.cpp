@@ -211,7 +211,7 @@ int ONScripterLabel::setwindowCommand()
     sentence_font.display_shadow = readInt( &p_string_buffer )?true:false;
 
     if ( sentence_font.ttf_font ) TTF_CloseFont( (TTF_Font*)sentence_font.ttf_font );
-    sentence_font.ttf_font = (void*)TTF_OpenFont( font_name, sentence_font.font_size );
+    sentence_font.ttf_font = (void*)TTF_OpenFont( font_file, sentence_font.font_size );
 #if 0
     printf("ONScripterLabel::setwindowCommand (%d,%d) (%d,%d) font=%d (%d,%d) wait=%d bold=%d, shadow=%d\n",
            sentence_font.top_xy[0], sentence_font.top_xy[1], sentence_font.num_xy[0], sentence_font.num_xy[1],
@@ -287,10 +287,9 @@ int ONScripterLabel::setcursorCommand()
 int ONScripterLabel::selectCommand()
 {
     int ret = enterTextDisplayMode();
-    int xy[2];
     if ( ret != RET_NOMATCH ) return ret;
 
-    //printf("selectCommand %d\n", event_mode);
+    int xy[2];
     char *p_script_buffer = current_link_label_info->current_script;
     readLine( &p_script_buffer );
     int select_mode;
@@ -298,25 +297,23 @@ int ONScripterLabel::selectCommand()
     char *p_string_buffer, *p_buf;
 
     if ( !strncmp( string_buffer + string_buffer_offset, "selnum", 6 ) ){
-        select_mode = 2;
         p_string_buffer = string_buffer + string_buffer_offset + 6; // strlen("selnum") = 6
+        select_mode = SELECT_NUM_MODE;
         SKIP_SPACE( p_string_buffer );
         p_buf = p_string_buffer;
         readInt( &p_string_buffer );
     }
     else if ( !strncmp( string_buffer + string_buffer_offset, "selgosub", 8 ) ){
-        select_mode = 1;
         p_string_buffer = string_buffer + string_buffer_offset + 8; // strlen("selgosub") = 8
+        select_mode = SELECT_GOSUB_MODE;
     }
     else{
-        select_mode = 0;
         p_string_buffer = string_buffer + string_buffer_offset + 6; // strlen("select") = 6
+        select_mode = SELECT_GOTO_MODE;
     }
     bool comma_flag, first_token_flag = true;
     int count = 0;
 
-    //printf("p_string_buffer [%s], string_buffer [%s], string_buffer_offset %d\n",
-    //p_string_buffer, string_buffer, string_buffer_offset );
     if ( event_mode & (WAIT_INPUT_MODE | WAIT_BUTTON_MODE) ){
 
         if ( current_button_state.button == 0 ) return RET_WAIT;
@@ -332,15 +329,16 @@ int ONScripterLabel::selectCommand()
             last_select_link = last_select_link->next;
         }
 
-        if ( select_mode  == 0 ){ // go
+        if ( select_mode  == SELECT_GOTO_MODE ){
             current_link_label_info->label_info = lookupLabel( last_select_link->label );
             current_link_label_info->current_line = 0;
             current_link_label_info->offset = 0;
             ret = RET_JUMP;
         }
-        else if ( select_mode == 1 ){
+        else if ( select_mode == SELECT_GOSUB_MODE ){
             current_link_label_info->current_line = select_label_info.current_line;
-            current_link_label_info->offset = select_label_info.offset;
+            string_buffer_offset = select_label_info.offset;
+
             gosubReal( last_select_link->label );
             ret = RET_JUMP;
         }
@@ -351,7 +349,6 @@ int ONScripterLabel::selectCommand()
         deleteSelectLink();
 
         refreshAccumulationSurface( accumulation_surface );
-        //SDL_BlitSurface( background_surface, NULL, accumulation_surface, NULL );
         newPage( true );
 
         return ret;
@@ -368,64 +365,60 @@ int ONScripterLabel::selectCommand()
         select_label_info.current_line = current_link_label_info->current_line;
         while(1){
             comma_flag = readStr( &p_string_buffer, tmp_string_buffer );
-            //printf("read tmp_string_buffer [%s] %d\n", tmp_string_buffer, comma_flag );
-            //printf("read p_string [%s]\n", p_string_buffer );
-            if ( tmp_string_buffer[0] != '\0' ){
-                //printf("tmp_string_buffer %s\n", tmp_string_buffer );
-                if ( first_token_flag ){ // First token is at the second line
-                    first_token_flag = false;
-                }
+            //printf("sel [%s] [%s]\n", p_string_buffer, tmp_string_buffer );
+            if ( tmp_string_buffer[0] != '\0' || comma_flag ){
+                first_token_flag = false;
                 count++;
-                if ( select_mode == 2 || count % 2 ){
+                if ( select_mode == SELECT_NUM_MODE || count % 2 ){
+                    if ( select_mode != SELECT_NUM_MODE && !comma_flag ) errorAndExit( string_buffer + string_buffer_offset, "comma is needed here" );
                     link = new SelectLink();
                     setStr( &link->text, tmp_string_buffer );
+                    //printf("Select text %s\n", link->text);
                 }
-                if ( select_mode == 2 || !(count % 2) ){
+                if ( select_mode == SELECT_NUM_MODE || !(count % 2) ){
                     setStr( &link->label, tmp_string_buffer+1 );
+                    //printf("Select label %s\n", link->label );
                     last_select_link->next = link;
                     last_select_link = last_select_link->next;
                 }
             }
-            
+
             if ( p_string_buffer[0] == '\0' ){ // end of line
-                //printf(" end of line %d\n", first_token_flag);
-                if ( first_token_flag ){ // First token is at the second line
-                    comma_flag = true;
-                    first_token_flag = false;
-                }
+                if ( first_token_flag ) comma_flag = true;
+
                 do{
                     readLine( &p_script_buffer );
+                    select_label_info.current_line++;
                 }
                 while ( string_buffer[ string_buffer_offset ] == ';' || string_buffer[ string_buffer_offset ] == '\0' );
-                select_label_info.current_line++;
-                //printf("after readline %s\n",string_buffer);
                 
                 p_string_buffer = string_buffer + string_buffer_offset;
-                SKIP_SPACE( p_string_buffer );
-                assert ( !comma_flag || string_buffer[ string_buffer_offset ] != ',' );
-                if ( !comma_flag && string_buffer[ string_buffer_offset ] != ',' ) break;
-
-                if ( string_buffer[ string_buffer_offset ] == ',' ) string_buffer_offset++;
-                continue;
+                if ( *p_string_buffer == ',' ){
+                    if ( comma_flag ) errorAndExit( string_buffer + string_buffer_offset, "double comma" );
+                    p_string_buffer++;
+                }
+                else if ( !comma_flag ) break;
             }
+            else if (!comma_flag ) break;
             
             if ( first_token_flag ) first_token_flag = false;
         }
-        select_label_info.offset = string_buffer_offset;
-        //printf("select end\n");
+        select_label_info.offset = p_string_buffer - string_buffer;
 
         last_select_link = root_select_link.next;
         int counter = 1;
         while( last_select_link ){
-            last_button_link->next = getSelectableSentence( last_select_link->text, &sentence_font );
-            last_button_link = last_button_link->next;
-            last_button_link->no = counter++;
+            if ( *last_select_link->text ){
+                last_button_link->next = getSelectableSentence( last_select_link->text, &sentence_font );
+                last_button_link = last_button_link->next;
+                last_button_link->no = counter;
+            }
+            counter++;
             last_select_link = last_select_link->next;
         }
         SDL_BlitSurface( text_surface, NULL, select_surface, NULL );
 
-        if ( select_mode == 0 ){
-            /* Resume */
+        if ( select_mode == SELECT_GOTO_MODE ){ /* Resume */
             p_script_buffer = current_link_label_info->current_script;
             readLine( &p_script_buffer );
         }
@@ -859,6 +852,61 @@ int ONScripterLabel::gettimerCommand()
     setInt( p_string_buffer, SDL_GetTicks() - internal_timer ); 
  
     return RET_CONTINUE; 
+}
+
+int ONScripterLabel::getregCommand()
+{
+    char *p_string_buffer = string_buffer + string_buffer_offset + 6; // strlen("getreg") = 6
+    char buf[256], buf2[256], *p_buf;
+    FILE *fp;
+    bool found_flag = false;
+    char *path = NULL;
+    
+    SKIP_SPACE( p_string_buffer );
+    
+    if ( p_string_buffer[0] != '$') errorAndExit( string_buffer + string_buffer_offset, "no string variable" );
+    p_string_buffer++;
+    int no = readInt( &p_string_buffer );
+
+    readStr( &p_string_buffer, tmp_string_buffer );
+    setStr( &path , tmp_string_buffer );
+    readStr( &p_string_buffer, tmp_string_buffer );
+
+    printf("  reading Registry file for [%s] %s\n", path, tmp_string_buffer );
+        
+    if ( ( fp = fopen( registry_file, "r" ) ) == NULL ){
+        fprintf( stderr, "Cannot open file [%s]\n", registry_file );
+        return RET_CONTINUE;
+    }
+    while( fgets( buf, 256, fp) && !found_flag ){
+        if ( buf[0] == '[' ){
+            unsigned int c=0;
+            while ( buf[c] != ']' ) c++;
+            if ( !strncmp( buf + 1, path, (c-1>strlen(path))?(c-1):strlen(path) ) ){
+                while( fgets( buf, 256, fp) ){
+                    p_buf = buf+1;
+                    readStr( &p_buf, buf2 );
+                    if ( strncmp( buf2,
+                                  tmp_string_buffer,
+                                  (strlen(buf2)>strlen(tmp_string_buffer))?strlen(buf2):strlen(tmp_string_buffer) ) ) continue;
+                    
+                    readStr( &p_buf, buf2 );
+                    if ( buf2[0] != '=' ) continue;
+
+                    readStr( &p_buf, buf2 );
+                    setStr( &str_variables[ no ], buf2 );
+                    printf("  $%d = %s\n", no, str_variables[ no ] );
+                    found_flag = true;
+                    break;
+                }
+            }
+        }
+    }
+
+    if ( !found_flag ) fprintf( stderr, "  The key is not found.\n" );
+    fclose(fp);
+
+    return RET_CONTINUE;
 }
 
 int ONScripterLabel::gameCommand()

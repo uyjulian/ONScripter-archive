@@ -12,7 +12,7 @@
 </CENTER>
 
 Created: Feb. 6, 2002<br>
-Last updated: Mar. 30, 2002
+Last updated: Mar. 31, 2002
 
 <HR>
 
@@ -27,9 +27,9 @@ href="http://www2.osk.3web.ne.jp/~naokikun/index.htm">高橋直樹</a>氏が開発したゲ
 
 <p>ONScripter で何ができるのかについてはαβεさんの[<A HREF="http://abe.platina.sakura.ne.jp/onscripter/">ONScripter のスゝメ</A>]を参照してください。</p>
 
-<p>現在はベータ版<A HREF="onscripter-beta-20020330.tar.gz">onscripter-beta-20020330.tar.gz</A>を配布しております。<br>
+<p>現在はベータ版<A HREF="onscripter-beta-20020331.tar.gz">onscripter-beta-20020331.tar.gz</A>を配布しております。<br>
 ベータ版ゆえデバッグ出力・assert 等が有効になっていますが、正式版になったら取り除きます。<br>
-(一つ前のベータ版<A HREF="onscripter-beta-20020327.tar.gz">onscripter-beta-20020327.tar.gz</A>)</p>
+(一つ前のベータ版<A HREF="onscripter-beta-20020330.tar.gz">onscripter-beta-20020330.tar.gz</A>)</p>
 
 <p>更新内容については[<A HREF="onscripter_devel.html">開発日誌</A>]を参照して下さい。</p>
 
@@ -81,7 +81,7 @@ href="http://www2.osk.3web.ne.jp/~naokikun/index.htm">高橋直樹</a>氏が開発したゲ
 <OL>
   <LI> 全ての操作をキーボードから行えます。もちろんマウスも使えますが、使う必要はありません。
   <LI> CD Audio の演奏に対応していますが、これを MP3 ファイルの演奏に振り替える機能もあります。
-  <LI> マルチプラットフォームに対応しています。Windows, Linux, MacOSX での動作が確認されていますが、下記の libjpeg, bzip2, SDL 及び SMPEG が動く環境ならどこでも同じソースをコンパイルするだけで動くはずです。<BR>
+  <LI> マルチプラットフォームに対応しています。Windows, Linux, MacOS X での動作が確認されていますが、下記の libjpeg, bzip2, SDL 及び SMPEG が動く環境ならどこでも同じソースをコンパイルするだけで動くはずです。<BR>
   <LI> 全てのコマンド・仕様を実装していないため、ゲームによって挙動がおかしくなります。その場合は上記バグトラッキングシステムまで御報告下さい。
 </OL>
 
@@ -130,9 +130,9 @@ href="http://www2.osk.3web.ne.jp/~naokikun/index.htm">高橋直樹</a>氏が開発したゲ
 <p> 
 
 <p> 当方では Windows と Linux で動作確認をしています。<BR>
-また MacOS X での<A HREF="http://www.freeml.com/message/sdl-fan-jp@freeml.com/0000316">動作確認報告</A>を受けています。<br>
+また MacOS X での<A HREF="http://www.freeml.com/message/sdl-fan-jp@freeml.com/0000316">動作報告</A>を受けています。<br>
 
-その他の多くの Unix 系 OS, BeOS, MacOS については libjpeg 6b, bzip2, SDL と SMPEG が対応しているため適切な Makefile を書けばコンパイル・実行できると思いますが、当方では確認できないので誰かやって下さい。</p>
+その他の多くの Unix 系 OS, BeOS, MacOS については上述のライブラリが対応しているため適切な Makefile を書けばコンパイル・実行できると思いますが、当方では確認できないので誰かやって下さい。</p>
 
 <A NAME="コンパイル"></A>
 <h3>コンパイル</h3>
@@ -159,6 +159,7 @@ href="http://www2.osk.3web.ne.jp/~naokikun/index.htm">高橋直樹</a>氏が開発したゲ
 <p>現在把握しており直す予定のバグ・未実装機能。先頭の文字は優先度。</p>
 
 <OL>
+  <LI> (<FONT color="#ff0000">高</FONT>)windowback の実装。
   <LI> (<FONT color="#ff0000">高</FONT>)csel 系の実装。
   <LI> (<FONT color="#ff8800">中</FONT>)sprite の透明度サポート
   <LI> (<FONT color="#ff8800">中</FONT>)blt の拡大縮小に対応。

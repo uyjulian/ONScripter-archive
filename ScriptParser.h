@@ -71,11 +71,21 @@ public:
         struct NameAlias *next;
         char *alias;
         int  num;
+
+        NameAlias(){
+            next  = NULL;
+            alias = NULL;
+        };
     };
     struct StringAlias{
         struct StringAlias *next;
         char *alias;
         char *str;
+
+        StringAlias(){
+            next  = NULL;
+            alias = str = NULL;
+        };
     };
 
     typedef enum{ SYSTEM_NULL = 0, SYSTEM_SKIP = 1, SYSTEM_RESET = 2, SYSTEM_SAVE = 3, SYSTEM_LOAD = 4, SYSTEM_LOOKBACK = 5, SYSTEM_WINDOWERASE = 6, SYSTEM_MENU = 7  } SYSTEM_CALLS;
@@ -175,7 +185,7 @@ protected:
 
     BaseReader *cBR;
 
-    int string_buffer_length, string_buffer_offset;//, string_buffer_offset_command;
+    int string_buffer_length, string_buffer_offset;
     char *string_buffer, *tmp_string_buffer;
 
     struct LinkLabelInfo root_link_label_info, *current_link_label_info;
@@ -349,6 +359,11 @@ protected:
         struct MenuLink *next;
         char *label;
         int system_call_no;
+
+        MenuLink(){
+            next  = NULL;
+            label = NULL;
+        };
     } root_menu_link;
     unsigned int  menu_link_num, menu_link_width;
     uchar3 menu_select_on_color;

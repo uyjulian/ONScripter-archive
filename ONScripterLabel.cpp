@@ -416,7 +416,6 @@ void ONScripterLabel::showAnimation( AnimationInfo *anim )
                         anim->preserve_surface, 0, 0, anim->pos.w, anim->pos.h,
                         anim->image_surface, src_rect.x, src_rect.y,
                         anim->alpha_offset, 0, -anim->tag.trans_mode );
-            //SDL_BlitSurface( anim->image_surface, &src_rect, text_surface, &dst_rect );
             flush( dst_rect.x, dst_rect.y, src_rect.w, src_rect.h );
         }
 
@@ -446,13 +445,8 @@ void ONScripterLabel::mouseOverCheck( int x, int y )
     }
     if ( current_over_button != button ){
         if ( event_mode & WAIT_BUTTON_MODE && !first_mouse_over_flag ){
-            if ( current_button_link.button_type == NORMAL_BUTTON ){
-                //SDL_BlitSurface( select_surface, &current_button_link.image_rect, text_surface, &current_button_link.image_rect );
-            }
-            else if ( current_button_link.button_type == SPRITE_BUTTON || current_button_link.button_type == EX_SPRITE_BUTTON ){
+            if ( current_button_link.button_type == SPRITE_BUTTON || current_button_link.button_type == EX_SPRITE_BUTTON ){
                 sprite_info[ current_button_link.sprite_no ].tag.current_cell = 0;
-                //refreshAccumulationSurface( select_surface, &current_button_link.image_rect );
-                //SDL_BlitSurface( accumulation_surface, &current_button_link.image_rect, text_surface, &current_button_link.image_rect );
             }
             SDL_BlitSurface( select_surface, &current_button_link.image_rect, text_surface, &current_button_link.image_rect );
             flush( &current_button_link.image_rect );
@@ -466,7 +460,7 @@ void ONScripterLabel::mouseOverCheck( int x, int y )
                 }
                 else if ( p_button_link->button_type == SPRITE_BUTTON || p_button_link->button_type == EX_SPRITE_BUTTON ){
                     sprite_info[ p_button_link->sprite_no ].tag.current_cell = 1;
-                    refreshAccumulationSurface( text_surface, &p_button_link->image_rect );
+                    refreshAccumulationSurface( text_surface, &p_button_link->image_rect, true );
                     if ( p_button_link->button_type == EX_SPRITE_BUTTON ){
                         drawExbtn( text_surface, p_button_link->exbtn_ctl );
                     }
@@ -482,7 +476,7 @@ void ONScripterLabel::mouseOverCheck( int x, int y )
         }
         else{
             if ( exbtn_d_button_link.exbtn_ctl ){
-                drawExbtn( accumulation_surface, exbtn_d_button_link.exbtn_ctl );
+                drawExbtn( text_surface, exbtn_d_button_link.exbtn_ctl );
             }
         }
     }
@@ -499,7 +493,7 @@ void ONScripterLabel::executeLabel()
                current_link_label_info->current_line,
                current_link_label_info->offset );
 
-    int i, ret1, ret2;
+    int i, ret;
     int line_cache = -1;
     bool first_read_flag = true;
 
@@ -508,17 +502,15 @@ void ONScripterLabel::executeLabel()
 
     i = current_link_label_info->current_line;
     while ( i<current_link_label_info->label_info.num_of_lines ){
-        //printf("process line %d(%d/%d): \n",i, line_cache, current_link_label_info->label_info.num_of_lines );
-        /* If comment */
         if ( line_cache != i ){
             line_cache = i;
             current_link_label_info->current_script = p_script_buffer;
-            ret1 = readLine( &p_script_buffer );
+            ret = readLine( &p_script_buffer );
             if ( first_read_flag ){
                 first_read_flag = false;
                 string_buffer_offset = current_link_label_info->offset;
             }
-            if ( ret1 || string_buffer[0] == ';' ){
+            if ( ret || string_buffer[0] == ';' ){
                 i++;
                 continue;
             }
@@ -542,25 +534,27 @@ void ONScripterLabel::executeLabel()
             continue;
         }
 
-        ret1 = ScriptParser::parseLine();
-        if ( ret1 == RET_COMMENT ){
+        ret = ScriptParser::parseLine();
+        if ( ret == RET_NOMATCH ) ret = this->parseLine();
+
+        if ( ret == RET_COMMENT ){
             i++;
             continue;
         }
-        else if ( ret1 == RET_JUMP ){
+        else if ( ret == RET_JUMP ){
             goto executeLabelTop;
         }
-        else if ( ret1 == RET_CONTINUE ){
+        else if ( ret == RET_CONTINUE ){
             if ( string_buffer[ string_buffer_offset ] == '\0' ){
                 current_link_label_info->current_script = p_script_buffer;
                 string_buffer_offset = 0;
                 i++;
             }
         }
-        else if ( ret1 == RET_WAIT ){
+        else if ( ret == RET_WAIT ){
             return;
         }
-        else if ( ret1 == RET_WAIT_NEXT ){
+        else if ( ret == RET_WAIT_NEXT ){
             if ( string_buffer[ string_buffer_offset ] == '\0' ){
                 current_link_label_info->current_script = p_script_buffer;
                 current_link_label_info->current_line = i+1;
@@ -569,32 +563,6 @@ void ONScripterLabel::executeLabel()
             else
                 current_link_label_info->offset = string_buffer_offset;
             return;
-        }
-        else if ( ret1 == RET_NOMATCH ){
-            ret2 = this->parseLine();
-            if ( ret2 == RET_JUMP ){
-                goto executeLabelTop;
-            }
-            else if ( ret2 == RET_CONTINUE ){
-                if ( string_buffer[ string_buffer_offset ] == '\0' ){
-                    current_link_label_info->current_script = p_script_buffer;
-                    string_buffer_offset = 0;
-                    i++;
-                }
-            }
-            else if ( ret2 == RET_WAIT ){
-                return;
-            }
-            else if ( ret2 == RET_WAIT_NEXT ){
-                if ( string_buffer[ string_buffer_offset ] == '\0' ){
-                    current_link_label_info->current_script = p_script_buffer;
-                    current_link_label_info->current_line = i+1;
-                    current_link_label_info->offset = 0;
-                }
-                else
-                    current_link_label_info->offset = string_buffer_offset;
-                return;
-            }
         }
     }
 
@@ -609,15 +577,13 @@ void ONScripterLabel::executeLabel()
 int ONScripterLabel::parseLine( )
 {
     int ret, lut_counter = 0;
-    unsigned int command_len;
 
     char *p_string_buffer = string_buffer + string_buffer_offset;
     //printf("parseline %d %s\n",string_buffer_offset,p_string_buffer );
     
     readToken( &p_string_buffer, tmp_string_buffer );
-    command_len = strlen( tmp_string_buffer );
     
-    while( func_lut[ lut_counter ].command[0] ){
+    while( func_lut[ lut_counter ].method ){
         if ( !strcmp( func_lut[ lut_counter ].command, tmp_string_buffer ) ){
             ret = (this->*func_lut[ lut_counter ].method)();
             if ( ret == RET_CONTINUE || ret == RET_WAIT_NEXT ){
@@ -729,13 +695,12 @@ void ONScripterLabel::deleteLabelLink()
 /* Delete button link */
 void ONScripterLabel::deleteButtonLink()
 {
-    struct ButtonLink *link;
+    ButtonLink *link;
 
     last_button_link = root_button_link.next;
     while( last_button_link ){
         link = last_button_link;
         last_button_link = last_button_link->next;
-        if ( link->image_surface ) SDL_FreeSurface( link->image_surface );
         delete link;
     }
     root_button_link.next = NULL;
@@ -755,13 +720,11 @@ void ONScripterLabel::refreshMouseOverButton()
 /* Delete select link */
 void ONScripterLabel::deleteSelectLink()
 {
-    struct SelectLink *link, *last_select_link = root_select_link.next;
+    SelectLink *link, *last_select_link = root_select_link.next;
 
     while ( last_select_link ){
         link = last_select_link;
         last_select_link = last_select_link->next;
-        delete[] link->text;
-        delete[] link->label;
         delete link;
     }
     root_select_link.next = NULL;
@@ -801,44 +764,76 @@ int ONScripterLabel::enterTextDisplayMode()
 }
 
 void ONScripterLabel::alphaBlend( SDL_Surface *dst_surface, int x, int y,
-                                  SDL_Surface *src1_surface, int x1, int y1, int wx, int wy,
+                                  SDL_Surface *src1_surface, int x1, int y1, int w, int h,
                                   SDL_Surface *src2_surface, int x2, int y2,
-                                  int x3, int y3, int mask_value, unsigned int effect_value )
+                                  int x3, int y3, int mask_value, unsigned int effect_value, SDL_Rect *clip )
 {
     int i, j;
     SDL_Rect src1_rect, src2_rect, dst_rect;
     Uint32 mask;
     Uint32 *src2_buffer;
 
+    /* ---------------------------------------- */
+    /* 1st clipping */
+    if ( clip ){
+        if ( x >= clip->x + clip->w || x + w <= clip->x ||
+             y >= clip->y + clip->h || y + h <= clip->y )
+            return;
+    
+        if ( x < clip->x ){
+            w -= clip->x - x;
+            x1 += clip->x - x;
+            x2 += clip->x - x;
+            x3 += clip->x - x;
+            x = clip->x;
+        }
+        if ( clip->x + clip->w < x + w ){
+            w = clip->x + clip->w - x;
+        }
+        if ( y < clip->y ){
+            h -= clip->y - y;
+            y1 += clip->y - y;
+            y2 += clip->y - y;
+            y3 += clip->y - y;
+            y = clip->y;
+        }
+        if ( clip->y + clip->h < y + h ){
+            h = clip->y + clip->h - y;
+        }
+    }
+    
+    /* ---------------------------------------- */
+    /* 2nd clipping */
     if ( x < 0 ){
+        w += x;
         x1 -= x;
         x2 -= x;
         x3 -= x;
-        wx += x;
         x = 0;
     }
-    if ( x+wx > dst_surface->w ){
-        wx -= x + wx - dst_surface->w;
+    if ( x + w > dst_surface->w ){
+        w -= x + w - dst_surface->w;
     }
     if ( y < 0 ){
+        h += y;
         y1 -= y;
         y2 -= y;
         y3 -= y;
-        wy += y;
         y = 0;
     }
-    if ( y+wy > dst_surface->h ){
-        wy -= y + wy - dst_surface->h;
+    if ( y + h > dst_surface->h ){
+        h -= y + h - dst_surface->h;
     }
         
+    /* ---------------------------------------- */
     dst_rect.x = x;
     dst_rect.y = y;
     src1_rect.x = x1;
     src1_rect.y = y1;
     src2_rect.x = x2;
     src2_rect.y = y2;
-    dst_rect.w = src1_rect.w = src2_rect.w = wx;
-    dst_rect.h = src1_rect.h = src2_rect.h = wy;
+    dst_rect.w = src1_rect.w = src2_rect.w = w;
+    dst_rect.h = src1_rect.h = src2_rect.h = h;
 
     if ( src1_surface != dst_surface )
         SDL_BlitSurface( src1_surface, &src1_rect, dst_surface, &dst_rect );
@@ -848,8 +843,8 @@ void ONScripterLabel::alphaBlend( SDL_Surface *dst_surface, int x, int y,
 
     if ( mask_value < 0 ){
         if ( mask_value == -TRANS_ALPHA ){
-            for ( i=0; i<wy ; i++ ) {
-                for ( j=0 ; j<wx ; j++ ){
+            for ( i=0; i<h ; i++ ) {
+                for ( j=0 ; j<w ; j++ ){
                     mask = (*(src2_buffer + src2_surface->w * (y3+i) + x3 + j) >> src2_surface->format->Rshift) & 0xff;
                     mask = (0xff - mask) << src2_surface->format->Ashift;
                     *(src2_buffer + src2_surface->w * (y2+i) + x2 + j) &= ~amask;
@@ -863,8 +858,8 @@ void ONScripterLabel::alphaBlend( SDL_Surface *dst_surface, int x, int y,
             if ( mask_value == -TRANS_TOPLEFT ) ref = *src2_buffer;
             else                                ref = *(src2_buffer + src2_surface->w - 1);
             mask = (Uint32)0xff << src2_surface->format->Ashift;
-            for ( i=0; i<wy ; i++ ) {
-                for ( j=0 ; j<wx ; j++ ){
+            for ( i=0; i<h ; i++ ) {
+                for ( j=0 ; j<w ; j++ ){
                     *(src2_buffer + src2_surface->w * (y2+i) + x2 + j) &= ~amask;
                     if ( *(src2_buffer + src2_surface->w * (y2+i) + x2 + j) != ref )
                         *(src2_buffer + src2_surface->w * (y2+i) + x2 + j) |= mask;
@@ -874,9 +869,9 @@ void ONScripterLabel::alphaBlend( SDL_Surface *dst_surface, int x, int y,
         else if ( mask_value == -TRANS_FADE_MASK ){
             SDL_LockSurface( effect_mask_surface );
             Uint32 *mask_buffer = (Uint32 *)effect_mask_surface->pixels;
-            for ( i=0; i<wy ; i++ ) {
+            for ( i=0; i<h ; i++ ) {
                 int y4 = effect_mask_surface->w * ((y2+i) % effect_mask_surface->h );
-                for ( j=0 ; j<wx ; j++ ){
+                for ( j=0 ; j<w ; j++ ){
                     mask = (*(mask_buffer + y4 + (x2 + j) % effect_mask_surface->w ) >> effect_mask_surface->format->Rshift) & 0xff;
                     if ( effect_value > mask )
                         mask = amask;
@@ -892,9 +887,9 @@ void ONScripterLabel::alphaBlend( SDL_Surface *dst_surface, int x, int y,
         else if ( mask_value == -TRANS_CROSSFADE_MASK ){
             SDL_LockSurface( effect_mask_surface );
             Uint32 *mask_buffer = (Uint32 *)effect_mask_surface->pixels;
-            for ( i=0; i<wy ; i++ ) {
+            for ( i=0; i<h ; i++ ) {
                 int y4 = effect_mask_surface->w * ((y2+i) % effect_mask_surface->h );
-                for ( j=0 ; j<wx ; j++ ){
+                for ( j=0 ; j<w ; j++ ){
                     mask = (*(mask_buffer + y4 + (x2 + j) % effect_mask_surface->w ) >> effect_mask_surface->format->Rshift) & 0xff;
                     if ( effect_value > mask ){
                         mask = effect_value - mask;
@@ -915,8 +910,8 @@ void ONScripterLabel::alphaBlend( SDL_Surface *dst_surface, int x, int y,
     }
     else{
         mask = (0xff - (unsigned int)mask_value) << src2_surface->format->Ashift;
-        for ( i=0; i<wy ; i++ ) {
-            for ( j=0 ; j<wx ; j++ ){
+        for ( i=0; i<h ; i++ ) {
+            for ( j=0 ; j<w ; j++ ){
                 *(src2_buffer + src2_surface->w * (y2+i) + x2 + j) &= ~amask;
                 *(src2_buffer + src2_surface->w * (y2+i) + x2 + j) |= mask;
             }
@@ -1064,14 +1059,40 @@ void ONScripterLabel::clearCurrentTextBuffer()
     }
 }
 
-void ONScripterLabel::shadowTextDisplay( SDL_Surface *dst_surface, SDL_Surface *src_surface )
+void ONScripterLabel::shadowTextDisplay( SDL_Surface *dst_surface, SDL_Surface *src_surface, SDL_Rect *clip )
 {
     if ( !dst_surface ) dst_surface = text_surface;
     if ( !src_surface ) src_surface = accumulation_surface;
     
     if ( sentence_font.display_transparency ){
-        SDL_BlitSurface( src_surface, NULL, dst_surface, NULL );
-        makeMonochromeSurface( dst_surface, &sentence_font_info.pos, false );
+        SDL_BlitSurface( src_surface, clip, dst_surface, clip );
+
+        /* ---------------------------------------- */
+        /* Clipping */
+        SDL_Rect rect = sentence_font_info.pos;
+        
+        if ( clip ){
+            if ( rect.x >= clip->x + clip->w || rect.x + rect.w <= clip->x ||
+                 rect.y >= clip->y + clip->h || rect.y + rect.h <= clip->y )
+                return;
+    
+            if ( rect.x < clip->x ){
+                rect.w -= clip->x - rect.x;
+                rect.x = clip->x;
+            }
+            if ( clip->x + clip->w < rect.x + rect.w ){
+                rect.w = clip->x + clip->w - rect.x;
+            }
+            if ( rect.y < clip->y ){
+                rect.h -= clip->y - rect.y;
+                rect.y = clip->y;
+            }
+            if ( clip->y + clip->h < rect.y + rect.h ){
+                rect.h = clip->y + clip->h - rect.y;
+            }
+        }
+    
+        makeMonochromeSurface( dst_surface, &rect, false );
     }
     else{
         if ( sentence_font_info.image_surface ){
@@ -1080,7 +1101,7 @@ void ONScripterLabel::shadowTextDisplay( SDL_Surface *dst_surface, SDL_Surface *
                         src_surface, sentence_font_info.pos.x, sentence_font_info.pos.y,
                         sentence_font_info.pos.w, sentence_font_info.pos.h,
                         sentence_font_info.image_surface, 0, 0,
-                        sentence_font_info.alpha_offset, 0, -sentence_font_info.tag.trans_mode );
+                        sentence_font_info.alpha_offset, 0, -sentence_font_info.tag.trans_mode, 0, clip );
         }
     }
 }
@@ -1175,7 +1196,8 @@ int ONScripterLabel::playWave( char *file_name, bool loop_flag, int channel )
     if ( channel == 0 ) Mix_Volume( channel, voice_volume * 128 / 100 );
     else                Mix_Volume( channel, se_volume * 128 / 100 );
 
-    printf("playWave %s at vol %d\n", file_name, (channel==0)?voice_volume:se_volume );
+    if ( debug_level > 0 )
+        printf("playWave %s at vol %d\n", file_name, (channel==0)?voice_volume:se_volume );
     
     Mix_PlayChannel( channel, wave_sample[channel], loop_flag?-1:0 );
 
@@ -1246,26 +1268,21 @@ struct ONScripterLabel::ButtonLink *ONScripterLabel::getSelectableSentence( char
     return button_link;
 }
 
-void ONScripterLabel::drawTaggedSurface( SDL_Surface *dst_surface, SDL_Rect *pos, SDL_Rect *clip,
-                                         SDL_Surface *src_surface, TaggedInfo *tag )
+void ONScripterLabel::drawTaggedSurface( SDL_Surface *dst_surface, AnimationInfo *anim, SDL_Rect *clip )
 {
-    SDL_Rect dst_rect = *pos, src_rect;
-    int offset, aoffset = 0, w, h, src_y;
-
-    //printf("drawTagged %d %d\n",x,y);
-    if ( tag->trans_mode == TRANS_STRING ){
+    if ( anim->tag.trans_mode == TRANS_STRING ){
         int top_xy[2], xy[2];
         
         xy[0] = sentence_font.xy[0];
         xy[1] = sentence_font.xy[1];
         top_xy[0] = sentence_font.top_xy[0];
         top_xy[1] = sentence_font.top_xy[1];
-        sentence_font.top_xy[0] = tag->pos.x;
-        sentence_font.top_xy[1] = tag->pos.y;
+        sentence_font.top_xy[0] = anim->tag.pos.x;
+        sentence_font.top_xy[1] = anim->tag.pos.y;
         sentence_font.xy[0] = 0;
         sentence_font.xy[1] = 0;
 
-        drawString( tag->file_name, tag->color_list[ tag->current_cell ], &sentence_font, false, dst_surface, NULL );
+        drawString( anim->tag.file_name, anim->tag.color_list[ anim->tag.current_cell ], &sentence_font, false, dst_surface, NULL );
         
         sentence_font.xy[0] = xy[0];
         sentence_font.xy[1] = xy[1];
@@ -1273,55 +1290,27 @@ void ONScripterLabel::drawTaggedSurface( SDL_Surface *dst_surface, SDL_Rect *pos
         sentence_font.top_xy[1] = top_xy[1];
         return;
     }
-    else if ( !src_surface ) return;
+    else if ( !anim->image_surface ) return;
 
-    w = src_surface->w / tag->num_of_cells;
-    h = src_surface->h;
-    src_y = 0;
-    offset = w * tag->current_cell;
+    int offset = (anim->pos.w + anim->alpha_offset) * anim->tag.current_cell;
 
-    if ( tag->trans_mode == TRANS_ALPHA ||
-              tag->trans_mode == TRANS_TOPLEFT ||
-              tag->trans_mode == TRANS_TOPRIGHT ){
-        if ( tag->trans_mode == TRANS_ALPHA ){
-            w /= 2;
-            aoffset = offset + w;
-        }
-        /* Ugly workaround. Clipping must be processed in another part !! */
-        if ( pos->x >= clip->x + clip->w ||
-             pos->x + w <= clip->x ||
-             pos->y >= clip->y + clip->h ||
-             pos->y + h <= clip->y ) return;
-        if ( dst_rect.x < clip->x ){
-            w -= clip->x - pos->x;
-            aoffset += clip->x - pos->x;
-            offset += clip->x - pos->x;
-            dst_rect.x = clip->x;
-        }
-        if ( clip->x + clip->w < dst_rect.x + w ){
-            w -= dst_rect.x + w - clip->x - clip->w;
-        }
-        if ( dst_rect.y < clip->y ){
-            h -= clip->y - pos->y;
-            src_y = clip->y - pos->y;
-            dst_rect.y = clip->y;
-        }
-        if ( clip->y + clip->h < dst_rect.y + h ){
-            h -= dst_rect.y + h - clip->y - clip->h;
-        }
-        alphaBlend( dst_surface, dst_rect.x, dst_rect.y,
-                    dst_surface, dst_rect.x, dst_rect.y, w, h,
-                    src_surface, offset, src_y,
-                    aoffset, src_y, -tag->trans_mode );
+    if ( anim->tag.trans_mode == TRANS_ALPHA ||
+         anim->tag.trans_mode == TRANS_TOPLEFT ||
+         anim->tag.trans_mode == TRANS_TOPRIGHT ){
+
+        alphaBlend( dst_surface, anim->pos.x, anim->pos.y,
+                    dst_surface, anim->pos.x, anim->pos.y, anim->pos.w, anim->pos.h,
+                    anim->image_surface, offset, 0,
+                    offset + anim->alpha_offset, 0, -anim->tag.trans_mode, 0, clip );
     }
-    else if ( tag->trans_mode == TRANS_COPY ){
+    else if ( anim->tag.trans_mode == TRANS_COPY ){
+        SDL_Rect src_rect;
+        
         src_rect.x = offset;
         src_rect.y = 0;
-        src_rect.w = w;
-        src_rect.h = src_surface->h;
-        dst_rect.x = pos->x;
-        dst_rect.y = pos->y;
-        SDL_BlitSurface( src_surface, &src_rect, dst_surface, &dst_rect );
+        src_rect.w = anim->pos.w;
+        src_rect.h = anim->pos.h;
+        SDL_BlitSurface( anim->image_surface, &src_rect, dst_surface, &anim->pos );
     }
 }
 
@@ -1368,46 +1357,34 @@ void ONScripterLabel::makeMonochromeSurface( SDL_Surface *surface, SDL_Rect *dst
     SDL_UnlockSurface( surface );
 }
 
-void ONScripterLabel::refreshAccumulationSurface( SDL_Surface *surface, SDL_Rect *rect, bool shadow_flag )
+void ONScripterLabel::refreshAccumulationSurface( SDL_Surface *surface, SDL_Rect *clip, bool shadow_flag )
 {
     int i;
-    SDL_Rect clip;
-
-    if ( !rect ){
-        clip.x = 0;
-        clip.y = 0;
-        clip.w = surface->w;
-        clip.h = surface->h;
-    }
-    else clip = *rect;
         
-    SDL_BlitSurface( background_surface, rect, surface, rect );
+    SDL_BlitSurface( background_surface, clip, surface, clip );
     
     for ( i=MAX_SPRITE_NUM-1 ; i>z_order ; i-- ){
         if ( sprite_info[i].valid ){
-            drawTaggedSurface( surface, &sprite_info[i].pos, &clip,
-                               sprite_info[i].image_surface, &sprite_info[i].tag );
+            drawTaggedSurface( surface, &sprite_info[i], clip );
         }
     }
     for ( i=0 ; i<3 ; i++ ){
         if ( tachi_info[i].image_surface ){
-            drawTaggedSurface( surface, &tachi_info[i].pos, &clip,
-                               tachi_info[i].image_surface, &tachi_info[i].tag );
+            drawTaggedSurface( surface, &tachi_info[i], clip );
         }
     }
 
-    if ( shadow_flag && windowback_flag ) shadowTextDisplay( surface );
+    if ( shadow_flag && windowback_flag ) shadowTextDisplay( surface, surface, clip );
     
     for ( i=z_order ; i>=0 ; i-- ){
         if ( sprite_info[i].valid ){
-            drawTaggedSurface( surface, &sprite_info[i].pos, &clip,
-                               sprite_info[i].image_surface, &sprite_info[i].tag );
+            drawTaggedSurface( surface, &sprite_info[i], clip );
         }
     }
 
-    if ( shadow_flag && !windowback_flag ) shadowTextDisplay( surface );
+    if ( shadow_flag && !windowback_flag ) shadowTextDisplay( surface, surface, clip );
     
-    if ( monocro_flag ) makeMonochromeSurface( surface, &clip );
+    if ( monocro_flag ) makeMonochromeSurface( surface, clip );
 }
 
 int ONScripterLabel::refreshSprite( SDL_Surface *surface, int sprite_no, bool active_flag, int cell_no, bool draw_flag )

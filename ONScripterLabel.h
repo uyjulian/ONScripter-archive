@@ -285,6 +285,9 @@ private:
             exbtn_ctl = NULL;
             image_surface = NULL;
         };
+        ~ButtonLink(){
+            if ( image_surface ) SDL_FreeSurface( image_surface );
+        };
     } root_button_link, *last_button_link, current_button_link, *shelter_button_link, exbtn_d_button_link;
 
     int current_over_button;
@@ -413,6 +416,10 @@ private:
             next = NULL;
             text = label = NULL;
         };
+        ~SelectLink(){
+            if ( text )  delete[] text;
+            if ( label ) delete[] label;
+        };
     } root_select_link, *shelter_select_link;
     struct LinkLabelInfo select_label_info;
     int shortcut_mouse_line;
@@ -450,7 +457,7 @@ private:
     int text_speed_no;
     int default_text_speed[3];
 
-    void shadowTextDisplay( SDL_Surface *dst_surface=NULL, SDL_Surface *src_surface=NULL );
+    void shadowTextDisplay( SDL_Surface *dst_surface=NULL, SDL_Surface *src_surface=NULL, SDL_Rect *clip=NULL );
     void clearCurrentTextBuffer();
     void newPage( bool next_flag );
     
@@ -464,14 +471,13 @@ private:
     void alphaBlend( SDL_Surface *dst_surface, int x, int y,
                      SDL_Surface *src1_surface, int x1, int y1, int wx, int wy,
                      SDL_Surface *src2_surface, int x2, int y2,
-                     int x3, int y3, int mask_value, unsigned int effect_value=0 );
+                     int x3, int y3, int mask_value, unsigned int effect_value=0, SDL_Rect *clip=NULL );
     int enterTextDisplayMode();
     SDL_Surface *loadImage( char *file_name );
     SDL_Surface *loadTaggedImage( struct TaggedInfo *tag );
-    void drawTaggedSurface( SDL_Surface *dst_surface, SDL_Rect *pos, SDL_Rect *clip,
-                           SDL_Surface *src_surface, TaggedInfo *tagged_info );
+    void drawTaggedSurface( SDL_Surface *dst_surface, AnimationInfo *anim, SDL_Rect *clip );
     void makeMonochromeSurface( SDL_Surface *surface, SDL_Rect *dst_rect=NULL, bool one_color_flag = true );
-    void refreshAccumulationSurface( SDL_Surface *surface, SDL_Rect *rect=NULL, bool shadow_flag = false );
+    void refreshAccumulationSurface( SDL_Surface *surface, SDL_Rect *clip=NULL, bool shadow_flag = false );
     void mouseOverCheck( int x, int y );
     
     /* ---------------------------------------- */

@@ -1358,20 +1358,6 @@ int ONScripterLabel::btnwaitCommand()
         if ( exbtn_d_button_link.exbtn_ctl ) delete[] exbtn_d_button_link.exbtn_ctl;
         exbtn_d_button_link.exbtn_ctl = NULL;
 
-        /* ---------------------------------------- */
-        /* fill the button image */
-        if ( current_over_button != 0 ){
-            // Almost the same code as in the mouseOverCheck(), possible cause of bug !!
-            if ( current_button_link.button_type == NORMAL_BUTTON ){
-            }
-            else if ( current_button_link.button_type == SPRITE_BUTTON ){
-                //refreshAccumulationSurface( select_surface );
-            }
-            SDL_BlitSurface( select_surface, &current_button_link.image_rect, text_surface, &current_button_link.image_rect );
-            flush( &current_button_link.image_rect );
-            current_over_button = 0;
-        }
-            
         event_mode = IDLE_EVENT_MODE;
         return RET_CONTINUE;
     }

@@ -25,6 +25,7 @@
 
 int ScriptParser::windowbackCommand()
 {
+    if ( current_mode != DEFINE_MODE ) errorAndExit( string_buffer + string_buffer_offset, "not in the define section" );
     windowback_flag = true;
 
     return RET_CONTINUE;
@@ -71,7 +72,7 @@ int ScriptParser::transmodeCommand()
     char *p_string_buffer = string_buffer + string_buffer_offset + 9; // strlen("transmode") = 9
 
     readStr( &p_string_buffer, tmp_string_buffer );
-    if ( !strcmp( tmp_string_buffer, "leftup" ) )        trans_mode = TRANS_TOPLEFT;
+    if      ( !strcmp( tmp_string_buffer, "leftup" ) )   trans_mode = TRANS_TOPLEFT;
     else if ( !strcmp( tmp_string_buffer, "copy" ) )     trans_mode = TRANS_COPY;
     else if ( !strcmp( tmp_string_buffer, "alpha" ) )    trans_mode = TRANS_ALPHA;
     else if ( !strcmp( tmp_string_buffer, "righttup" ) ) trans_mode = TRANS_TOPRIGHT;
@@ -82,21 +83,17 @@ int ScriptParser::transmodeCommand()
 int ScriptParser::timeCommand()
 {
     char *p_string_buffer = string_buffer + string_buffer_offset + 4; // strlen("time") = 4
-    char *p_buf;
     time_t t = time(NULL);
     struct tm *tm = localtime( &t );
 
-    p_buf = p_string_buffer;
+    setInt( p_string_buffer, tm->tm_hour );
     readInt( &p_string_buffer );
-    setInt( p_buf, tm->tm_hour );
     
-    p_buf = p_string_buffer;
+    setInt( p_string_buffer, tm->tm_min );
     readInt( &p_string_buffer );
-    setInt( p_buf, tm->tm_min );
     
-    p_buf = p_string_buffer;
+    setInt( p_string_buffer, tm->tm_sec );
     readInt( &p_string_buffer );
-    setInt( p_buf, tm->tm_sec );
 
     return RET_CONTINUE;
 }
@@ -132,16 +129,13 @@ int ScriptParser::straliasCommand()
     StringAlias *p_str_alias = new StringAlias();
     
     readStr( &p_string_buffer, tmp_string_buffer );
-    p_str_alias->alias = new char[ strlen(tmp_string_buffer) + 1 ];
-    memcpy( p_str_alias->alias, tmp_string_buffer, strlen(tmp_string_buffer) + 1 );
+    setStr( &p_str_alias->alias, tmp_string_buffer );
     
     readStr( &p_string_buffer, tmp_string_buffer );
-    p_str_alias->str = new char[ strlen(tmp_string_buffer) + 1 ];
-    memcpy( p_str_alias->str, tmp_string_buffer, strlen(tmp_string_buffer) + 1 );
+    setStr( &p_str_alias->str, tmp_string_buffer );
     
     last_str_alias->next = p_str_alias;
     last_str_alias = last_str_alias->next;
-    last_str_alias->next = NULL;
 
     return RET_CONTINUE;
 }
@@ -192,19 +186,13 @@ int ScriptParser::savenameCommand()
     char *p_string_buffer = string_buffer + string_buffer_offset + 8; // strlen("savename") = 8
 
     readStr( &p_string_buffer, tmp_string_buffer );
-    delete[] save_menu_name;
-    save_menu_name = new char[ strlen( tmp_string_buffer ) + 1 ];
-    memcpy( save_menu_name, tmp_string_buffer, strlen( tmp_string_buffer ) + 1 );
+    setStr( &save_menu_name, tmp_string_buffer );
 
     readStr( &p_string_buffer, tmp_string_buffer );
-    delete[] load_menu_name;
-    load_menu_name = new char[ strlen( tmp_string_buffer ) + 1 ];
-    memcpy( load_menu_name, tmp_string_buffer, strlen( tmp_string_buffer ) + 1 );
+    setStr( &load_menu_name, tmp_string_buffer );
 
     readStr( &p_string_buffer, tmp_string_buffer );
-    delete[] save_item_name;
-    save_item_name = new char[ strlen( tmp_string_buffer ) + 1 ];
-    memcpy( save_item_name, tmp_string_buffer, strlen( tmp_string_buffer ) + 1 );
+    setStr( &save_item_name, tmp_string_buffer );
 
     return RET_CONTINUE;
 }
@@ -233,7 +221,7 @@ int ScriptParser::rmenuCommand()
     }
 
     link = &root_menu_link;
-    menu_link_num = 0;
+    menu_link_num   = 0;
     menu_link_width = 0;
 
     SKIP_SPACE( p_string_buffer );
@@ -241,14 +229,12 @@ int ScriptParser::rmenuCommand()
         MenuLink *menu = new MenuLink();
 
         readStr( &p_string_buffer, tmp_string_buffer );
-        menu->label = new char[ strlen( tmp_string_buffer ) + 1 ];
-        memcpy( menu->label, tmp_string_buffer, strlen( tmp_string_buffer ) + 1 );
+        setStr( &menu->label, tmp_string_buffer );
         if ( menu_link_width < strlen( tmp_string_buffer ) / 2 ) menu_link_width = strlen( tmp_string_buffer ) / 2;
 
         readStr( &p_string_buffer, tmp_string_buffer );
         menu->system_call_no = getSystemCallNo( tmp_string_buffer );
 
-        menu->next = NULL;
         link->next = menu;
         link = menu;
         menu_link_num++;
@@ -272,29 +258,25 @@ int ScriptParser::numaliasCommand()
 {
     if ( current_mode != DEFINE_MODE ) errorAndExit( string_buffer + string_buffer_offset, "not in the define section" );
     char *p_string_buffer = string_buffer + string_buffer_offset + 8; // strlen("numalias") = 8
+
     NameAlias *p_name_alias = new NameAlias();
     
     readStr( &p_string_buffer, tmp_string_buffer );
-    p_name_alias->alias = new char[ strlen(tmp_string_buffer) + 1 ];
-    memcpy( p_name_alias->alias, tmp_string_buffer, strlen(tmp_string_buffer) + 1 );
-    
+    setStr( &p_name_alias->alias, tmp_string_buffer );
     p_name_alias->num = readInt( &p_string_buffer );
 
     last_name_alias->next = p_name_alias;
     last_name_alias = last_name_alias->next;
-    last_name_alias->next = NULL;
     
     return RET_CONTINUE;
 }
 
 int ScriptParser::nsaCommand()
 {
-    printf("nsa\n");
-
     delete cBR;
     cBR = new NsaReader();
     if ( cBR->open() ){
-        printf(" *** failed to open archive, exitting ...  ***\n");
+        printf(" *** failed to open Nsa archive, exitting ...  ***\n");
         exit(-1);
     }
 
@@ -328,9 +310,9 @@ int ScriptParser::nextCommand()
         return RET_CONTINUE;
     }
     else{
-        current_link_label_info->label_info = current_for_link->label_info;
+        current_link_label_info->label_info   = current_for_link->label_info;
         current_link_label_info->current_line = current_for_link->current_line;
-        current_link_label_info->offset = current_for_link->offset;
+        current_link_label_info->offset       = current_for_link->offset;
         
         return RET_JUMP;
     }
@@ -410,22 +392,20 @@ int ScriptParser::modCommand()
 int ScriptParser::midCommand()
 {
     char *p_string_buffer = string_buffer + string_buffer_offset + 3; // strlen("mid") = 3
-    int no, start, len;
     
     SKIP_SPACE( p_string_buffer );
 
     if ( p_string_buffer[0] == '$'){
         p_string_buffer++;
-        no = readInt( &p_string_buffer );
+        int no    = readInt( &p_string_buffer );
         readStr( &p_string_buffer, tmp_string_buffer );
-        start = readInt( &p_string_buffer );
-        len = readInt( &p_string_buffer );
+        int start = readInt( &p_string_buffer );
+        int len   = readInt( &p_string_buffer );
 
         delete[] str_variables[ no ];
         str_variables[ no ] = new char[ len + 1 ];
         memcpy( str_variables[ no ], tmp_string_buffer + start, len );
         str_variables[ no ][ len ] = '\0';
-        //printf(" mid %d -> %s\n",no,str_variables[ no ]);
     }
     else errorAndExit( string_buffer + string_buffer_offset );
 
@@ -437,29 +417,19 @@ int ScriptParser::menusetwindowCommand()
     char *p_string_buffer = string_buffer + string_buffer_offset + 13; // strlen("menusetwindow") = 13
 
     menu_font.font_valid_flag = false;
-    menu_font.font_size = readInt( &p_string_buffer );
+    menu_font.font_size       = readInt( &p_string_buffer );
     readInt( &p_string_buffer ); // Ignore font size along Y axis
-    menu_font.pitch_xy[0] = readInt( &p_string_buffer ) + menu_font.font_size;
-    menu_font.pitch_xy[1] = readInt( &p_string_buffer ) + menu_font.font_size;
-    menu_font.display_bold = readInt( &p_string_buffer )?true:false;
-    menu_font.display_shadow = readInt( &p_string_buffer )?true:false;
+    menu_font.pitch_xy[0]     = readInt( &p_string_buffer ) + menu_font.font_size;
+    menu_font.pitch_xy[1]     = readInt( &p_string_buffer ) + menu_font.font_size;
+    menu_font.display_bold    = readInt( &p_string_buffer )?true:false;
+    menu_font.display_shadow  = readInt( &p_string_buffer )?true:false;
 
-    //menu_font.top_xy[1] += menu_font.font_size;
-#if 0
-    printf("ONScripterLabel::menusetwindowCommand font=%d (%d,%d) bold=%d, shadow=%d\n",
-           menu_font.font_size, menu_font.pitch_xy[0], menu_font.pitch_xy[1],
-           menu_font.display_bold, menu_font.display_shadow );
-#endif
     readStr( &p_string_buffer, tmp_string_buffer );
-
-    menu_font.display_transparency = true;
     if ( strlen( tmp_string_buffer ) != 7 ) errorAndExit( string_buffer + string_buffer_offset );
     readColor( &menu_font.window_color, tmp_string_buffer + 1 );
 
-#if 0
-    printf("    trans %u %u %u\n",
-           menu_font.window_color[0], menu_font.window_color[1], menu_font.window_color[2] );
-#endif
+    menu_font.display_transparency = true;
+
     return RET_CONTINUE;
 }
 
@@ -503,9 +473,7 @@ int ScriptParser::lookbackbuttonCommand()
 
     for ( int i=0 ; i<4 ; i++ ){
         readStr( &p_string_buffer, tmp_string_buffer );
-        delete lookback_image_name[i];
-        lookback_image_name[i] = new char[ strlen( tmp_string_buffer ) + 1 ];
-        memcpy( lookback_image_name[i], tmp_string_buffer, strlen( tmp_string_buffer ) + 1 );
+        setStr( &lookback_image_name[i], tmp_string_buffer );
     }
     return RET_CONTINUE;
 }
@@ -531,11 +499,9 @@ int ScriptParser::labellogCommand()
     char buf[100];
     
     if ( ( fp = fopen( "NScrllog.dat", "rb" ) ) != NULL ){
-        //printf("read from NScrllog.dat\n");
         while( (ch = fgetc( fp )) != 0x0a ){
             count = count * 10 + ch - '0';
         }
-        //printf("count %d\n",count);
 
         for ( i=0 ; i<count ; i++ ){
             fgetc( fp );
@@ -638,24 +604,18 @@ int ScriptParser::ifCommand()
 
 int ScriptParser::itoaCommand()
 {
-    int no, val;
-    char val_str[20], *tmp_buffer;
+    char val_str[20];
     char *p_string_buffer = string_buffer + string_buffer_offset + 4; // strlen("itoa") = 4
     
     SKIP_SPACE( p_string_buffer );
-
     if ( p_string_buffer[0] != '$' ) errorAndExit( string_buffer + string_buffer_offset );
 
     p_string_buffer++;
-    no = readInt( &p_string_buffer );
+    int no  = readInt( &p_string_buffer );
+    int val = readInt( &p_string_buffer );
 
-    val = readInt( &p_string_buffer );
-
-    tmp_buffer = str_variables[ no ];
     sprintf( val_str, "%d", val );
-    str_variables[ no ] = new char[ strlen( val_str ) + 1 ];
-    memcpy( str_variables[ no ], val_str, strlen( val_str ) + 1 );
-    delete[] tmp_buffer;
+    setStr( &str_variables[ no ], val_str );
     
     return RET_CONTINUE;
 }
@@ -665,7 +625,7 @@ int ScriptParser::intlimitCommand()
     char *p_string_buffer = string_buffer + string_buffer_offset + 8; // strlen("intlimit") = 8
     int no = readInt( &p_string_buffer );
 
-    num_limit_flag[ no ] = true;
+    num_limit_flag[ no ]  = true;
     num_limit_lower[ no ] = readInt( &p_string_buffer );
     num_limit_upper[ no ] = readInt( &p_string_buffer );
 
@@ -812,18 +772,16 @@ int ScriptParser::filelogCommand()
     char buf[100];
     
     if ( ( fp = fopen( "NScrflog.dat", "rb" ) ) != NULL ){
-        //printf("read from NScrflog.dat\n");
         while( (ch = fgetc( fp )) != 0x0a ){
             count = count * 10 + ch - '0';
         }
-        //printf("count %d\n",count);
 
         for ( i=0 ; i<count ; i++ ){
             fgetc( fp );
             j = 0;
             while( (ch = fgetc( fp )) != '"' ) buf[j++] = ch ^ 0x84;
             buf[j] = '\0';
-            //printf("read %s\n",buf );
+
             cBR->getFileLength( buf );
         }
         
@@ -944,21 +902,17 @@ int ScriptParser::decCommand()
 int ScriptParser::dateCommand()
 {
     char *p_string_buffer = string_buffer + string_buffer_offset + 4; // strlen("date") = 4
-    char *p_buf;
     time_t t = time(NULL);
     struct tm *tm = localtime( &t );
 
-    p_buf = p_string_buffer;
+    setInt( p_string_buffer, tm->tm_year + 1900 );
     readInt( &p_string_buffer );
-    setInt( p_buf, tm->tm_year + 1900 );
 
-    p_buf = p_string_buffer;
+    setInt( p_string_buffer, tm->tm_mon + 1 );
     readInt( &p_string_buffer );
-    setInt( p_buf, tm->tm_mon + 1 );
 
-    p_buf = p_string_buffer;
+    setInt( p_string_buffer, tm->tm_mday );
     readInt( &p_string_buffer );
-    setInt( p_buf, tm->tm_mday );
 
     return RET_CONTINUE;
 }
@@ -975,8 +929,11 @@ int ScriptParser::cmpCommand()
     memcpy( tmp_buffer, tmp_string_buffer, strlen( tmp_string_buffer ) + 1 );
     readStr( &p_string_buffer, tmp_string_buffer );
 
-    //printf("cmp between %s <-> %s\n", tmp_buffer, tmp_string_buffer);
-    setInt( p_buf, strcmp( tmp_buffer, tmp_string_buffer ) );
+    int val = strcmp( tmp_buffer, tmp_string_buffer );
+    if      ( val > 0 ) val = 1;
+    else if ( val < 0 ) val = -1;
+    setInt( p_buf, val );
+
     delete[] tmp_buffer;
     
     return RET_CONTINUE;

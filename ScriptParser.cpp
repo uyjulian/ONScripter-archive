@@ -421,8 +421,9 @@ int ScriptParser::readScript()
     /* ---------------------------------------- */
     /* 800 x 600 check */
     if ( !strncmp( script_buffer, ";mode800", 8 ) ){
-        screen_width = 800;
-        screen_height = 600;
+        screen_width    = 800;
+        screen_height   = 600;
+        underline_value = 599;
     }
          
     return 0;

@@ -82,6 +82,7 @@ static struct FuncLUT{
     {"rmode",   &ONScripterLabel::rmodeCommand},
     {"resettimer",   &ONScripterLabel::resettimerCommand},
     {"reset",   &ONScripterLabel::resetCommand},
+    {"repaint",   &ONScripterLabel::repaintCommand},
     {"quakey",   &ONScripterLabel::quakeCommand},
     {"quakex",   &ONScripterLabel::quakeCommand},
     {"quake",   &ONScripterLabel::quakeCommand},
@@ -326,13 +327,14 @@ ONScripterLabel::ONScripterLabel( bool cdaudio_flag, char *default_font, char *d
     }
     sentence_font.font_valid_flag = true;
     sentence_font.color[0] = sentence_font.color[1] = sentence_font.color[2] = 0xff;
-    sentence_font.font_size = FONT_SIZE;
+    sentence_font.font_size_xy[0] = FONT_SIZE;
+    sentence_font.font_size_xy[1] = FONT_SIZE;
     sentence_font.top_xy[0] = 8;
     sentence_font.top_xy[1] = 16;// + sentence_font.font_size;
     sentence_font.num_xy[0] = 23;
     sentence_font.num_xy[1] = 16;
-    sentence_font.pitch_xy[0] = sentence_font.font_size;
-    sentence_font.pitch_xy[1] = 2 + sentence_font.font_size;
+    sentence_font.pitch_xy[0] = sentence_font.font_size_xy[0];
+    sentence_font.pitch_xy[1] = 2 + sentence_font.font_size_xy[1];
     sentence_font.wait_time = default_text_speed[text_speed_no];
     sentence_font.display_bold = true;
     sentence_font.display_shadow = true;

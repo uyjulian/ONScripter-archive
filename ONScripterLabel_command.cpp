@@ -261,16 +261,18 @@ int ONScripterLabel::setwindowCommand()
     sentence_font.top_xy[1] = readInt( &p_string_buffer );
     sentence_font.num_xy[0] = readInt( &p_string_buffer );
     sentence_font.num_xy[1] = readInt( &p_string_buffer );
-    sentence_font.font_size = readInt( &p_string_buffer );
-    readInt( &p_string_buffer ); // Ignore font size along Y axis
-    sentence_font.pitch_xy[0] = readInt( &p_string_buffer ) + sentence_font.font_size;
-    sentence_font.pitch_xy[1] = readInt( &p_string_buffer ) + sentence_font.font_size;
+    sentence_font.font_size_xy[0] = readInt( &p_string_buffer );
+    sentence_font.font_size_xy[1] = readInt( &p_string_buffer );
+    sentence_font.pitch_xy[0] = readInt( &p_string_buffer ) + sentence_font.font_size_xy[0];
+    sentence_font.pitch_xy[1] = readInt( &p_string_buffer ) + sentence_font.font_size_xy[1];
     sentence_font.wait_time = readInt( &p_string_buffer );
     sentence_font.display_bold = readInt( &p_string_buffer )?true:false;
     sentence_font.display_shadow = readInt( &p_string_buffer )?true:false;
 
     if ( sentence_font.ttf_font ) TTF_CloseFont( (TTF_Font*)sentence_font.ttf_font );
-    sentence_font.ttf_font = (void*)TTF_OpenFont( font_file, sentence_font.font_size );
+    int font_size = (sentence_font.font_size_xy[0] < sentence_font.font_size_xy[1])?
+        sentence_font.font_size_xy[0]:sentence_font.font_size_xy[1];
+    sentence_font.ttf_font = (void*)TTF_OpenFont( font_file, font_size );
 #if 0
     printf("ONScripterLabel::setwindowCommand (%d,%d) (%d,%d) font=%d (%d,%d) wait=%d bold=%d, shadow=%d\n",
            sentence_font.top_xy[0], sentence_font.top_xy[1], sentence_font.num_xy[0], sentence_font.num_xy[1],
@@ -615,6 +617,13 @@ int ONScripterLabel::resetCommand()
     SDL_BlitSurface( accumulation_surface, NULL, text_surface, NULL );
 
     return RET_JUMP;
+}
+
+int ONScripterLabel::repaintCommand()
+{
+    flush();
+
+    return RET_CONTINUE;
 }
 
 int ONScripterLabel::quakeCommand()

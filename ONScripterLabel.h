@@ -85,6 +85,7 @@ public:
     int savegameCommand();
     int resettimerCommand();
     int resetCommand();
+    int repaintCommand();
     int rndCommand();
     int rmodeCommand();
     int quakeCommand();

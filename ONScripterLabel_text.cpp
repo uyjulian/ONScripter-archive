@@ -51,7 +51,9 @@ void ONScripterLabel::drawChar( char* text, struct FontInfo *info, bool flush_fl
         info->ttf_font = NULL;
     }
     if ( info->ttf_font == NULL ){
-        info->ttf_font = TTF_OpenFont( font_file, info->font_size );
+        int font_size = (info->font_size_xy[0] < info->font_size_xy[1])?
+            info->font_size_xy[0]:info->font_size_xy[1];
+        info->ttf_font = TTF_OpenFont( font_file, font_size );
         if ( !info->ttf_font ){
             fprintf( stderr, "can't open font file: %s\n", font_file );
             SDL_Quit();

@@ -434,10 +434,10 @@ int ScriptParser::menusetwindowCommand()
     char *p_string_buffer = string_buffer + string_buffer_offset + 13; // strlen("menusetwindow") = 13
 
     menu_font.font_valid_flag = false;
-    menu_font.font_size       = readInt( &p_string_buffer );
-    readInt( &p_string_buffer ); // Ignore font size along Y axis
-    menu_font.pitch_xy[0]     = readInt( &p_string_buffer ) + menu_font.font_size;
-    menu_font.pitch_xy[1]     = readInt( &p_string_buffer ) + menu_font.font_size;
+    menu_font.font_size_xy[0] = readInt( &p_string_buffer );
+    menu_font.font_size_xy[1] = readInt( &p_string_buffer );
+    menu_font.pitch_xy[0]     = readInt( &p_string_buffer ) + menu_font.font_size_xy[0];
+    menu_font.pitch_xy[1]     = readInt( &p_string_buffer ) + menu_font.font_size_xy[1];
     menu_font.display_bold    = readInt( &p_string_buffer )?true:false;
     menu_font.display_shadow  = readInt( &p_string_buffer )?true:false;
 

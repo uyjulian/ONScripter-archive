@@ -33,6 +33,10 @@
 #elif
 #endif
 
+#define SAVEFILE_MAGIC_NUMBER "ONS"
+#define SAVEFILE_VERSION_MAJOR 1
+#define SAVEFILE_VERSION_MINOR 0
+
 #define READ_LENGTH 4096
 
 void ONScripterLabel::searchSaveFiles()
@@ -101,6 +105,7 @@ int ONScripterLabel::loadSaveFile( int no )
     FILE *fp;
     char file_name[256], *str = NULL;
     int  i, j, address;
+    int  file_version;
     
     sprintf( file_name, "save%d.dat", no );
     if ( ( fp = fopen( file_name, "rb" ) ) == NULL ){
@@ -110,6 +115,19 @@ int ONScripterLabel::loadSaveFile( int no )
 
     deleteLabelLink();
 
+    /* ---------------------------------------- */
+    /* Load magic number */
+    for ( i=0 ; i<(int)strlen( SAVEFILE_MAGIC_NUMBER ) ; i++ )
+        if ( fgetc( fp ) != SAVEFILE_MAGIC_NUMBER[i] ) break;
+    if ( i != (int)strlen( SAVEFILE_MAGIC_NUMBER ) ){ // in the case of old file format
+        file_version = 0;
+        fseek( fp, 0, SEEK_SET );
+    }
+    else{
+        file_version = (fgetc( fp ) * 100) | fgetc( fp );
+    }
+    printf("Save file version is %d.%d\n",file_version / 100, file_version % 100 );
+    
     /* ---------------------------------------- */
     /* Load text history */
     loadInt( fp, &text_history_num );
@@ -131,7 +149,13 @@ int ONScripterLabel::loadSaveFile( int no )
     /* Load sentence font */
     loadInt( fp, &j );
     sentence_font.font_valid_flag = (j==1)?true:false;
-    loadInt( fp, &sentence_font.font_size );
+    loadInt( fp, &sentence_font.font_size_xy[0] );
+    if ( file_version >= 100 ){
+        loadInt( fp, &sentence_font.font_size_xy[1] );
+    }
+    else{
+        sentence_font.font_size_xy[1] = sentence_font.font_size_xy[0];
+    }
     loadInt( fp, &sentence_font.top_xy[0] );
     loadInt( fp, &sentence_font.top_xy[1] );
     loadInt( fp, &sentence_font.num_xy[0] );
@@ -171,7 +195,9 @@ int ONScripterLabel::loadSaveFile( int no )
     }
     
     if ( sentence_font.ttf_font ) TTF_CloseFont( (TTF_Font*)sentence_font.ttf_font );
-    sentence_font.ttf_font = (void*)TTF_OpenFont( font_file, sentence_font.font_size );
+    int font_size = (sentence_font.font_size_xy[0] < sentence_font.font_size_xy[1])?
+        sentence_font.font_size_xy[0]:sentence_font.font_size_xy[1];
+    sentence_font.ttf_font = (void*)TTF_OpenFont( font_file, font_size );
 
     loadInt( fp, &clickstr_state );
     loadInt( fp, &j );
@@ -368,6 +394,13 @@ int ONScripterLabel::saveSaveFile( int no )
     }
 
     /* ---------------------------------------- */
+    /* Save magic number */
+    for ( i=0 ; i<(int)strlen( SAVEFILE_MAGIC_NUMBER ) ; i++ )
+        fputc( SAVEFILE_MAGIC_NUMBER[i], fp );
+    fputc( SAVEFILE_VERSION_MAJOR, fp );
+    fputc( SAVEFILE_VERSION_MINOR, fp );
+    
+    /* ---------------------------------------- */
     /* Save text history */
     saveInt( fp, text_history_num );
     struct TextBuffer *tb = current_text_buffer;
@@ -384,7 +417,8 @@ int ONScripterLabel::saveSaveFile( int no )
     /* ---------------------------------------- */
     /* Save sentence font */
     saveInt( fp, (sentence_font.font_valid_flag?1:0) );
-    saveInt( fp, sentence_font.font_size );
+    saveInt( fp, sentence_font.font_size_xy[0] );
+    saveInt( fp, sentence_font.font_size_xy[1] );
     saveInt( fp, sentence_font.top_xy[0] );
     saveInt( fp, sentence_font.top_xy[1] );
     saveInt( fp, sentence_font.num_xy[0] );

@@ -246,13 +246,14 @@ ScriptParser::ScriptParser()
     menu_font.ttf_font  = system_font.ttf_font  = NULL;
     menu_font.color[0] = menu_font.color[1] = menu_font.color[2] = 0xff;
     system_font.color[0] = system_font.color[1] = system_font.color[2] = 0xff;
-    menu_font.font_size = system_font.font_size = 18;
+    menu_font.font_size_xy[0] = system_font.font_size_xy[0] = 18;
+    menu_font.font_size_xy[1] = system_font.font_size_xy[1] = 18;
     menu_font.top_xy[0] = system_font.top_xy[0] = 0;
     menu_font.top_xy[1] = system_font.top_xy[1] = 16;
     menu_font.num_xy[0] = system_font.num_xy[0] = 32;
     menu_font.num_xy[1] = system_font.num_xy[1] = 23;
-    menu_font.pitch_xy[0] = system_font.pitch_xy[0] = 2 + system_font.font_size;
-    menu_font.pitch_xy[1] = system_font.pitch_xy[1] = 2 + system_font.font_size;
+    menu_font.pitch_xy[0] = system_font.pitch_xy[0] = 2 + system_font.font_size_xy[0];
+    menu_font.pitch_xy[1] = system_font.pitch_xy[1] = 2 + system_font.font_size_xy[1];
     menu_font.display_bold = system_font.display_bold = true;
     menu_font.display_shadow = system_font.display_shadow = true;
     menu_font.display_transparency = system_font.display_transparency = true;
@@ -526,7 +527,7 @@ int ScriptParser::readLine( char **buf, bool raw_flag )
         }
         else if ( (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') ){
             if ( head_flag ) text_flag = false;
-            if ( !quat_flag && ch >= 'A' && ch <= 'Z' ) ch += 'a' - 'A';
+            if ( !text_flag && !quat_flag && ch >= 'A' && ch <= 'Z' ) ch += 'a' - 'A';
             addStringBuffer( ch, string_counter++ );
         }
         else if ( ch == '$' ){

@@ -337,7 +337,7 @@ protected:
         bool font_valid_flag;
         uchar3 color;
         uchar3 on_color, off_color, nofile_color;
-        int font_size;
+        int font_size_xy[2];
         int top_xy[2]; // Top left origin
         int num_xy[2]; // Row and column of the text windows
         int xy[2]; // Current position

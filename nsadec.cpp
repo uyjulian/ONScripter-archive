@@ -41,7 +41,7 @@ int main( int argc, char **argv )
     FILE *fp;
     struct stat file_stat;
 
-    cNR.open();
+    cNR.openForConvert( argv[1] );
     count = cNR.getNumFiles();
     
     SarReader::FileInfo sFI;

@@ -34,8 +34,8 @@ extern int errno;
 int main( int argc, char **argv )
 {
     SarReader cSR;
-    unsigned long length;
-    unsigned char *buffer;
+    unsigned long length, buffer_length = 0;
+    unsigned char *buffer = NULL;
     char file_name[256], dir_name[256];
     unsigned int i, j, count;
     FILE *fp;
@@ -52,8 +52,14 @@ int main( int argc, char **argv )
     
     for ( i=0 ; i<count ; i++ ){
         sFI = cSR.getFileByIndex( i );
+        
         length = cSR.getFileLength( sFI.name );
-        buffer = new unsigned char[length];
+
+        if ( length > buffer_length ){
+            if ( buffer ) delete[] buffer;
+            buffer = new unsigned char[length];
+            buffer_length = length;
+        }
         if ( cSR.getFile( sFI.name, buffer ) != length ){
             fprintf( stderr, "file %s can't be retrieved\n", sFI.name );
             continue;
@@ -80,9 +86,9 @@ int main( int argc, char **argv )
         else{
             printf(" ... falied\n");
         }
-        
-        delete[] buffer;
     }
+    
+    if ( buffer ) delete[] buffer;
     
     exit(0);
 }

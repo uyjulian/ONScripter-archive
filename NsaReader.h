@@ -42,6 +42,10 @@ public:
     size_t getFile( const char *file_name, unsigned char *buf );
     struct FileInfo getFileByIndex( int index );
     bool getAccessFlag( const char *file_name );
+
+    int openForConvert( char *nsa_name );
+    int writeHeader( FILE *fp );
+    void putFile( FILE *fp, int no, size_t offset, size_t length, bool modified_flag, unsigned char *buffer );
     
 private:
     bool sar_flag;

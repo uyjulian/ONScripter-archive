@@ -84,6 +84,31 @@ unsigned long DirectReader::readLong( FILE *fp )
     return ret;
 }
 
+void DirectReader::writeChar( FILE *fp, unsigned char ch )
+{
+    fwrite( &ch, 1, 1, fp );
+}
+
+void DirectReader::writeShort( FILE *fp, unsigned short ch )
+{
+    unsigned char buf[2];
+
+    buf[0] = ((unsigned char*)&ch)[1];
+    buf[1] = ((unsigned char*)&ch)[0];
+    fwrite( &buf, 1, 2, fp );
+}
+
+void DirectReader::writeLong( FILE *fp, unsigned long ch )
+{
+    unsigned char buf[4];
+    
+    buf[0] = ((unsigned char*)&ch)[3];
+    buf[1] = ((unsigned char*)&ch)[2];
+    buf[2] = ((unsigned char*)&ch)[1];
+    buf[3] = ((unsigned char*)&ch)[0];
+    fwrite( &buf, 1, 4, fp );
+}
+
 int DirectReader::open( char *name )
 {
     return 0;

@@ -62,6 +62,7 @@ struct BaseReader
         struct FileInfo *fi_list;
         int num_of_files;
         int num_of_accessed;
+        unsigned long base_offset;
 
         ArchiveInfo(){
             next = NULL;

@@ -22,6 +22,7 @@
  */
 
 #include "SarReader.h"
+#define WRITE_LENGTH 4096
 
 SarReader::SarReader( char *path )
         :DirectReader( path )
@@ -58,13 +59,12 @@ int SarReader::open( char *name )
 int SarReader::readArchive( struct ArchiveInfo *ai, bool nsa_flag )
 {
     int i;
-    unsigned long base_offset;
     
     /* Read header */
     ai->num_of_files = readShort( ai->file_handle );
     ai->fi_list = new struct FileInfo[ ai->num_of_files ];
     
-    base_offset = readLong( ai->file_handle );
+    ai->base_offset = readLong( ai->file_handle );
     
     for ( i=0 ; i<ai->num_of_files ; i++ ){
         unsigned char ch;
@@ -80,7 +80,7 @@ int SarReader::readArchive( struct ArchiveInfo *ai, bool nsa_flag )
             ai->fi_list[i].compression_type = readChar( ai->file_handle );
         else
             ai->fi_list[i].compression_type = NO_COMPRESSION;
-        ai->fi_list[i].offset = readLong( ai->file_handle ) + base_offset;
+        ai->fi_list[i].offset = readLong( ai->file_handle ) + ai->base_offset;
         ai->fi_list[i].length = readLong( ai->file_handle );
 
         if ( nsa_flag ){
@@ -121,6 +121,68 @@ int SarReader::readArchive( struct ArchiveInfo *ai, bool nsa_flag )
     ai->num_of_accessed = 0;
 
     return 0;
+}
+
+int SarReader::writeHeaderSub( ArchiveInfo *ai, FILE *fp, bool nsa_flag )
+{
+    int i, j;
+
+    fseek( fp, 0L, SEEK_SET );
+    writeShort( fp, ai->num_of_files  );
+    writeLong( fp, ai->base_offset );
+    
+    for ( i=0 ; i<ai->num_of_files ; i++ ){
+
+        for ( j=0 ; ai->fi_list[i].name[j] ; j++ )
+            fputc( ai->fi_list[i].name[j], fp );
+        fputc( ai->fi_list[i].name[j], fp );
+        
+        if ( nsa_flag )
+            writeChar( fp, ai->fi_list[i].compression_type );
+
+        writeLong( fp, ai->fi_list[i].offset  - ai->base_offset );
+        writeLong( fp, ai->fi_list[i].length );
+
+        if ( nsa_flag ){
+            ai->fi_list[i].original_length = ai->fi_list[i].length;
+            writeLong( fp, ai->fi_list[i].original_length );
+        }
+    }
+
+    return 0;
+}
+
+int SarReader::writeHeader( FILE *fp )
+{
+    ArchiveInfo *ai = archive_info.next;
+    return writeHeaderSub( ai, fp, false );
+}
+
+void SarReader::putFileSub( ArchiveInfo *ai, FILE *fp, int no, size_t offset, size_t length, bool modified_flag, unsigned char *buffer )
+{
+    ai->fi_list[no].offset = offset;
+    ai->fi_list[no].length = length;
+    
+    fseek( fp, ai->fi_list[no].offset, SEEK_SET );
+    if ( ai->fi_list[no].compression_type == NBZ_COMPRESSION )
+        writeLong( fp, ai->fi_list[no].original_length );
+    else if ( modified_flag )
+        ai->fi_list[no].compression_type = NO_COMPRESSION;
+
+    size_t len = ai->fi_list[no].length, c;
+    while( len > 0 ){
+        if ( len > WRITE_LENGTH ) c = WRITE_LENGTH;
+        else                      c = len;
+        len -= c;
+        fwrite( buffer, 1, c, fp );
+        buffer += c;
+    }
+}
+
+void SarReader::putFile( FILE *fp, int no, size_t offset, size_t length, bool modified_flag, unsigned char *buffer )
+{
+    ArchiveInfo *ai = archive_info.next;
+    putFileSub( ai, fp, no, offset, length, modified_flag, buffer );
 }
 
 int SarReader::close()

@@ -12,7 +12,7 @@
 </CENTER>
 
 Since: Feb. 6, 2002<br>
-Last updated: Sep. 9, 2002<br>
+Last updated: Sep. 10, 2002<br>
 <HR>
 
 <table>
@@ -26,9 +26,9 @@ href="http://www2.osk.3web.ne.jp/~naokikun/index.htm">高橋直樹</a>氏が開発された
 
 <p>ONScripter で何ができるのかについてはαβεさんの[<A HREF="http://abe.platina.sakura.ne.jp/onscripter/">ONScripter のスゝメ</A>]を参照してください。</p>
 
-<p>現在はベータ版<A HREF="onscripter-beta-20020909.tar.gz">onscripter-beta-20020909.tar.gz</A>を配布しております。<FONT color="#ff0000">サーバが prohosting の場合は直接ダウンロードできません。一旦左クリックして先に進み、そこでもう一回左クリックしてください。</FONT><br>
+<p>現在はベータ版<A HREF="onscripter-beta-20020910.tar.gz">onscripter-beta-20020910.tar.gz</A>を配布しております。<FONT color="#ff0000">サーバが prohosting の場合は直接ダウンロードできません。一旦左クリックして先に進み、そこでもう一回左クリックしてください。</FONT><br>
 ベータ版ゆえデバッグ出力が有効になっていますが、正式版になったら取り除きます。<br>
-(一つ前のベータ版<A HREF="onscripter-beta-20020906.tar.gz">onscripter-beta-20020906.tar.gz</A>)<br>
+(一つ前のベータ版<A HREF="onscripter-beta-20020909.tar.gz">onscripter-beta-20020909.tar.gz</A>)<br>
 ザウルス(SL-5500, SL-A300)用のバイナリパッケージは<A HREF="zaurus/index.html">こちら</A>からどうぞ。</p>
 
 <p>更新内容については[<A HREF="onscripter_devel.html">開発日誌</A>]を参照して下さい。</p>
@@ -64,6 +64,7 @@ href="http://www2.osk.3web.ne.jp/~naokikun/index.htm">高橋直樹</a>氏が開発された
 	 <LI> <A HREF="#TrueType font による漢字表示について">TrueType font による漢字表示について</A>
 	 <LI> <A HREF="#CD audio 演奏の振り替えについて">CD audio 演奏の振り替えについて</A>
 	 <LI> <A HREF="#MIDI 演奏機能について">MIDI 演奏機能について</A>
+	 <LI> <A HREF="#アーカイブ圧縮について">アーカイブ圧縮について</A>
 	 <LI> <A HREF="#Windows 上で MP3 の音がぶつぶつとぎれる問題について">Windows 上で MP3 の音がぶつぶつとぎれる問題について</A>
        </UL>
 </UL>
@@ -166,7 +167,6 @@ href="http://www2.osk.3web.ne.jp/~naokikun/index.htm">高橋直樹</a>氏が開発された
 
 <OL>
   <LI> (<FONT color="#ff0000">高</FONT>)windowback の挙動がおかしいのを直す
-  <LI> (<FONT color="#ff8800">中</FONT>)Zaurus 用にアーカイブ内の画像を半分の大きさにするコンバータを作る
   <LI> (<FONT color="#ff8800">中</FONT>)btndown + btnwait でマウスのドラッグに対応させる。
   <LI> (<FONT color="#ff8800">中</FONT>)効果 16, 17 の実装
   <LI> (<FONT color="#ff8800">中</FONT>)雪をスムーズに降らせる
@@ -251,6 +251,7 @@ href="http://www2.osk.3web.ne.jp/~naokikun/index.htm">高橋直樹</a>氏が開発された
 <tr><td>--registry file</td><td>使用する registry file を指定。</td></tr>
 <tr><td>--root path</td><td>使用するゲームファイルのあるディレクトリを指定。</td></tr>
 <tr><td>--force-button-shortcut</td><td>getenter と useescspc のコマンドを無視します。つまり、マウスのクリックを強制的に esc, space, return キーに割り付けます。</td></tr>
+<tr><td>--disable-rescale</td><td>画像の解像度を PDA 用に落としたアーカイブと、PDA を設定してコンパイルした ONScripter とを同時に使用する場合に、ONScripter 内で解像度を落とすことを抑制します。</td></tr>
 <tr><td>--edit</td><td>z キーを押したときに、音量及び変数の編集モードに入れるようになる。</td></tr>
 </table>
 
@@ -347,6 +348,24 @@ registry.txt を一カ所にまとめておくことができます。--registry を指定し
 
 </td></tr><tr><td>
 
+<A NAME="CD audio 演奏の振り替えについて"></A>
+<h3>CD audio 演奏の振り替えについて</h3>
+
+<p>ゲームのスクリプトがある場所に cd というディレクトリを作り、そこに<BR>
+cd/track01.mp3<BR>
+cd/track02.mp3<BR>
+cd/track03.mp3<BR>
+...<BR>
+cd/track14.mp3<BR>
+...<BR>
+という名前で MP3 ファイルを置きます。</p>
+
+<p>すると、スクリプトで CD audio の１曲目を演奏するコマンドがあった場合に、対応する track01.mp3 を演奏するようになります。</p>
+
+<p>MP3 を必ず用意する必要はなく、その場合は音が鳴らないだけです。</p>
+
+</td></tr><tr><td>
+
 <A NAME="MIDI 演奏機能について"></A>
 <h3>MIDI 演奏機能について</h3>
 
@@ -370,21 +389,40 @@ registry.txt を一カ所にまとめておくことができます。--registry を指定し
 
 </td></tr><tr><td>
 
-<A NAME="CD audio 演奏の振り替えについて"></A>
-<h3>CD audio 演奏の振り替えについて</h3>
+<A NAME="アーカイブ圧縮について"></A>
+<h3>アーカイブ圧縮について</h3>
 
-<p>ゲームのスクリプトがある場所に cd というディレクトリを作り、そこに<BR>
-cd/track01.mp3<BR>
-cd/track02.mp3<BR>
-cd/track03.mp3<BR>
-...<BR>
-cd/track14.mp3<BR>
-...<BR>
-という名前で MP3 ファイルを置きます。</p>
+<p> Zaurus ( SL-5500, SL-A300 ) でプレイする場合は、画面の大きさが 
+320x240 になります。そこで、あらかじめアーカイブ中の画像ファイルを 
+320x240 に合うように小さくしておくことで、アーカイブサイズの減少を図る
+ことができ、少ない記憶デバイスを有効活用することができます。</p>
 
-<p>すると、スクリプトで CD audio の１曲目を演奏するコマンドがあった場合に、対応する track01.mp3 を演奏するようになります。</p>
+<p>
+画面のサイズが 640x480 で、拡張子が sar のアーカイブに対しては、
+<pre>
+&gt; sarconv 640 arc.sar zaurus_dir/arc.sar
+...
+</pre>
 
-<p>MP3 を必ず用意する必要はなく、その場合は音が鳴らないだけです。</p>
+画面のサイズが 800x600 で、拡張子が nsa のアーカイブに対しては、
+<pre>
+&gt; nsaconv 800 arc.nsa zaurus_dir/arc.nsa
+&gt; nsaconv 800 arc1.nsa zaurus_dir/arc1.nsa
+...
+</pre>
+
+として変換してください。
+</p>
+
+<p>
+
+さらに、サイズを小さくしたアーカイブを使うときは、onscripter に --
+disable-rescale オプションを指定してください。<br>
+
+なお、Linux 等でも、-DPDA をつけてコンパイルすることにより、320x240 画
+面でゲームをすることができます。
+
+</p>
 
 </td></tr><tr><td>
 

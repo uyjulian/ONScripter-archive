@@ -225,7 +225,7 @@ void ONScripterLabel::initSDL( bool cdaudio_flag )
     }
 }
 
-ONScripterLabel::ONScripterLabel( bool cdaudio_flag, char *default_font, char *default_registry, char *default_archive_path, bool force_button_shortcut_flag, bool edit_flag )
+ONScripterLabel::ONScripterLabel( bool cdaudio_flag, char *default_font, char *default_registry, char *default_archive_path, bool force_button_shortcut_flag, bool disable_rescale_flag, bool edit_flag )
         :ScriptParser( default_archive_path )
 {
     int i;
@@ -271,7 +271,7 @@ ONScripterLabel::ONScripterLabel( bool cdaudio_flag, char *default_font, char *d
     getfunction_flag = false;
     getenter_flag = false;
     getcursor_flag = false;
-    
+
     tmp_save_fp = NULL;
     saveon_flag = true;
     
@@ -294,6 +294,7 @@ ONScripterLabel::ONScripterLabel( bool cdaudio_flag, char *default_font, char *d
     current_over_button = 0;
 
     variable_edit_mode = NOT_EDIT_MODE;
+    this->disable_rescale_flag = disable_rescale_flag;
     this->edit_flag = edit_flag;
 
     /* ---------------------------------------- */
@@ -802,7 +803,7 @@ SDL_Surface *ONScripterLabel::loadImage( char *file_name )
     }
 
     ret = SDL_ConvertSurface( tmp, text_surface->format, DEFAULT_SURFACE_FLAG );
-    if ( ret && screen_ratio2 != 1 ){
+    if ( ret && screen_ratio2 != 1 && !disable_rescale_flag ){
         SDL_Surface *ret2 = ret;
 
         SDL_Rect src_rect, dst_rect;

@@ -48,10 +48,11 @@ int NsaReader::open( char *nsa_path )
     int i;
     char archive_name[256], archive_name2[256];
 
-    if ( !SarReader::open() ) return 0;
-
+    if ( !SarReader::open( "arc.sar" ) ) return 0;
+    
     sar_flag = false;
     if ( !nsa_path ) nsa_path = "";
+
     sprintf( archive_name, "%s%s", nsa_path, NSA_ARCHIVE_NAME );
     if ( ( archive_info.file_handle = fopen( archive_name, "rb" ) ) == NULL ){
         fprintf( stderr, "can't open file %s\n", archive_name );
@@ -59,7 +60,7 @@ int NsaReader::open( char *nsa_path )
     }
 
     readArchive( &archive_info, true );
-
+    
     for ( i=0 ; i<MAX_EXTRA_ARCHIVE ; i++ ){
         sprintf( archive_name2, NSA_ARCHIVE_NAME2, i+1 );
         sprintf( archive_name, "%s%s", nsa_path, archive_name2 );
@@ -71,6 +72,31 @@ int NsaReader::open( char *nsa_path )
     }
 
     return 0;
+}
+
+int NsaReader::openForConvert( char *nsa_name )
+{
+    sar_flag = false;
+    if ( ( archive_info.file_handle = fopen( nsa_name, "rb" ) ) == NULL ){
+        fprintf( stderr, "can't open file %s\n", nsa_name );
+        return -1;
+    }
+
+    readArchive( &archive_info, true );
+
+    return 0;
+}
+
+int NsaReader::writeHeader( FILE *fp )
+{
+    ArchiveInfo *ai = &archive_info;
+    return writeHeaderSub( ai, fp, true );
+}
+
+void NsaReader::putFile( FILE *fp, int no, size_t offset, size_t length, bool modified_flag, unsigned char *buffer )
+{
+    ArchiveInfo *ai = &archive_info;
+    putFileSub( ai, fp, no, offset, length, modified_flag, buffer );
 }
 
 char *NsaReader::getArchiveName() const

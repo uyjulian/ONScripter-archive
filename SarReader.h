@@ -42,6 +42,9 @@ public:
     size_t getFileLength( const char *file_name );
     size_t getFile( const char *file_name, unsigned char *buf );
     struct FileInfo getFileByIndex( int index );
+
+    int writeHeader( FILE *fp );
+    void putFile( FILE *fp, int no, size_t offset, size_t length, bool modified_flag, unsigned char *buffer );
     
 protected:
     struct ArchiveInfo archive_info;
@@ -51,6 +54,9 @@ protected:
     int readArchive( ArchiveInfo *ai, bool nsa_flag = false );
     int getIndexFromFile( ArchiveInfo *ai, const char *file_name );
     size_t getFileSub( ArchiveInfo *ai, const char *file_name, unsigned char *buf );
+
+    int writeHeaderSub( ArchiveInfo *ai, FILE *fp, bool nsa_flag );
+    void putFileSub( ArchiveInfo *ai, FILE *fp, int no, size_t offset, size_t length, bool modified_flag, unsigned char *buffer );
 };
 
 #endif // __SAR_READER_H__

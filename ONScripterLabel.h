@@ -56,7 +56,7 @@
 class ONScripterLabel : public ScriptParser
 {
 public:
-    ONScripterLabel( bool cdaudio_flag, char *default_font, char *default_registry, char *default_archive_path, bool force_button_shortcut_flag, bool edit_flag );
+    ONScripterLabel( bool cdaudio_flag, char *default_font, char *default_registry, char *default_archive_path, bool force_button_shortcut_flag, bool disable_rescale_flag, bool edit_flag );
     ~ONScripterLabel();
 
     bool skip_flag;
@@ -214,6 +214,7 @@ private:
     /* ---------------------------------------- */
     /* Global definitions */
     bool edit_flag;
+    bool disable_rescale_flag;
     
     long internal_timer;
     long autoclick_timer;

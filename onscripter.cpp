@@ -31,6 +31,7 @@ void optionHelp()
     printf( "      --registry file\tuse file as a default registry file\n");
     printf( "      --root path\tuse path as a root path for archives\n");
     printf( "      --force-button-shortcut\tignore useescspc and getenter command\n");
+    printf( "      --disable-rescale\tdo not rescale images when running on Zaurus\n");
     printf( "      --edit\t\tedit volumes and variables when 'z' is pressed\n");
     printf( "  -h, --help\t\tdisplay this help and exit\n");
     printf( "  -v, --version\t\toutput version information and exit\n");
@@ -56,6 +57,7 @@ int main( int argc, char **argv )
     char *default_registry = NULL;
     char *default_archive_path = NULL;
     bool force_button_shortcut_flag = false;
+    bool disable_rescale_flag = false;
     bool edit_flag = false;
     
     /* ---------------------------------------- */
@@ -96,6 +98,9 @@ int main( int argc, char **argv )
             else if ( !strcmp( argv[0]+1, "-force-button-shortcut" ) ){
                 force_button_shortcut_flag = true;
             }
+            else if ( !strcmp( argv[0]+1, "-disable-rescale" ) ){
+                disable_rescale_flag = true;
+            }
             else if ( !strcmp( argv[0]+1, "-edit" ) ){
                 edit_flag = true;
             }
@@ -112,7 +117,7 @@ int main( int argc, char **argv )
     
     /* ---------------------------------------- */
     /* Run ONScripter */
-    ONScripterLabel *ons = new ONScripterLabel( cdaudio_flag, default_font, default_registry, default_archive_path, force_button_shortcut_flag, edit_flag );
+    ONScripterLabel *ons = new ONScripterLabel( cdaudio_flag, default_font, default_registry, default_archive_path, force_button_shortcut_flag, disable_rescale_flag, edit_flag );
     ons->eventLoop();
     
     exit(0);

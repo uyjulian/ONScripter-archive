@@ -55,6 +55,9 @@ protected:
     unsigned char readChar( FILE *fp );
     unsigned short readShort( FILE *fp );
     unsigned long readLong( FILE *fp );
+    void writeChar( FILE *fp, unsigned char ch );
+    void writeShort( FILE *fp, unsigned short ch );
+    void writeLong( FILE *fp, unsigned long ch );
     char capital_name[ MAX_FILE_NAME_LENGTH + 1 ];
     size_t decodeNBZ( FILE *fp, size_t offset, unsigned char *buf );
     int getbit( FILE *fp, int n );

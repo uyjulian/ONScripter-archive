@@ -158,6 +158,27 @@ int ScriptParser::skipCommand()
     return RET_JUMP;
 }
 
+int ScriptParser::selectcolorCommand()
+{
+    char *p_string_buffer = string_buffer + string_buffer_offset + 11; // strlen("selectcolor") = 11
+
+    readStr( &p_string_buffer, tmp_string_buffer );
+    if ( tmp_string_buffer[0] != '#' ) errorAndExit( string_buffer + string_buffer_offset );
+
+    sentence_font.on_color[0] = convHexToDec( tmp_string_buffer[1] ) << 4 | convHexToDec( tmp_string_buffer[2] );
+    sentence_font.on_color[1] = convHexToDec( tmp_string_buffer[3] ) << 4 | convHexToDec( tmp_string_buffer[4] );
+    sentence_font.on_color[2] = convHexToDec( tmp_string_buffer[5] ) << 4 | convHexToDec( tmp_string_buffer[6] );
+
+    readStr( &p_string_buffer, tmp_string_buffer );
+    if ( tmp_string_buffer[0] != '#' ) errorAndExit( string_buffer + string_buffer_offset );
+
+    sentence_font.off_color[0] = convHexToDec( tmp_string_buffer[1] ) << 4 | convHexToDec( tmp_string_buffer[2] );
+    sentence_font.off_color[1] = convHexToDec( tmp_string_buffer[3] ) << 4 | convHexToDec( tmp_string_buffer[4] );
+    sentence_font.off_color[2] = convHexToDec( tmp_string_buffer[5] ) << 4 | convHexToDec( tmp_string_buffer[6] );
+    
+    return RET_CONTINUE;
+}
+
 int ScriptParser::savenumberCommand()
 {
     char *p_string_buffer = string_buffer + string_buffer_offset + 10; // strlen("savenumber") = 10
@@ -387,6 +408,65 @@ int ScriptParser::menusetwindowCommand()
     return RET_CONTINUE;
 }
 
+int ScriptParser::menuselectcolorCommand()
+{
+    int i;
+    char *p_string_buffer = string_buffer + string_buffer_offset + 15; // strlen("menuselectcolor") = 15
+
+    readStr( &p_string_buffer, tmp_string_buffer );
+    if ( tmp_string_buffer[0] != '#' ) errorAndExit( string_buffer + string_buffer_offset );
+
+    menu_font.on_color[0] = convHexToDec( tmp_string_buffer[1] ) << 4 | convHexToDec( tmp_string_buffer[2] );
+    menu_font.on_color[1] = convHexToDec( tmp_string_buffer[3] ) << 4 | convHexToDec( tmp_string_buffer[4] );
+    menu_font.on_color[2] = convHexToDec( tmp_string_buffer[5] ) << 4 | convHexToDec( tmp_string_buffer[6] );
+    for ( i=0 ; i<3 ; i++ ) system_font.on_color[i] = menu_font.on_color[i];
+
+    readStr( &p_string_buffer, tmp_string_buffer );
+    if ( tmp_string_buffer[0] != '#' ) errorAndExit( string_buffer + string_buffer_offset );
+
+    menu_font.off_color[0] = convHexToDec( tmp_string_buffer[1] ) << 4 | convHexToDec( tmp_string_buffer[2] );
+    menu_font.off_color[1] = convHexToDec( tmp_string_buffer[3] ) << 4 | convHexToDec( tmp_string_buffer[4] );
+    menu_font.off_color[2] = convHexToDec( tmp_string_buffer[5] ) << 4 | convHexToDec( tmp_string_buffer[6] );
+    for ( i=0 ; i<3 ; i++ ) system_font.off_color[i] = menu_font.off_color[i];
+    
+    readStr( &p_string_buffer, tmp_string_buffer );
+    if ( tmp_string_buffer[0] != '#' ) errorAndExit( string_buffer + string_buffer_offset );
+
+    menu_font.nofile_color[0] = convHexToDec( tmp_string_buffer[1] ) << 4 | convHexToDec( tmp_string_buffer[2] );
+    menu_font.nofile_color[1] = convHexToDec( tmp_string_buffer[3] ) << 4 | convHexToDec( tmp_string_buffer[4] );
+    menu_font.nofile_color[2] = convHexToDec( tmp_string_buffer[5] ) << 4 | convHexToDec( tmp_string_buffer[6] );
+    for ( i=0 ; i<3 ; i++ ) system_font.nofile_color[i] = menu_font.nofile_color[i];
+    
+    return RET_CONTINUE;
+}
+
+int ScriptParser::lookbackcolorCommand()
+{
+    char *p_string_buffer = string_buffer + string_buffer_offset + 13; // strlen("lookbackcolor") = 13
+
+    readStr( &p_string_buffer, tmp_string_buffer );
+    if ( tmp_string_buffer[0] != '#' ) errorAndExit( string_buffer + string_buffer_offset );
+
+    lookback_color[0] = convHexToDec( tmp_string_buffer[1] ) << 4 | convHexToDec( tmp_string_buffer[2] );
+    lookback_color[1] = convHexToDec( tmp_string_buffer[3] ) << 4 | convHexToDec( tmp_string_buffer[4] );
+    lookback_color[2] = convHexToDec( tmp_string_buffer[5] ) << 4 | convHexToDec( tmp_string_buffer[6] );
+
+    return RET_CONTINUE;
+}
+
+int ScriptParser::lookbackbuttonCommand()
+{
+    char *p_string_buffer = string_buffer + string_buffer_offset + 14; // strlen("lookbackbutton") = 14
+
+    for ( int i=0 ; i<4 ; i++ ){
+        readStr( &p_string_buffer, tmp_string_buffer );
+        delete lookback_image_name[i];
+        lookback_image_name[i] = new char[ strlen( tmp_string_buffer ) + 1 ];
+        memcpy( lookback_image_name[i], tmp_string_buffer, strlen( tmp_string_buffer ) + 1 );
+    }
+    return RET_CONTINUE;
+}
+
 int ScriptParser::labellogCommand()
 {
     printf(" labellogCommand\n" );
@@ -395,18 +475,17 @@ int ScriptParser::labellogCommand()
     char buf[100];
     
     if ( ( fp = fopen( "NScrllog.dat", "rb" ) ) != NULL ){
-        printf("read from NScrllog.dat\n");
+        //printf("read from NScrllog.dat\n");
         while( (ch = fgetc( fp )) != 0x0a ){
             count = count * 10 + ch - '0';
         }
-        printf("count %d\n",count);
+        //printf("count %d\n",count);
 
         for ( i=0 ; i<count ; i++ ){
             fgetc( fp );
             j = 0;
             while( (ch = fgetc( fp )) != '"' ) buf[j++] = ch ^ 0x84;
             buf[j] = '\0';
-            //printf("read %s\n",buf );
             lookupLabel( buf );
         }
         
@@ -623,16 +702,6 @@ int ScriptParser::globalonCommand()
     return RET_CONTINUE;
 }
 
-int ScriptParser::gameCommand()
-{
-    current_link_label_info->label_info = lookupLabel( "start" );
-    current_link_label_info->current_line = 0;
-    current_link_label_info->offset = 0;
-    current_mode = NORMAL_MODE;
-
-    return RET_JUMP;
-}
-
 int ScriptParser::forCommand()
 {
     for_stack_depth++;
@@ -693,11 +762,11 @@ int ScriptParser::filelogCommand()
     char buf[100];
     
     if ( ( fp = fopen( "NScrflog.dat", "rb" ) ) != NULL ){
-        printf("read from NScrflog.dat\n");
+        //printf("read from NScrflog.dat\n");
         while( (ch = fgetc( fp )) != 0x0a ){
             count = count * 10 + ch - '0';
         }
-        printf("count %d\n",count);
+        //printf("count %d\n",count);
 
         for ( i=0 ; i<count ; i++ ){
             fgetc( fp );
@@ -855,7 +924,6 @@ int ScriptParser::clickstrCommand()
     for ( i=0 ; i<clickstr_num*2 ; i++ ) clickstr_list[i] = tmp_string_buffer[i];
 
     clickstr_line = readInt( &p_string_buffer, tmp_string_buffer );
-    printf(" clickstrCommand %s\n",tmp_string_buffer );
            
     return RET_CONTINUE;
 }

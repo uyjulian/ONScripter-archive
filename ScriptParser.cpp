@@ -25,11 +25,16 @@
 
 #define READ_LENGTH 4096
 #define VERSION_STR1 "ONScripter"
-#define VERSION_STR2 "Copyright (C) 2001 Studio O.G.A. All Rights Reserved."
+#define VERSION_STR2 "Copyright (C) 2001-2002 Studio O.G.A. All Rights Reserved."
 
 #define DEFAULT_SAVE_MENU_NAME "＜セーブ＞"
 #define DEFAULT_LOAD_MENU_NAME "＜ロード＞"
 #define DEFAULT_SAVE_ITEM_NAME "しおり"
+
+#define DEFAULT_LOOKBACK_NAME0 "uoncur.bmp"
+#define DEFAULT_LOOKBACK_NAME1 "uoffcur.bmp"
+#define DEFAULT_LOOKBACK_NAME2 "doncur.bmp"
+#define DEFAULT_LOOKBACK_NAME3 "doffcur.bmp"
 
 typedef int (ScriptParser::*FuncList)();
 static struct FuncLUT{
@@ -44,6 +49,7 @@ static struct FuncLUT{
     {"sub", &ScriptParser::subCommand},
     {"stralias", &ScriptParser::straliasCommand},
     {"skip",     &ScriptParser::skipCommand},
+    {"selectcolor",     &ScriptParser::selectcolorCommand},
     {"savenumber",     &ScriptParser::savenumberCommand},
     {"savename",     &ScriptParser::savenameCommand},
     {"sar",    &ScriptParser::arcCommand},
@@ -57,6 +63,9 @@ static struct FuncLUT{
     {"mov",      &ScriptParser::movCommand},
     {"mod",      &ScriptParser::modCommand},
     {"menusetwindow",      &ScriptParser::menusetwindowCommand},
+    {"menuselectcolor",      &ScriptParser::menuselectcolorCommand},
+    {"lookbackcolor",      &ScriptParser::lookbackcolorCommand},
+    {"lookbackbutton",      &ScriptParser::lookbackbuttonCommand},
     {"labellog",      &ScriptParser::labellogCommand},
     {"itoa", &ScriptParser::itoaCommand},
     {"intlimit", &ScriptParser::intlimitCommand},
@@ -66,7 +75,7 @@ static struct FuncLUT{
     {"goto",     &ScriptParser::gotoCommand},
     {"gosub",    &ScriptParser::gosubCommand},
     {"globalon",    &ScriptParser::globalonCommand},
-    {"game",    &ScriptParser::gameCommand},
+    //{"game",    &ScriptParser::gameCommand},
     {"for",   &ScriptParser::forCommand},
     {"filelog",   &ScriptParser::filelogCommand},
     {"effectblank",   &ScriptParser::effectblankCommand},
@@ -118,6 +127,25 @@ ScriptParser::ScriptParser()
     z_order = 25;
     
     /* ---------------------------------------- */
+    /* Lookback related variables */
+    lookback_image_name[0] = new char[ strlen( DEFAULT_LOOKBACK_NAME0 ) + 1 ];
+    memcpy( lookback_image_name[0], DEFAULT_LOOKBACK_NAME0, strlen( DEFAULT_LOOKBACK_NAME0 ) + 1 );
+    lookback_image_name[1] = new char[ strlen( DEFAULT_LOOKBACK_NAME1 ) + 1 ];
+    memcpy( lookback_image_name[1], DEFAULT_LOOKBACK_NAME1, strlen( DEFAULT_LOOKBACK_NAME1 ) + 1 );
+    lookback_image_name[2] = new char[ strlen( DEFAULT_LOOKBACK_NAME2 ) + 1 ];
+    memcpy( lookback_image_name[2], DEFAULT_LOOKBACK_NAME2, strlen( DEFAULT_LOOKBACK_NAME2 ) + 1 );
+    lookback_image_name[3] = new char[ strlen( DEFAULT_LOOKBACK_NAME3 ) + 1 ];
+    memcpy( lookback_image_name[3], DEFAULT_LOOKBACK_NAME3, strlen( DEFAULT_LOOKBACK_NAME3 ) + 1 );
+    lookback_color[0] = 0xff;
+    lookback_color[1] = 0xff;
+    lookback_color[2] = 0x00;
+
+    /* ---------------------------------------- */
+    /* Select related variables */
+    select_on_color[0] = select_on_color[1] = select_on_color[2] = 0xff;
+    select_off_color[0] = select_off_color[1] = select_off_color[2] = 0x80;
+    
+    /* ---------------------------------------- */
     /* For loop related variables */
     root_for_link.previous = NULL;
     root_for_link.next = NULL;
@@ -151,10 +179,14 @@ ScriptParser::ScriptParser()
     /* Text related variables */
     for ( i=0 ; i<MAX_TEXT_BUFFER-1 ; i++ ){
         text_buffer[i].next = &text_buffer[i+1];
+        text_buffer[i+1].previous = &text_buffer[i];
         text_buffer[i].buffer = NULL;
+        text_buffer[i].xy[1] = -1; // It means an invalid text buffer.
     }
+    text_buffer[0].previous = &text_buffer[MAX_TEXT_BUFFER-1];
     text_buffer[MAX_TEXT_BUFFER-1].next = &text_buffer[0];
     text_buffer[MAX_TEXT_BUFFER-1].buffer = NULL;
+    text_buffer[MAX_TEXT_BUFFER-1].xy[1] = -1; // It means an invalid text buffer.
     current_text_buffer = &text_buffer[0];
 
     clickstr_num = 0;
@@ -181,7 +213,16 @@ ScriptParser::ScriptParser()
     memcpy( menu_font.window_color, "#cccccc", 8 );
     system_font.window_color_mask[0] = system_font.window_color_mask[1] = system_font.window_color_mask[2] = 0xcc;
     menu_font.window_color_mask[0] = menu_font.window_color_mask[1] = menu_font.window_color_mask[2] = 0xcc;
-        
+
+    for ( i=0 ; i<3 ; i++ ){
+        menu_font.on_color[i] = 0xff;
+        menu_font.off_color[i] = 0x80;
+        menu_font.nofile_color[i] = 0x80;
+        system_font.on_color[i] = 0xff;
+        system_font.off_color[i] = 0x80;
+        system_font.nofile_color[i] = 0x80;
+    }
+    
     last_menu_link = &root_menu_link;
     last_menu_link->next = NULL;
     last_menu_link->label = NULL;

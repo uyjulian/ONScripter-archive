@@ -12,7 +12,7 @@
 </CENTER>
 
 Created: Feb. 6, 2002<br>
-Last updated: Feb. 23, 2002
+Last updated: Feb. 24, 2002
 
 <HR>
 
@@ -25,9 +25,9 @@ Last updated: Feb. 23, 2002
 <p>NScripterとは<a
 href="http://www2.osk.3web.ne.jp/~naokikun/index.htm">高橋直樹</a>氏が開発したゲーム実行エンジンであり、高橋氏のホームページから<a href="http://www2.osk.3web.ne.jp/~naokikun/index.htm">ダウンロード</a>できます。</p>
 
-<p>現在はベータ版<A HREF="onscripter-beta-20020223.tar.gz">onscripter-beta-20020223.tar.gz</A>を配布しております。<br>
+<p>現在はベータ版<A HREF="onscripter-beta-20020224.tar.gz">onscripter-beta-20020224.tar.gz</A>を配布しております。<br>
 ベータ版ゆえデバッグ出力・assert 等が有効になっていますが、正式版になったら取り除きます。<br>
-(一つ前のベータ版<A HREF="onscripter-beta-20020222.tar.gz">onscripter-beta-20020222.tar.gz</A>)</p>
+(一つ前のベータ版<A HREF="onscripter-beta-20020223.tar.gz">onscripter-beta-20020223.tar.gz</A>)</p>
 
 <p>バグ報告・機能追加は随時受け付けますので、一番下のメールアドレスまでお願いします。</p>
 
@@ -92,7 +92,7 @@ href="http://www2.osk.3web.ne.jp/~naokikun/index.htm">高橋直樹</a>氏が開発したゲ
 <p>適当な場所に ONScripter を展開し、Linux の場合は make -f Makefile.Linux, Windows の場合は、nmake -f Makefile.Win とやって下さい。Windows の場合は、SDL と SMPEG のヘッダファイルとライブラリのある場所を Makefile.Win で指定しているので、自身の環境に合わせて適宜修正してください。</p>
 
 <h3> 実行 </h3>
-<p><FONT color="#ff0000">[必須]</FONT>まずゲームのアーカイブを一カ所にまとめます。通常は、スクリプト(0.txt もしくは nscript.dat)とアーカイブ(arc.sar もしくは arc.nsa)の２つのファイルがあれば十分なはずです。arc1.nsa 〜 arc9.nsa がある場合は、それも置いてください。</p>
+<p><FONT color="#ff0000">[必須]</FONT>まずゲームのアーカイブを一カ所にまとめます。通常は、スクリプト(0.txt もしくは nscript.dat)とアーカイブ(arc.sar もしくは arc.nsa)の２つのファイルがあれば十分なはずです。arc1.nsa 〜 arc9.nsa がある場合は、それも置いてください。またゲームによっては、アーカイブの外に一部の画像ファイルを置いていたりします。その場合は、それらのファイルも元と同じように置いてください。一番確実なのは、ディレクトリ毎全てのファイルをコピーしてくることです。</p>
 
 <p><FONT color="#ff0000">[必須]</FONT>下記の"TrueType font による漢字表示について"を参考に、日本語 TrueType font を用意し、"default.ttf" という名前で置いてください。</p>
 
@@ -115,9 +115,8 @@ href="http://www2.osk.3web.ne.jp/~naokikun/index.htm">高橋直樹</a>氏が開発したゲ
   <LI> btndef "" クリック待ちの実装
   <LI> sprite の透明度サポート
   <LI> dwave で全てのチャンネル 0 にマッピングしているのを直す（かも）
-  <LI> 既読文章表示の実装
+  <LI> 既読文章表示で select 文は表示しない等細かいバグを取る（かも）
   <LI> archive の検索の高速化
-  <LI> マウスカーソルが最初にボタンの上にある場合に選択状態にならないバグを直す
   <LI> select が複数行にまたがるときに、先頭が * ではじまるとラベルの先頭として解釈されてしますバグをとる。
   <LI> quake, spbtn の実装。
   <LI> 一文字毎に readLine するのをなんとかする（かも）

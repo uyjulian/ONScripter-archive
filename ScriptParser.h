@@ -58,6 +58,8 @@
     num_variables[_no] = _i;\
 }
 
+typedef unsigned char uchar3[3];
+
 class ScriptParser
 {
 public:
@@ -99,32 +101,6 @@ public:
     };
     typedef enum{ SYSTEM_NULL = 0, SYSTEM_SKIP = 1, SYSTEM_RESET = 2, SYSTEM_SAVE = 3, SYSTEM_LOAD = 4, SYSTEM_LOOKBACK = 5, SYSTEM_WINDOWERASE = 6, SYSTEM_MENU = 7  } SYSTEM_CALLS;
 
-    struct FontInfo{
-        void *ttf_font;
-        bool font_valid_flag;
-        unsigned char color[3];
-        int font_size;
-        int top_xy[2]; // Top left origin
-        int num_xy[2]; // Row and column of the text windows
-        int xy[2]; // Current position
-        int pitch_xy[2]; // Width and height of a character
-        int wait_time;
-        bool display_bold;
-        bool display_shadow;
-        bool display_transparency;
-        char window_color[8];
-        int  window_color_mask[3];
-        char *window_image;
-        int window_rect[4]; // Top left and bottom right of the text window
-    };
-
-    struct TextBuffer{
-        struct TextBuffer *next;
-        char *buffer;
-        int num_xy[2];
-        int xy[2];
-    };
-    
     typedef enum{ RET_COMMENT = 0, RET_NOMATCH = 1, RET_CONTINUE = 2, RET_CONTINUE_NONEXT = 3, RET_WAIT = 4, RET_WAIT_NEXT = 5, RET_JUMP = 6 } COMMAND_RETURN;
     typedef enum{ CLICK_NONE = 0, CLICK_WAIT = 1, CLICK_NEWPAGE = 2, CLICK_IGNORE = 3 } CLICKSTR_STATE;
 
@@ -157,6 +133,7 @@ public:
     int subCommand();
     int straliasCommand();
     int skipCommand();
+    int selectcolorCommand();
     int savenumberCommand();
     int savenameCommand();
     int rmenuCommand();
@@ -167,6 +144,9 @@ public:
     int movCommand();
     int modCommand();
     int menusetwindowCommand();
+    int menuselectcolorCommand();
+    int lookbackcolorCommand();
+    int lookbackbuttonCommand();
     int labellogCommand();
     int itoaCommand();
     int intlimitCommand();
@@ -176,7 +156,7 @@ public:
     int gotoCommand();
     int gosubCommand();
     int globalonCommand();
-    int gameCommand();
+    //int gameCommand();
     int forCommand();
     int filelogCommand();
     int effectblankCommand();
@@ -234,6 +214,16 @@ protected:
     struct EffectLink window_effect, print_effect, tmp_effect;
 
     /* ---------------------------------------- */
+    /* Lookback related variables */
+    char *lookback_image_name[4];
+    uchar3 lookback_color;
+    
+    /* ---------------------------------------- */
+    /* Select related variables */
+    uchar3 select_on_color;
+    uchar3 select_off_color;
+    
+    /* ---------------------------------------- */
     /* For loop related variables */
     struct ForInfo{
         struct ForInfo *previous, *next;
@@ -278,7 +268,12 @@ protected:
 
     /* ---------------------------------------- */
     /* Text related variables */
-    struct TextBuffer text_buffer[ MAX_TEXT_BUFFER ], *current_text_buffer; // ring buffer
+    struct TextBuffer{
+        struct TextBuffer *next, *previous;
+        char *buffer;
+        int num_xy[2];
+        int xy[2];
+    } text_buffer[ MAX_TEXT_BUFFER ], *current_text_buffer; // ring buffer
     bool text_line_flag;
     int  clickstr_num;
     char *clickstr_list;
@@ -287,10 +282,30 @@ protected:
     
     /* ---------------------------------------- */
     /* Menu related variables */
-    struct FontInfo system_font;
-    struct FontInfo menu_font;
+    struct FontInfo{
+        void *ttf_font;
+        bool font_valid_flag;
+        uchar3 color;
+        uchar3 on_color, off_color, nofile_color;
+        int font_size;
+        int top_xy[2]; // Top left origin
+        int num_xy[2]; // Row and column of the text windows
+        int xy[2]; // Current position
+        int pitch_xy[2]; // Width and height of a character
+        int wait_time;
+        bool display_bold;
+        bool display_shadow;
+        bool display_transparency;
+        char window_color[8];
+        int  window_color_mask[3];
+        char *window_image;
+        int window_rect[4]; // Top left and bottom right of the text window
+    } sentence_font, system_font, menu_font;
     struct MenuLink root_menu_link, *last_menu_link;
     unsigned int  menu_link_num, menu_link_width;
+    uchar3 menu_select_on_color;
+    uchar3 menu_select_off_color;
+    uchar3 menu_select_nofile_color;
 
     int getSystemCallNo( char *buffer );
     void getSJISFromInteger( char *buffer, int no, bool add_space_flag=true );

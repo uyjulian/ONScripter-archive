@@ -193,6 +193,16 @@ int ONScripterLabel::loadSaveFile( int no )
     loadVariables( fp, 0, 200 );
 
     /* ---------------------------------------- */
+    /* Load monocro flag */
+    monocro_flag = (fgetc( fp )==1)?true:false;
+    for ( i=0 ; i<3 ; i++ ) monocro_color[i] = fgetc( fp );
+    for ( i=0 ; i<256 ; i++ ){
+        monocro_color_lut[i][0] = (monocro_color[0] * i) >> 8;
+        monocro_color_lut[i][1] = (monocro_color[1] * i) >> 8;
+        monocro_color_lut[i][2] = (monocro_color[2] * i) >> 8;
+    }
+    
+    /* ---------------------------------------- */
     /* Load current images */
     TaggedInfo tagged_info;
 
@@ -222,7 +232,7 @@ int ONScripterLabel::loadSaveFile( int no )
 
     effect_counter = 0;
     doEffect( 1, &bg_image_tag, bg_effect_image );
-
+    
     /* ---------------------------------------- */
     /* Load Tachi image and Sprite */
     for ( i=0 ; i<3 ; i++ ){
@@ -247,7 +257,7 @@ int ONScripterLabel::loadSaveFile( int no )
             sprite_info[i].image_surface = loadPixmap( &sprite_info[i].tag );
         }
     }
-    
+
     effect_counter = 0;
     doEffect( 1, NULL, TACHI_EFFECT_IMAGE );
 
@@ -270,11 +280,6 @@ int ONScripterLabel::loadSaveFile( int no )
     loadStr( fp, &mp3_file_name );
     if ( current_cd_track >= 0 || mp3_file_name ) playMP3( current_cd_track );
 
-    /* ---------------------------------------- */
-    /* Load monocro flag */
-    monocro_flag = (fgetc( fp )==1)?true:false;
-    for ( i=0 ; i<3 ; i++ ) monocro_color[i] = fgetc( fp );
-    
     fclose( fp );
 
     return 0;
@@ -355,6 +360,11 @@ int ONScripterLabel::saveSaveFile( int no )
     saveVariables( fp, 0, 200 );
     
     /* ---------------------------------------- */
+    /* Save monocro flag */
+    monocro_flag?fputc(1,fp):fputc(0,fp);
+    for ( i=0 ; i<3 ; i++ ) fputc( monocro_color[i], fp );
+    
+    /* ---------------------------------------- */
     /* Save current images */
     fputc( bg_image_tag.color[0], fp );
     fputc( bg_image_tag.color[1], fp );
@@ -383,11 +393,6 @@ int ONScripterLabel::saveSaveFile( int no )
     mp3_play_once_flag?fputc(1,fp):fputc(0,fp);
     saveStr( fp, mp3_file_name );
     
-    /* ---------------------------------------- */
-    /* Save monocro flag */
-    monocro_flag?fputc(1,fp):fputc(0,fp);
-    for ( i=0 ; i<3 ; i++ ) fputc( monocro_color[i], fp );
-    
     fclose( fp );
 
     return 0;
@@ -395,6 +400,7 @@ int ONScripterLabel::saveSaveFile( int no )
 
 void ONScripterLabel::leaveSystemCall( bool restore_flag )
 {
+    int i;
     //printf("leaveSystemCall\n");
 
     if ( restore_flag ){
@@ -405,7 +411,10 @@ void ONScripterLabel::leaveSystemCall( bool restore_flag )
         root_button_link.next = shelter_button_link;
         event_mode = shelter_event_mode;
         if ( event_mode & WAIT_BUTTON_MODE ) SDL_WarpMouse( shelter_mouse_state.x, shelter_mouse_state.y );
+        current_text_buffer = shelter_text_buffer;
     }
+
+    for ( i=0 ; i<3 ; i++ ) sentence_font.color[i] = shelter_sentence_color[i];
     system_menu_mode = SYSTEM_NULL;
     system_menu_enter_flag = false;
     key_pressed_flag = false;
@@ -422,7 +431,8 @@ void ONScripterLabel::leaveSystemCall( bool restore_flag )
 void ONScripterLabel::executeSystemCall()
 {
     //printf("*****  executeSystemCall %d %d*****\n", system_menu_enter_flag, volatile_button_state.button );
-
+    int i;
+    
     if ( !system_menu_enter_flag ){
         shelter_button_link = root_button_link.next;
         last_button_link = &root_button_link;
@@ -432,6 +442,8 @@ void ONScripterLabel::executeSystemCall()
         shelter_event_mode = event_mode;
         shelter_mouse_state.x = last_mouse_state.x;
         shelter_mouse_state.y = last_mouse_state.y;
+        shelter_text_buffer = current_text_buffer;
+        for ( i=0 ; i<3 ; i++ ) shelter_sentence_color[i] = sentence_font.color[i];
         event_mode = IDLE_EVENT_MODE;
         system_menu_enter_flag = true;
     }
@@ -449,8 +461,9 @@ void ONScripterLabel::executeSystemCall()
       case SYSTEM_LOAD:
         executeSystemLoad();
         break;
-        //case SYSTEM_LOOKBACK:
-        //break;
+      case SYSTEM_LOOKBACK:
+        executeSystemLookback();
+        break;
       case SYSTEM_WINDOWERASE:
         executeWindowErase();
         break;
@@ -527,6 +540,7 @@ void ONScripterLabel::executeSystemMenu()
         SDL_BlitSurface( text_surface, NULL, select_surface, NULL );
 
         event_mode = WAIT_MOUSE_MODE | WAIT_BUTTON_MODE;
+        refreshMouseOverButton();
         system_menu_mode = SYSTEM_MENU;
     }
 }
@@ -578,16 +592,13 @@ void ONScripterLabel::executeSystemLoad()
         event_mode = IDLE_EVENT_MODE;
         if ( loadSaveFile( current_button_state.button ) ){
             event_mode  = WAIT_MOUSE_MODE | WAIT_BUTTON_MODE;
+            refreshMouseOverButton();
             return;
         }
         
         deleteButtonLink();
         deleteSelectLink();
 
-        if ( current_button_state.button == -1 ){
-            leaveSystemCall();
-            return;
-        }
         leaveSystemCall( false );
     }
     else{
@@ -598,7 +609,7 @@ void ONScripterLabel::executeSystemLoad()
         alphaBlend( text_surface, 0, 0,
                     accumulation_surface, 0, 0, WIDTH, HEIGHT,
                     effect_src_surface, 0, 0,
-                    0, 0, system_font.window_color_mask[0] );
+                    0, 0, menu_font.window_color_mask[0] );
 
         //text_font.setPixelSize( system_font.font_size );
         system_font.xy[0] = (system_font.num_xy[0] - strlen( load_menu_name ) / 2) / 2;
@@ -612,6 +623,7 @@ void ONScripterLabel::executeSystemLoad()
         system_font.xy[1] += 2;
         
         int counter = 1;
+        bool nofile_flag;
         char *buffer = new char[ strlen( save_item_name ) + 30 + 1 ];
         for ( i=0 ; i<num_save_file ; i++ ){
             system_font.xy[0] = (system_font.num_xy[0] - (strlen( save_item_name ) / 2 + 15) ) / 2;
@@ -624,13 +636,15 @@ void ONScripterLabel::executeSystemLoad()
                          save_file_info[i].day,
                          save_file_info[i].hour,
                          save_file_info[i].minute );
+                nofile_flag = false;
             }
             else{
                 sprintf( buffer, "%s%s@||||||||||||",
                          save_item_name,
                          save_file_info[i].no );
+                nofile_flag = true;
             }
-            last_button_link->next = getSelectableSentence( buffer, &system_font, false );
+            last_button_link->next = getSelectableSentence( buffer, &system_font, false, nofile_flag );
             last_button_link = last_button_link->next;
             last_button_link->no = counter++;
             flush();
@@ -638,8 +652,8 @@ void ONScripterLabel::executeSystemLoad()
         delete[] buffer;
         SDL_BlitSurface( text_surface, NULL, select_surface, NULL );
 
-
         event_mode = WAIT_MOUSE_MODE | WAIT_BUTTON_MODE;
+        refreshMouseOverButton();
         system_menu_mode = SYSTEM_LOAD;
     }
 }
@@ -656,11 +670,7 @@ void ONScripterLabel::executeSystemSave()
 
         deleteButtonLink();
 
-        if ( current_button_state.button == -1 ){
-            leaveSystemCall();
-            return;
-        }
-        else if ( current_button_state.button == 0 ){
+        if ( current_button_state.button == 0 ){
             event_mode = WAIT_MOUSE_MODE | WAIT_BUTTON_MODE;
             return;
         }
@@ -690,6 +700,7 @@ void ONScripterLabel::executeSystemSave()
         system_font.xy[1] += 2;
         
         int counter = 1;
+        bool nofile_flag;
         char *buffer = new char[ strlen( save_item_name ) + 30 + 1 ];
         for ( i=0 ; i<num_save_file ; i++ ){
             system_font.xy[0] = (system_font.num_xy[0] - (strlen( save_item_name ) / 2 + 15) ) / 2;
@@ -702,13 +713,15 @@ void ONScripterLabel::executeSystemSave()
                          save_file_info[i].day,
                          save_file_info[i].hour,
                          save_file_info[i].minute );
+                nofile_flag = false;
             }
             else{
                 sprintf( buffer, "%s%s@||||||||||||",
                          save_item_name,
                          save_file_info[i].no );
+                nofile_flag = true;
             }
-            last_button_link->next = getSelectableSentence( buffer, &system_font, false );
+            last_button_link->next = getSelectableSentence( buffer, &system_font, false, nofile_flag );
             last_button_link = last_button_link->next;
             last_button_link->no = counter++;
             flush();
@@ -717,7 +730,138 @@ void ONScripterLabel::executeSystemSave()
 
         SDL_BlitSurface( text_surface, NULL, select_surface, NULL );
         event_mode = WAIT_MOUSE_MODE | WAIT_BUTTON_MODE;
+        refreshMouseOverButton();
         system_menu_mode = SYSTEM_SAVE;
+    }
+}
+
+void ONScripterLabel::setupLookbackButton()
+{
+    /* ---------------------------------------- */
+    /* Previous button check */
+    if ( (current_text_buffer->previous->xy[1] != -1 ) &&
+         current_text_buffer->previous != shelter_text_buffer ){
+        last_button_link->next = new struct ButtonLink();
+        last_button_link = last_button_link->next;
+        last_button_link->next = NULL;
+    
+        last_button_link->no = 1;
+        last_button_link->select_rect.x = 0;
+        last_button_link->select_rect.y = 0;
+        last_button_link->select_rect.w = WIDTH;
+        last_button_link->select_rect.h = HEIGHT/3;
+
+        if ( lookback_image_surface[0] ){
+            last_button_link->image_rect.x = WIDTH - lookback_image_surface[0]->w;
+            last_button_link->image_rect.y = 0;
+            last_button_link->image_rect.w = lookback_image_surface[0]->w;
+            last_button_link->image_rect.h = lookback_image_surface[0]->h;
+            
+            last_button_link->image_surface = SDL_CreateRGBSurface( DEFAULT_SURFACE_FLAG, lookback_image_surface[0]->w, lookback_image_surface[0]->h, 32, rmask, gmask, bmask, amask );
+            SDL_SetAlpha( last_button_link->image_surface, DEFAULT_BLIT_FLAG, SDL_ALPHA_OPAQUE );
+            alphaBlend( last_button_link->image_surface, 0, 0,
+                        text_surface, last_button_link->image_rect.x, last_button_link->image_rect.y, lookback_image_surface[0]->w, lookback_image_surface[0]->h,
+                        lookback_image_surface[0], 0, 0,
+                        0, 0, -lookback_image_tag[0].trans_mode );
+        }
+        else{
+            last_button_link->image_surface = NULL;
+        }
+
+        if ( lookback_image_surface[1] )
+            alphaBlend( select_surface, last_button_link->image_rect.x, last_button_link->image_rect.y,
+                        text_surface, last_button_link->image_rect.x, last_button_link->image_rect.y, lookback_image_surface[1]->w, lookback_image_surface[1]->h,
+                        lookback_image_surface[1], 0, 0,
+                        0, 0, -lookback_image_tag[1].trans_mode );
+        SDL_BlitSurface( select_surface, &last_button_link->image_rect, text_surface, &last_button_link->image_rect );
+    }
+
+    /* ---------------------------------------- */
+    /* Next button check */
+    if ( current_text_buffer->next != shelter_text_buffer ){
+        last_button_link->next = new struct ButtonLink();
+        last_button_link = last_button_link->next;
+        last_button_link->next = NULL;
+    
+        last_button_link->no = 2;
+        last_button_link->select_rect.x = 0;
+        last_button_link->select_rect.y = HEIGHT*2/3;
+        last_button_link->select_rect.w = WIDTH;
+        last_button_link->select_rect.h = HEIGHT/3;
+
+        if ( lookback_image_surface[2] ){
+            last_button_link->image_rect.x = WIDTH - lookback_image_surface[2]->w;
+            last_button_link->image_rect.y = HEIGHT - lookback_image_surface[2]->h;
+            last_button_link->image_rect.w = lookback_image_surface[2]->w;
+            last_button_link->image_rect.h = lookback_image_surface[2]->h;
+            
+            last_button_link->image_surface = SDL_CreateRGBSurface( DEFAULT_SURFACE_FLAG, lookback_image_surface[2]->w, lookback_image_surface[2]->h, 32, rmask, gmask, bmask, amask );
+            SDL_SetAlpha( last_button_link->image_surface, DEFAULT_BLIT_FLAG, SDL_ALPHA_OPAQUE );
+            alphaBlend( last_button_link->image_surface, 0, 0,
+                        text_surface, last_button_link->image_rect.x, last_button_link->image_rect.y, lookback_image_surface[2]->w, lookback_image_surface[2]->h,
+                        lookback_image_surface[2], 0, 0,
+                        0, 0, -lookback_image_tag[2].trans_mode );
+        }
+        else{
+            last_button_link->image_surface = NULL;
+        }
+
+        if ( lookback_image_surface[3] )
+            alphaBlend( select_surface, last_button_link->image_rect.x, last_button_link->image_rect.y,
+                        text_surface, last_button_link->image_rect.x, last_button_link->image_rect.y, lookback_image_surface[3]->w, lookback_image_surface[3]->h,
+                        lookback_image_surface[3], 0, 0,
+                        0, 0, -lookback_image_tag[3].trans_mode );
+        SDL_BlitSurface( select_surface, &last_button_link->image_rect, text_surface, &last_button_link->image_rect );
+    }
+    refreshMouseOverButton();
+}
+
+void ONScripterLabel::executeSystemLookback()
+{
+    int i;
+    
+    SDL_BlitSurface( shelter_select_surface, NULL, select_surface, NULL );
+    SDL_FillRect( effect_src_surface, NULL, SDL_MapRGB( effect_src_surface->format, 0, 0, 0 ) );
+    alphaBlend( text_surface, 0, 0,
+                accumulation_surface, 0, 0, WIDTH, HEIGHT,
+                effect_src_surface, 0, 0,
+                0, 0, sentence_font.window_color_mask[0] );
+    
+    if ( event_mode & (WAIT_MOUSE_MODE | WAIT_BUTTON_MODE) ){
+        if ( current_button_state.button == 0 ){
+            event_mode = WAIT_MOUSE_MODE | WAIT_BUTTON_MODE;
+            return;
+        }
+        event_mode = IDLE_EVENT_MODE;
+        
+        deleteButtonLink();
+        
+        if ( current_button_state.button == 1 ){
+            current_text_buffer = current_text_buffer->previous;
+        }
+        else{
+            current_text_buffer = current_text_buffer->next;
+        }
+        restoreTextBuffer();
+        event_mode = WAIT_MOUSE_MODE | WAIT_BUTTON_MODE;
+        setupLookbackButton();
+        flush();
+    }
+    else{
+        for ( i=0 ; i<3 ; i++ ) sentence_font.color[i] = lookback_color[i];
+        shelter_text_buffer = current_text_buffer;
+        if ( current_text_buffer->previous->xy[1] == -1 ){
+            leaveSystemCall();
+            return;
+        }
+        current_text_buffer = current_text_buffer->previous;
+
+        restoreTextBuffer();
+        event_mode = WAIT_MOUSE_MODE | WAIT_BUTTON_MODE;
+        setupLookbackButton();
+        flush();
+
+        system_menu_mode = SYSTEM_LOOKBACK;
     }
 }
 

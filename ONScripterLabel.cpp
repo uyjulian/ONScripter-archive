@@ -85,12 +85,14 @@ static struct FuncLUT{
     {"monocro", &ONScripterLabel::monocroCommand},
     {"lsph", &ONScripterLabel::lspCommand},
     {"lsp", &ONScripterLabel::lspCommand},
-    {"loadgame", &ONScripterLabel::loadgameCommand},
+    {"lookbackflush", &ONScripterLabel::lookbackflushCommand},
     {"locate", &ONScripterLabel::locateCommand},
+    {"loadgame", &ONScripterLabel::loadgameCommand},
     {"ld", &ONScripterLabel::ldCommand},
     {"jumpf", &ONScripterLabel::jumpfCommand},
     {"jumpb", &ONScripterLabel::jumpbCommand},
     {"getversion", &ONScripterLabel::getversionCommand},
+    {"game", &ONScripterLabel::gameCommand},
     {"end", &ONScripterLabel::endCommand},
     {"dwavestop", &ONScripterLabel::dwavestopCommand},
     {"dwaveloop", &ONScripterLabel::dwaveCommand},
@@ -218,7 +220,7 @@ ONScripterLabel::ONScripterLabel()
     if ( Mix_OpenAudio( 44100, MIX_DEFAULT_FORMAT, MIX_DEFAULT_CHANNELS, DEFAULT_AUDIOBUF ) < 0 ){
         fprintf(stderr, "Couldn't open audio device!\n"
                 "  reason: [%s].\n", SDL_GetError());
-        //exit( -1 );
+        audio_open_flag = false;
     }
     else{
         audio_rate = MIX_DEFAULT_FREQUENCY;
@@ -226,9 +228,10 @@ ONScripterLabel::ONScripterLabel()
         audio_channels = 2;
 
         Mix_QuerySpec(&audio_rate, &audio_format, &audio_channels);
-        printf("Opened audio at %d Hz %d bit %s", audio_rate,
+        printf("Opened audio at %d Hz %d bit %s\n", audio_rate,
                (audio_format&0xFF),
                (audio_channels > 1) ? "stereo" : "mono");
+        audio_open_flag = true;
     }
 
 #if SDL_BYTEORDER == SDL_BIG_ENDIAN
@@ -366,6 +369,9 @@ ONScripterLabel::ONScripterLabel()
     sentence_font.window_rect[2] = 639;
     sentence_font.window_rect[3] = 479;
 
+    sentence_font.on_color[0] = sentence_font.on_color[1] = sentence_font.on_color[2] = 0xff;
+    sentence_font.off_color[0] = sentence_font.off_color[1] = sentence_font.off_color[2] = 0x80;
+    
     sentence_font.xy[0] = 0;
     sentence_font.xy[1] = 0;
 
@@ -423,23 +429,15 @@ int ONScripterLabel::eventLoop()
             keyPressEvent( (SDL_KeyboardEvent*)&event );
             break;
 
-          case SDL_VIDEORESIZE:
-            printf("Got a resize event: %dx%d\n",
-                   event.resize.w, event.resize.h);
-            SetVideoMode(event.resize.w, event.resize.h);
-            break;
           case ONS_TIMER_EVENT:
-            //printf("Handling internal quit request\n");
             timerEvent();
             break;
                 
           case ONS_SOUND_EVENT:
-            //printf("stoped music\n");
             playstopCommand();
             if ( !mp3_play_once_flag ) playMP3( current_cd_track );
             break;
                 
-            /* Fall through to the quit handler */
           case SDL_QUIT:
             saveGlovalData();
             saveFileLog();
@@ -447,9 +445,6 @@ int ONScripterLabel::eventLoop()
             return(0);
             
           default:
-            /* This should never happen */
-            //printf("Warning: Event %d wasn't filtered\n",
-            //event.type);
             break;
 		}
 	}
@@ -467,7 +462,7 @@ void ONScripterLabel::keyPressEvent( SDL_KeyboardEvent *event )
             if ( --shortcut_mouse_line < 0 ) shortcut_mouse_line = 0;
             struct ButtonLink *p_button_link = root_button_link.next;
             for ( i=0 ; i<shortcut_mouse_line && p_button_link ; i++ ) p_button_link  = p_button_link->next;
-            if ( p_button_link ) SDL_WarpMouse( p_button_link->x + p_button_link->wx / 2, p_button_link->y + p_button_link->wy / 2 );
+            if ( p_button_link ) SDL_WarpMouse( p_button_link->select_rect.x + p_button_link->select_rect.w / 2, p_button_link->select_rect.y + p_button_link->select_rect.h / 2 );
         }
         else if ( event->keysym.sym == SDLK_DOWN || event->keysym.sym == SDLK_n ){
             shortcut_mouse_line++;
@@ -478,7 +473,7 @@ void ONScripterLabel::keyPressEvent( SDL_KeyboardEvent *event )
                 p_button_link = root_button_link.next;
                 for ( i=0 ; i<shortcut_mouse_line ; i++ ) p_button_link  = p_button_link->next;
             }
-            SDL_WarpMouse( p_button_link->x + p_button_link->wx / 2, p_button_link->y + p_button_link->wy / 2 );
+            if ( p_button_link ) SDL_WarpMouse( p_button_link->select_rect.x + p_button_link->select_rect.w / 2, p_button_link->select_rect.y + p_button_link->select_rect.h / 2 );
         }
         else if ( event->keysym.sym == SDLK_RETURN ||
                   event->keysym.sym == SDLK_SPACE ||
@@ -697,21 +692,20 @@ void ONScripterLabel::timerEvent( void )
     volatile_button_state.button = 0;
 }
 
-void ONScripterLabel::mouseMoveEvent( SDL_MouseMotionEvent *event )
+void ONScripterLabel::mouseOverCheck( int x, int y )
 {
-    SDL_Rect rect;
     int c = 0;
 
-    last_mouse_state.x = event->x;
-    last_mouse_state.y = event->y;
+    last_mouse_state.x = x;
+    last_mouse_state.y = y;
     
     /* ---------------------------------------- */
     /* Check button */
     int button = 0;
     struct ButtonLink *p_button_link = root_button_link.next;
     while( p_button_link ){
-        if ( event->x > p_button_link->x && event->x < p_button_link->x + p_button_link->wx &&
-             event->y > p_button_link->y && event->y < p_button_link->y + p_button_link->wy ){
+        if ( x > p_button_link->select_rect.x && x < p_button_link->select_rect.x + p_button_link->select_rect.w &&
+             y > p_button_link->select_rect.y && y < p_button_link->select_rect.y + p_button_link->select_rect.h ){
             button = p_button_link->no;
             break;
         }
@@ -719,34 +713,31 @@ void ONScripterLabel::mouseMoveEvent( SDL_MouseMotionEvent *event )
         c++;
     }
     if ( current_over_button != button ){
-        if ( event_mode & WAIT_BUTTON_MODE ){
-            rect.x = current_over_button_link.x;
-            rect.y = current_over_button_link.y;
-            rect.w = current_over_button_link.wx;
-            rect.h = current_over_button_link.wy;
-            
-            SDL_BlitSurface( select_surface, &rect, text_surface, &rect );
-            flush( current_over_button_link.x, current_over_button_link.y, rect.w, rect.h );
+        if ( event_mode & WAIT_BUTTON_MODE && !first_mouse_over_flag ){
+            SDL_BlitSurface( select_surface, &current_over_button_link.image_rect, text_surface, &current_over_button_link.image_rect );
+            flush( current_over_button_link.image_rect.x, current_over_button_link.image_rect.y, current_over_button_link.image_rect.w, current_over_button_link.image_rect.h );
         }
+        first_mouse_over_flag = false;
 
         if ( p_button_link ){
-            if ( event_mode & WAIT_BUTTON_MODE ){
-                rect.x = p_button_link->x;
-                rect.y = p_button_link->y;
-                rect.w = p_button_link->image_surface->w;
-                rect.h = p_button_link->image_surface->h;
-                SDL_BlitSurface( p_button_link->image_surface, NULL, text_surface, &rect );
-                if ( monocro_flag ) makeMonochromeSurface( text_surface, &rect );
-                flush( p_button_link->x, p_button_link->y, rect.w, rect.h );
+            if ( event_mode & WAIT_BUTTON_MODE && p_button_link->image_surface ){
+                SDL_BlitSurface( p_button_link->image_surface, NULL, text_surface, &p_button_link->image_rect );
+                if ( monocro_flag && !(event_mode & WAIT_MOUSE_MODE) ) makeMonochromeSurface( text_surface, &p_button_link->image_rect );
+                flush( p_button_link->image_rect.x, p_button_link->image_rect.y, p_button_link->image_rect.w, p_button_link->image_rect.h );
             }
-            current_over_button_link.x = p_button_link->x;
-            current_over_button_link.y = p_button_link->y;
-            current_over_button_link.wx = p_button_link->wx;
-            current_over_button_link.wy = p_button_link->wy;
+            current_over_button_link.image_rect.x = p_button_link->image_rect.x;
+            current_over_button_link.image_rect.y = p_button_link->image_rect.y;
+            current_over_button_link.image_rect.w = p_button_link->image_rect.w;
+            current_over_button_link.image_rect.h = p_button_link->image_rect.h;
             shortcut_mouse_line = c;
         }
     }
     current_over_button = button;
+}
+
+void ONScripterLabel::mouseMoveEvent( SDL_MouseMotionEvent *event )
+{
+    mouseOverCheck( event->x, event->y );
 }
 
 void ONScripterLabel::executeLabel()
@@ -998,7 +989,8 @@ int ONScripterLabel::doEffect( int effect_no, struct TaggedInfo *tag, int effect
             break;
             
           case COLOR_EFFECT_IMAGE:
-            SDL_FillRect( effect_dst_surface, NULL, SDL_MapRGB( effect_dst_surface->format, tag->color[0], tag->color[1], tag->color[2]) );
+            SDL_FillRect( background_surface, NULL, SDL_MapRGB( effect_dst_surface->format, tag->color[0], tag->color[1], tag->color[2]) );
+            refreshAccumulationSruface( effect_dst_surface );
             break;
 
           case BG_EFFECT_IMAGE:
@@ -1009,7 +1001,7 @@ int ONScripterLabel::doEffect( int effect_no, struct TaggedInfo *tag, int effect
             src_rect.h = tmp_surface->h;
             dst_rect.x = (WIDTH - tmp_surface->w) / 2;
             dst_rect.y = (HEIGHT - tmp_surface->h) / 2;
-            
+
             SDL_BlitSurface( tmp_surface, &src_rect, background_surface, &dst_rect );
             refreshAccumulationSruface( effect_dst_surface );
             break;
@@ -1021,6 +1013,7 @@ int ONScripterLabel::doEffect( int effect_no, struct TaggedInfo *tag, int effect
         if ( tmp_surface ) SDL_FreeSurface( tmp_surface );
     }
 
+    
     /* ---------------------------------------- */
     /* Execute effect */
     struct EffectLink effect = getEffect( effect_no );
@@ -1212,16 +1205,18 @@ int ONScripterLabel::doEffect( int effect_no, struct TaggedInfo *tag, int effect
         bitBlt( text_surface, 0, 0, effect_dst_surface );
 #endif        
     }
-    if ( effect.effect != 0 ) flush();
 
     //printf("%d / %d\n", effect_counter, effect.duration);
         
     effect_counter += effect_timer_resolution;
-    if ( effect_counter < effect.duration ) return RET_WAIT;
+    if ( effect_counter < effect.duration ){
+        if ( effect.effect != 0 ) flush();
+        return RET_WAIT;
+    }
     else{
+        //monocro_flag = false;
         if ( effect_image == COLOR_EFFECT_IMAGE || effect_image == BG_EFFECT_IMAGE ){
-            SDL_BlitSurface( effect_dst_surface, NULL, background_surface, NULL );
-            SDL_BlitSurface( background_surface, NULL, accumulation_surface, NULL );
+            SDL_BlitSurface( effect_dst_surface, NULL, accumulation_surface, NULL );
             SDL_BlitSurface( accumulation_surface, NULL, select_surface, NULL );
             SDL_BlitSurface( select_surface, NULL, text_surface, NULL );
         }
@@ -1234,13 +1229,12 @@ int ONScripterLabel::doEffect( int effect_no, struct TaggedInfo *tag, int effect
             SDL_BlitSurface( accumulation_surface, NULL, select_surface, NULL );
             SDL_BlitSurface( select_surface, NULL, text_surface, NULL );
         }
-        //restoreTextBuffer();
         if ( effect.effect != 0 ) flush();
         return RET_CONTINUE;
     }
 }
 
-void ONScripterLabel::drawChar( char* text, struct FontInfo *info, bool flush_flag, bool not_selected_flag, SDL_Surface *surface )
+void ONScripterLabel::drawChar( char* text, struct FontInfo *info, bool flush_flag, SDL_Surface *surface )
 {
     int xy[2];
     SDL_Rect rect;
@@ -1298,12 +1292,14 @@ void ONScripterLabel::drawChar( char* text, struct FontInfo *info, bool flush_fl
         SDL_BlitSurface( tmp_surface, NULL, surface, &rect );
         SDL_FreeSurface( tmp_surface );
     }
+#if 0    
     if ( not_selected_flag ) color.r = color.g = color.b = 0x80;
     else{
+#endif        
         color.r = info->color[0];
         color.g = info->color[1];
         color.b = info->color[2];
-    }
+        //}
 
     tmp_surface = TTF_RenderGlyph_Blended( (TTF_Font*)info->ttf_font, unicode, color );
     rect.x--;
@@ -1359,6 +1355,15 @@ void ONScripterLabel::deleteButtonLink()
     last_button_link = &root_button_link;
 }
 
+void ONScripterLabel::refreshMouseOverButton()
+{
+    int mx, my;
+    current_over_button = 0;
+    first_mouse_over_flag = true;
+    SDL_GetMouseState( &mx, &my );
+    mouseOverCheck( mx, my );
+}
+
 /* ---------------------------------------- */
 /* Delete select link */
 void ONScripterLabel::deleteSelectLink()
@@ -1380,7 +1385,7 @@ void ONScripterLabel::restoreTextBuffer()
 {
     int i, end;
     int xy[2];
-    
+
     char out_text[3] = { '\0','\0','\0' };
     xy[0] = sentence_font.xy[0];
     xy[1] = sentence_font.xy[1];
@@ -1653,7 +1658,8 @@ void ONScripterLabel::enterNewPage( )
 {
     /* ---------------------------------------- */
     /* Set forward the text buffer */
-    current_text_buffer = current_text_buffer->next;
+    if ( current_text_buffer->xy[0] != 0 || current_text_buffer->xy[1] != 0 )
+        current_text_buffer = current_text_buffer->next;
     clearCurrentTextBuffer();
 
     /* ---------------------------------------- */
@@ -1716,8 +1722,10 @@ int ONScripterLabel::playWave( char *file_name, bool loop_flag )
     return 0;
 }
 
-struct ONScripterLabel::ButtonLink *ONScripterLabel::getSelectableSentence( char *buffer, struct FontInfo *info, bool flush_flag )
+struct ONScripterLabel::ButtonLink *ONScripterLabel::getSelectableSentence( char *buffer, struct FontInfo *info, bool flush_flag, bool nofile_flag )
 {
+    int i;
+    uchar3 color;
     struct ButtonLink *button_link;
     int current_text_xy[2];
     char *p_text, text[3] = { '\0', '\0', '\0' };
@@ -1727,6 +1735,8 @@ struct ONScripterLabel::ButtonLink *ONScripterLabel::getSelectableSentence( char
     
     /* ---------------------------------------- */
     /* Draw selected characters */
+    for ( i=0 ; i<3 ; i++ ) color[i] = info->color[i];
+    for ( i=0 ; i<3 ; i++ ) info->color[i] = info->on_color[i];
     p_text = buffer;
     while( *p_text ){
         if ( *p_text & 0x80 ){
@@ -1745,31 +1755,28 @@ struct ONScripterLabel::ButtonLink *ONScripterLabel::getSelectableSentence( char
     button_link = new struct ButtonLink();
 
     if ( current_text_xy[1] == info->xy[1] ){
-        button_link->x = info->top_xy[0] + current_text_xy[0] * info->pitch_xy[0];
-        button_link->wx = info->pitch_xy[0] * (info->xy[0] - current_text_xy[0] + 1);
+        button_link->image_rect.x = info->top_xy[0] + current_text_xy[0] * info->pitch_xy[0];
+        button_link->image_rect.w = info->pitch_xy[0] * (info->xy[0] - current_text_xy[0] + 1);
     }
     else{
-        button_link->x = info->top_xy[0];
-        button_link->wx = info->pitch_xy[0] * info->num_xy[0];
+        button_link->image_rect.x = info->top_xy[0];
+        button_link->image_rect.w = info->pitch_xy[0] * info->num_xy[0];
     }
-    button_link->y = current_text_xy[1] * info->pitch_xy[1] + info->top_xy[1];// - info->pitch_xy[1] + 3;
-    button_link->wy = (info->xy[1] - current_text_xy[1] + 1) * info->pitch_xy[1];
-    button_link->x3 = 0;
-    button_link->y3 = 0;
+    button_link->image_rect.y = current_text_xy[1] * info->pitch_xy[1] + info->top_xy[1];// - info->pitch_xy[1] + 3;
+    button_link->image_rect.h = (info->xy[1] - current_text_xy[1] + 1) * info->pitch_xy[1];
+    button_link->select_rect = button_link->image_rect;
     button_link->next = NULL;
 
-    button_link->image_surface = SDL_CreateRGBSurface( DEFAULT_SURFACE_FLAG, button_link->wx, button_link->wy, 32, rmask, gmask, bmask, amask );
+    button_link->image_surface = SDL_CreateRGBSurface( DEFAULT_SURFACE_FLAG, button_link->image_rect.w, button_link->image_rect.h, 32, rmask, gmask, bmask, amask );
     SDL_SetAlpha( button_link->image_surface, DEFAULT_BLIT_FLAG, SDL_ALPHA_OPAQUE );
-    SDL_Rect rect;
-    rect.x = button_link->x;
-    rect.y = button_link->y;
-    rect.w = button_link->wx;
-    rect.h = button_link->wy;
-
-    SDL_BlitSurface( text_surface, &rect, button_link->image_surface, NULL );
+    SDL_BlitSurface( text_surface, &button_link->image_rect, button_link->image_surface, NULL );
     
     /* ---------------------------------------- */
     /* Draw shadowed characters */
+    if ( nofile_flag )
+        for ( i=0 ; i<3 ; i++ ) info->color[i] = info->nofile_color[i];
+    else
+        for ( i=0 ; i<3 ; i++ ) info->color[i] = info->off_color[i];
     info->xy[0] = current_text_xy[0];
     info->xy[1] = current_text_xy[1];
     p_text = buffer;
@@ -1782,11 +1789,13 @@ struct ONScripterLabel::ButtonLink *ONScripterLabel::getSelectableSentence( char
             text[0] = *p_text++;
             text[1] = '\0';
         }
-        drawChar( text, info, flush_flag, true );
+        drawChar( text, info, flush_flag );
     }
         
     info->xy[0] = current_text_xy[0];
     info->xy[1]++;
+
+    for ( i=0 ; i<3 ; i++ ) info->color[i] = color[i];
 
     return button_link;
 }
@@ -1823,7 +1832,7 @@ void ONScripterLabel::drawTaggedSurface( SDL_Surface *dst_surface, int x, int y,
                 text[0] = *p_text++;
                 text[1] = '\0';
             }
-            drawChar( text, &sentence_font, false, false, dst_surface );
+            drawChar( text, &sentence_font, false, dst_surface );
         }
         sentence_font.xy[0] = xy[0];
         sentence_font.xy[1] = xy[1];
@@ -2016,12 +2025,11 @@ void ONScripterLabel::makeEffectStr( char *buf, int no, int duration, char *imag
             sprintf( buf + strlen(buf), ",%s", image );
         }
     }
-    //printf("makeEffect [%s]\n",buf);
 }
 
 void ONScripterLabel::loadCursor( int no, char *str, int x, int y )
 {
-    printf("load Cursor %s\n",str);
+    //printf("load Cursor %s\n",str);
     if ( cursor_info[ no ].image_name ) delete[] cursor_info[ no ].image_name;
     cursor_info[ no ].image_name = new char[ strlen( str ) + 1 ];
     memcpy( cursor_info[ no ].image_name, str, strlen( str ) + 1 );
@@ -2472,7 +2480,7 @@ int ONScripterLabel::setwindowCommand()
 #endif        
     }
 
-    current_text_buffer = current_text_buffer->next;
+    lookbackflushCommand();
     clearCurrentTextBuffer();
     SDL_BlitSurface( accumulation_surface, NULL, select_surface, NULL );
     display_mode = NORMAL_DISPLAY_MODE;
@@ -2643,6 +2651,8 @@ int ONScripterLabel::selectCommand()
         sentence_font.xy[1] = xy[1];
 
         event_mode = WAIT_MOUSE_MODE | WAIT_BUTTON_MODE;
+        refreshMouseOverButton();
+
         return RET_WAIT;
     }
 }
@@ -2692,14 +2702,12 @@ int ONScripterLabel::rmodeCommand()
 
 int ONScripterLabel::resettimerCommand()
 {
-    //printf("ONScripterLabel::resettimerCommand %d\n", event_mode);
     internal_timer = SDL_GetTicks();
     return RET_CONTINUE;
 }
 
 int ONScripterLabel::resetCommand()
 {
-    //printf("ONScripterLabel::resetCommand %d\n", event_mode);
     int i=0;
 
     for ( i=0 ; i<199 ; i++ ){
@@ -2731,28 +2739,6 @@ int ONScripterLabel::resetCommand()
     SDL_BlitSurface( accumulation_surface, NULL, text_surface, NULL );
 
     return RET_JUMP;
-}
-
-int ONScripterLabel::playstopCommand()
-{
-    if ( mp3_sample ){
-        Mix_FadeOutMusic( 1000 );
-        Mix_HookMusic( NULL, NULL );
-
-        if ( mp3_sample->flags & SOUND_SAMPLEFLAG_ERROR ){
-            fprintf(stderr, "Error in decoding sound file!\n"
-                    "  reason: [%s].\n", Sound_GetError());
-        }
-
-        if ( mp3_sample ) Sound_FreeSample( mp3_sample );
-        mp3_sample = NULL;
-        if ( mp3_buffer ){
-            delete[] mp3_buffer;
-            mp3_buffer = NULL;
-        }
-    }
-
-    return RET_CONTINUE;
 }
 
 int ONScripterLabel::puttextCommand()
@@ -2815,6 +2801,28 @@ int ONScripterLabel::printCommand()
     
     return RET_CONTINUE;
     
+}
+
+int ONScripterLabel::playstopCommand()
+{
+    if ( mp3_sample ){
+        Mix_FadeOutMusic( 1000 );
+        Mix_HookMusic( NULL, NULL );
+
+        if ( mp3_sample->flags & SOUND_SAMPLEFLAG_ERROR ){
+            fprintf(stderr, "Error in decoding sound file!\n"
+                    "  reason: [%s].\n", Sound_GetError());
+        }
+
+        Sound_FreeSample( mp3_sample );
+        mp3_sample = NULL;
+        if ( mp3_buffer ){
+            delete[] mp3_buffer;
+            mp3_buffer = NULL;
+        }
+    }
+
+    return RET_CONTINUE;
 }
 
 int ONScripterLabel::playCommand()
@@ -2880,7 +2888,6 @@ int ONScripterLabel::mp3Command()
 
 int ONScripterLabel::mspCommand()
 {
-    //printf("mspCommand %d\n", event_mode);
     int no;
     char *p_string_buffer;
 
@@ -2898,7 +2905,6 @@ int ONScripterLabel::mspCommand()
 
 int ONScripterLabel::monocroCommand()
 {
-    printf("monocroCommand %s\n", string_buffer + string_buffer_offset);
     int i;
     char *p_string_buffer = string_buffer + string_buffer_offset + 7; // strlen("monocro") = 7
 
@@ -2926,7 +2932,6 @@ int ONScripterLabel::monocroCommand()
 
 int ONScripterLabel::lspCommand()
 {
-    //printf("lspCommand %d\n", event_mode);
     bool v;
     int no;
     char *p_string_buffer;
@@ -2963,6 +2968,29 @@ int ONScripterLabel::lspCommand()
     return RET_CONTINUE;
 }
 
+int ONScripterLabel::lookbackflushCommand()
+{
+    int i;
+    
+    current_text_buffer = current_text_buffer->next;
+    for ( i=0 ; i<MAX_TEXT_BUFFER-1 ; i++ ){
+        current_text_buffer->xy[1] = -1;
+        current_text_buffer = current_text_buffer->next;
+    }
+
+    return RET_CONTINUE;
+}
+
+int ONScripterLabel::locateCommand()
+{
+    char *p_string_buffer = string_buffer + string_buffer_offset + 6; // strlen("locate") = 6
+
+    sentence_font.xy[0] = readInt( &p_string_buffer, tmp_string_buffer );
+    sentence_font.xy[1] = readInt( &p_string_buffer, tmp_string_buffer );
+
+    return RET_CONTINUE;
+}
+
 int ONScripterLabel::loadgameCommand()
 {
     char *p_string_buffer = string_buffer + string_buffer_offset + 8; // strlen("loadgame") = 8
@@ -2980,16 +3008,6 @@ int ONScripterLabel::loadgameCommand()
         startTimer( MINIMUM_TIMER_RESOLUTION );
         return RET_JUMP;
     }
-}
-
-int ONScripterLabel::locateCommand()
-{
-    char *p_string_buffer = string_buffer + string_buffer_offset + 6; // strlen("locate") = 6
-
-    sentence_font.xy[0] = readInt( &p_string_buffer, tmp_string_buffer );
-    sentence_font.xy[1] = readInt( &p_string_buffer, tmp_string_buffer );
-
-    return RET_CONTINUE;
 }
 
 int ONScripterLabel::ldCommand()
@@ -3049,14 +3067,12 @@ int ONScripterLabel::ldCommand()
 
 int ONScripterLabel::jumpfCommand()
 {
-    //printf("jumpfCommand\n");
     jumpf_flag = true;
     return RET_CONTINUE;
 }
 
 int ONScripterLabel::jumpbCommand()
 {
-    //printf("jumpbCommand\n");
     current_link_label_info->label_info = last_tilde.label_info;
     current_link_label_info->current_line = last_tilde.current_line;
     current_link_label_info->offset = last_tilde.offset;
@@ -3074,6 +3090,24 @@ int ONScripterLabel::getversionCommand()
     setNumVariable( no, ONSCRITER_VERSION );
     printf("getversionCommand %d\n", num_variables[ no ] );
     return RET_CONTINUE;
+}
+
+int ONScripterLabel::gameCommand()
+{
+    current_link_label_info->label_info = lookupLabel( "start" );
+    current_link_label_info->current_line = 0;
+    current_link_label_info->offset = 0;
+    current_mode = NORMAL_MODE;
+
+    /* ---------------------------------------- */
+    /* Lookback related variables */
+    int i;
+    for ( i=0 ; i<4 ; i++ ){
+        parseTaggedString( lookback_image_name[i], &lookback_image_tag[i] );
+        lookback_image_surface[i] = loadPixmap( &lookback_image_tag[i] );
+    }
+    
+    return RET_JUMP;
 }
 
 int ONScripterLabel::endCommand()
@@ -3243,6 +3277,8 @@ int ONScripterLabel::btndefCommand()
 
 int ONScripterLabel::btnCommand()
 {
+    int x3, y3;
+    
     last_button_link->next = new struct ButtonLink();
     last_button_link = last_button_link->next;
     last_button_link->next = NULL;
@@ -3251,12 +3287,13 @@ int ONScripterLabel::btnCommand()
     
     p_string_buffer = string_buffer + string_buffer_offset + 3; // strlen("btn") = 3
     last_button_link->no = readInt( &p_string_buffer, tmp_string_buffer );
-    last_button_link->x = readInt( &p_string_buffer, tmp_string_buffer );
-    last_button_link->y = readInt( &p_string_buffer, tmp_string_buffer );
-    last_button_link->wx = readInt( &p_string_buffer, tmp_string_buffer );
-    last_button_link->wy = readInt( &p_string_buffer, tmp_string_buffer );
-    last_button_link->x3 = readInt( &p_string_buffer, tmp_string_buffer );
-    last_button_link->y3 = readInt( &p_string_buffer, tmp_string_buffer );
+    last_button_link->image_rect.x = readInt( &p_string_buffer, tmp_string_buffer );
+    last_button_link->image_rect.y = readInt( &p_string_buffer, tmp_string_buffer );
+    last_button_link->image_rect.w = readInt( &p_string_buffer, tmp_string_buffer );
+    last_button_link->image_rect.h = readInt( &p_string_buffer, tmp_string_buffer );
+    last_button_link->select_rect = last_button_link->image_rect;
+    x3 = readInt( &p_string_buffer, tmp_string_buffer );
+    y3 = readInt( &p_string_buffer, tmp_string_buffer );
 #if 0
     printf("ONScripterLabel::btnCommand %d,%d,%d,%d,%d,%d,%d\n",
            last_button_link->no,
@@ -3264,17 +3301,17 @@ int ONScripterLabel::btnCommand()
            last_button_link->y,
            last_button_link->wx,
            last_button_link->wy,
-           last_button_link->x3,
-           last_button_link->y3 );
+           x3,
+           y3 );
 #endif
 
-    last_button_link->image_surface = SDL_CreateRGBSurface( DEFAULT_SURFACE_FLAG, last_button_link->wx, last_button_link->wy, 32, rmask, gmask, bmask, amask );
+    last_button_link->image_surface = SDL_CreateRGBSurface( DEFAULT_SURFACE_FLAG, last_button_link->image_rect.w, last_button_link->image_rect.h, 32, rmask, gmask, bmask, amask );
+
     SDL_Rect src_rect;
-    src_rect.x = last_button_link->x3;
-    src_rect.y = last_button_link->y3;
-    src_rect.w = last_button_link->wx;
-    src_rect.h = last_button_link->wy;
-    
+    src_rect.x = x3;
+    src_rect.y = y3;
+    src_rect.w = last_button_link->image_rect.w;
+    src_rect.h = last_button_link->image_rect.h;
     SDL_BlitSurface( btndef_surface, &src_rect, last_button_link->image_surface, NULL );
 
     return RET_CONTINUE;
@@ -3282,8 +3319,6 @@ int ONScripterLabel::btnCommand()
 
 int ONScripterLabel::btnwaitCommand()
 {
-    SDL_Rect src_rect;
-
     char *p_string_buffer = string_buffer + string_buffer_offset + 7; // strlen("btnwait") = 7
     
     if ( event_mode & WAIT_BUTTON_MODE ){
@@ -3297,23 +3332,20 @@ int ONScripterLabel::btnwaitCommand()
         /* ---------------------------------------- */
         /* fill the button image */
         if ( current_over_button != 0 ){
-            src_rect.x = current_over_button_link.x;
-            src_rect.y = current_over_button_link.y;
-            src_rect.w = current_over_button_link.wx;
-            src_rect.h = current_over_button_link.wy;
-            
-            SDL_BlitSurface( background_surface, &src_rect, accumulation_surface, &src_rect );
-            SDL_BlitSurface( accumulation_surface, &src_rect, text_surface, &src_rect );
+            SDL_BlitSurface( background_surface, &current_over_button_link.image_rect, accumulation_surface, &current_over_button_link.image_rect );
+            SDL_BlitSurface( accumulation_surface, &current_over_button_link.image_rect, text_surface, &current_over_button_link.image_rect );
 
-            flush( current_over_button_link.x, current_over_button_link.y, current_over_button_link.wx, current_over_button_link.wy );
+            flush( current_over_button_link.image_rect.x, current_over_button_link.image_rect.y, current_over_button_link.image_rect.w, current_over_button_link.image_rect.h );
             current_over_button = 0;
         }
             
-        event_mode &= ~WAIT_BUTTON_MODE;
+        event_mode = IDLE_EVENT_MODE;
         return RET_CONTINUE;
     }
     else{
-        event_mode |= WAIT_BUTTON_MODE;
+        event_mode = WAIT_BUTTON_MODE;
+        refreshMouseOverButton();
+
         return RET_WAIT;
     }
 }

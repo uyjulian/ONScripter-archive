@@ -29,7 +29,8 @@ extern "C"{
 };
 #include <bzlib.h>
 
-float scale_ratio;
+int scale_ratio_upper;
+int scale_ratio_lower;
 
 unsigned char *rescaled_tmp_buffer = NULL;
 size_t rescaled_tmp_length = 0;
@@ -59,8 +60,8 @@ void rescaleImage( unsigned char *original_buffer, int width, int height, int by
     size_t width_pad = 0;
     if ( pad_flag ) width_pad = (4 - width * byte_per_pixel % 4) % 4;
     
-    size_t w = (int)(width / scale_ratio);
-    size_t h = (int)(height / scale_ratio);
+    size_t w = (int)(width  * scale_ratio_upper / scale_ratio_lower);
+    size_t h = (int)(height * scale_ratio_upper / scale_ratio_lower);
     size_t w_pad = 0;
     if ( pad_flag ) w_pad = (4 - w * byte_per_pixel % 4) % 4;
     
@@ -76,24 +77,24 @@ void rescaleImage( unsigned char *original_buffer, int width, int height, int by
     unsigned char *buf_p = rescaled_tmp_buffer;
     for ( i=0 ; i<h ; i++ ){
         for ( j=0 ; j<w ; j++ ){
-            float dx = j * scale_ratio;
-            float dy = i * scale_ratio;
-            int ix = (int)dx;
-            int iy = (int)dy;
-            dx -= ix;
-            dy -= iy;
+            int x = (j<<3) * scale_ratio_lower / scale_ratio_upper;
+            int y = (i<<3) * scale_ratio_lower / scale_ratio_upper;
+            int dx = x & 0x7;
+            int dy = y & 0x7;
+            x >>= 3;
+            y >>= 3;
 
             int wd = width * byte_per_pixel + width_pad;
-            int k = wd * iy + ix * byte_per_pixel;
+            int k = wd * y + x * byte_per_pixel;
             
             for ( s=0 ; s<byte_per_pixel ; s++, k++ ){
-                float pic;
-                
-                pic  = (1.0 - dx) * (1.0 - dy) * original_buffer[ k ];
-                pic +=        dx  * (1.0 - dy) * original_buffer[ k+byte_per_pixel ];
-                pic += (1.0 - dx) *        dy  * original_buffer[ k+wd ];
-                pic +=        dx  *        dy  * original_buffer[ k+byte_per_pixel+wd ];
-                *buf_p++ = (unsigned char)pic;
+
+                unsigned int p;
+                p =  (8-dx)*(8-dy)*original_buffer[ k ];
+                p +=    dx *(8-dy)*original_buffer[ k+byte_per_pixel ];
+                p += (8-dx)*   dy *original_buffer[ k+wd ];
+                p +=    dx *   dy *original_buffer[ k+byte_per_pixel+wd ];
+                *buf_p++ = (unsigned char)(p>>6);
             }
         }
         for ( j=0 ; j<w_pad ; j++ )
@@ -220,9 +221,9 @@ size_t rescaleJPEG( unsigned char *original_buffer, size_t length, unsigned char
     dest->pub.empty_output_buffer = empty_output_buffer;
     dest->pub.term_destination = term_destination;
 
-    cinfo2.image_width = (int)(cinfo.output_width / scale_ratio);
+    cinfo2.image_width = (int)(cinfo.output_width * scale_ratio_upper / scale_ratio_lower);
     if ( cinfo2.image_width == 0 ) cinfo2.image_width = 1;
-    cinfo2.image_height = (int)(cinfo.output_height / scale_ratio);
+    cinfo2.image_height = (int)(cinfo.output_height * scale_ratio_upper / scale_ratio_lower);
     if ( cinfo2.image_height == 0 ) cinfo2.image_height = 1;
     cinfo2.input_components = cinfo.output_components;
     if ( cinfo2.input_components == 1 )
@@ -265,11 +266,11 @@ size_t rescaleBMP( unsigned char *original_buffer, size_t length, unsigned char 
     int color_num = original_buffer[46] + ((int)original_buffer[47] << 8) + (original_buffer[48] << 16) + (original_buffer[49] << 24);
     if ( bit_per_pixel == 8 && color_num == 0 ) color_num = 256;
 
-    size_t width2  = (int)(width / scale_ratio );
+    size_t width2  = (int)(width * scale_ratio_upper / scale_ratio_lower);
     if ( width2 == 0 ) width2 = 1;
     size_t width2_pad = (4 - width2 * byte_per_pixel % 4) % 4;
     
-    size_t height2 = (int)(height / scale_ratio );
+    size_t height2 = (int)(height * scale_ratio_upper / scale_ratio_lower);
     if ( height2 == 0 ) height2 = 1;
 
     rescaleImage( original_buffer+54+color_num*4, width, height, byte_per_pixel, true );

@@ -204,7 +204,7 @@ void ONScripterLabel::initSDL( bool cdaudio_flag )
 #endif
 
     /* ---------------------------------------- */
-    /* Check if VGA screen is abailable. */
+    /* Check if VGA screen is available. */
 #if defined(PDA) && defined(PDA_VGA)
     if ( screen_surface == NULL ){
         screen_width  /= 2;

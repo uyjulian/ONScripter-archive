@@ -30,7 +30,8 @@
 #include "SarReader.h"
 
 extern int errno;
-extern float scale_ratio;
+extern int scale_ratio_upper;
+extern int scale_ratio_lower;
 
 extern size_t rescaleJPEG( unsigned char *original_buffer, size_t length, unsigned char **rescaled_buffer );
 extern size_t rescaleBMP( unsigned char *original_buffer, size_t length, unsigned char **rescaled_buffer );
@@ -49,8 +50,8 @@ int main( int argc, char **argv )
 
     if ( argc == 4 ){
         int s = atoi( argv[1] );
-        if      ( s == 640 ) scale_ratio = 2.0;
-        else if ( s == 800 ) scale_ratio = 2.5;
+        if      ( s == 640 ){ scale_ratio_upper = 1; scale_ratio_lower = 2; }
+        else if ( s == 800 ){ scale_ratio_upper = 2; scale_ratio_lower = 5; }
         else argc = 1;
     }
     if ( argc != 4 ){
@@ -60,7 +61,7 @@ int main( int argc, char **argv )
     }
 
     if ( (fp = fopen( argv[3], "wb" ) ) == NULL ){
-        fprintf( stderr, "can't open file %s for writing.\n", argv[2] );
+        fprintf( stderr, "can't open file %s for writing.\n", argv[3] );
         exit(-1);
     }
     cSR.open( argv[2] );

@@ -10,7 +10,7 @@ ONScripter
 	libjpeg 6b, bzip2-1.0.2, SDL-1.2.4, SDL_image-1.2.2, SDL_mixer-1.2.3, SDL_ttf-2.0.5, 及び SMPEG-0.4.4 が動作する環境です。
 	Linux 2.4.17 + XFree86 4.1.0 + g++ (gcc 2.95.4) で開発しています。
 	Linux, Windows 2000 (Visual C++ 6.0), Zaurus (SL-5500)上で動作確認をしています。
-	MacOS X および FreeBSD 上での動作報告をいただいています。
+	MacOS X および FreeBSD, Solaris 上での動作報告をいただいています。
 
 
 2. コンパイル・起動方法
@@ -19,7 +19,7 @@ ONScripter
 	ただし、onscripter を実行する場所に default.ttf, スクリプト, アーカイブがなければいけません。
 	詳しくは同梱の www/onscripter.html を参照してください。
 
-	Linux もしくは FreeBSD の場合
+	Linux もしくは FreeBSD, Solaris の場合
 	$ make -f Makefile.Linux
 	$ onscripter
 
@@ -35,7 +35,7 @@ ONScripter
 	Zaurus (SL-5500) の場合
 	別のマシン(Linux 等)上でクロスコンパイル
 	$ make -f Makefile.ARMLinux
-	Zaurus のコンソールから実行
+	Zaurus の Qtopia 上から実行
 	$ onscripter
 
 	それ以外のプラットフォームでは、Makefile.Linux を雛形にして Makefile.### を作ってください。

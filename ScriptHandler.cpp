@@ -337,6 +337,8 @@ bool ScriptHandler::readToken()
             break;
         }
         else if ( ch & 0x80 ){
+            if ( !text_flag ) break;
+            
             addStringBuffer( ch, string_counter++ );
             ch = *buf++;
             addStringBuffer( ch, string_counter++ );

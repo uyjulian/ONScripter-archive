@@ -630,6 +630,7 @@ void ONScripterLabel::leaveSystemCall( bool restore_flag )
         event_mode &= ~WAIT_SLEEP_MODE;
     else
         event_mode |= WAIT_ANIMATION_MODE;
+    refreshMouseOverButton();
     advancePhase();
 }
 

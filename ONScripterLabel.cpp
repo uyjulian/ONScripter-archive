@@ -108,9 +108,13 @@ static struct FuncLUT{
     {"isdown", &ONScripterLabel::isdownCommand},
     {"getversion", &ONScripterLabel::getversionCommand},
     {"gettimer", &ONScripterLabel::gettimerCommand},
+    {"gettext", &ONScripterLabel::gettextCommand},
+    {"gettab", &ONScripterLabel::gettabCommand},
     {"getreg", &ONScripterLabel::getregCommand},
     {"getmousepos", &ONScripterLabel::getmouseposCommand},
+    {"getfunction", &ONScripterLabel::getfunctionCommand},
     {"getcursorpos", &ONScripterLabel::getcursorposCommand},
+    //{"getcursor", &ONScripterLabel::getcursorCommand},
     {"getcselnum", &ONScripterLabel::getcselnumCommand},
     {"getbtntimer", &ONScripterLabel::gettimerCommand},
     {"game", &ONScripterLabel::gameCommand},
@@ -132,6 +136,7 @@ static struct FuncLUT{
     {"caption", &ONScripterLabel::captionCommand},
     {"btnwait2", &ONScripterLabel::btnwaitCommand},
     {"btnwait", &ONScripterLabel::btnwaitCommand},
+    {"btntime2", &ONScripterLabel::btntimeCommand},
     {"btntime", &ONScripterLabel::btntimeCommand},
     {"btndown",  &ONScripterLabel::btndownCommand},
     {"btndef",  &ONScripterLabel::btndefCommand},
@@ -1068,8 +1073,8 @@ void ONScripterLabel::clearCurrentTextBuffer()
 
     for ( i=0 ; i<current_text_buffer->num_xy[1] ; i++ ){
         for ( j=0 ; j<current_text_buffer->num_xy[0] ; j++ ){
-            current_text_buffer->buffer[ (i * current_text_buffer->num_xy[0] + j) * 2 ] = ((char*)"@")[0];
-            current_text_buffer->buffer[ (i * current_text_buffer->num_xy[0] + j) * 2 + 1 ] = ((char*)"@")[1];
+            current_text_buffer->buffer[ (i * current_text_buffer->num_xy[0] + j) * 2 ] = 0x0;
+            current_text_buffer->buffer[ (i * current_text_buffer->num_xy[0] + j) * 2 + 1 ] = 0x0;
         }
     }
 }

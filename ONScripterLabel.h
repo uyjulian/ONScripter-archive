@@ -130,9 +130,13 @@ public:
     int isdownCommand();
     int getversionCommand();
     int gettimerCommand();
+    int gettextCommand();
+    int gettabCommand();
     int getregCommand();
     int getmouseposCommand();
+    int getfunctionCommand();
     int getcursorposCommand();
+    int getcursorCommand();
     int getcselnumCommand();
     int gameCommand();
     int exbtnCommand();
@@ -150,6 +154,7 @@ public:
     int captionCommand();
     int btnwait2Command();
     int btnwaitCommand();
+    int btntime2Command();
     int btntimeCommand();
     int btndownCommand();
     int btndefCommand();
@@ -300,6 +305,10 @@ private:
     } root_button_link, *last_button_link, *current_button_link, *shelter_button_link, exbtn_d_button_link;
 
     int current_over_button;
+
+    bool gettab_flag;
+    bool getfunction_flag;
+    bool getcursor_flag;
 
     void resetSentenceFont();
     void deleteButtonLink();
@@ -455,6 +464,7 @@ private:
     void refreshSurfaceParameters();
     void refreshSurface( SDL_Surface *surface, SDL_Rect *clip=NULL, int refresh_mode = REFRESH_NORMAL_MODE );
     void mouseOverCheck( int x, int y );
+    void moveCursorOnButton( int diff );
     
     /* ---------------------------------------- */
     /* System call related method */

@@ -234,12 +234,18 @@ void ONScripterLabel::restoreTextBuffer( SDL_Surface *surface )
     for ( i=0 ; i<current_text_buffer->num_xy[1] * current_text_buffer->num_xy[0] ; i++ ){
         if ( f_info.xy[1] * current_text_buffer->num_xy[0] + f_info.xy[0] >= end ) break;
         out_text[0] = current_text_buffer->buffer[ i * 2 ];
-        if ( !(out_text[0] & 0x80) ){
-            out_text[1] = '\0';
-            drawChar( out_text, &f_info, false, surface, false );
-            f_info.xy[0]--;
+        if ( out_text[0] == 0x0 ){
+            out_text[0] = ((char*)"@")[0];
+            out_text[1] = ((char*)"@")[1];
         }
-        out_text[1] = current_text_buffer->buffer[ i * 2 + 1];
+        else{
+            if ( !(out_text[0] & 0x80) ){
+                out_text[1] = '\0';
+                drawChar( out_text, &f_info, false, surface, false );
+                f_info.xy[0]--;
+            }
+            out_text[1] = current_text_buffer->buffer[ i * 2 + 1];
+        }
         drawChar( out_text, &f_info, false, surface );
     }
 

@@ -319,11 +319,40 @@ void ONScripterLabel::variableEditMode( SDL_KeyboardEvent *event )
     SDL_WM_SetCaption( wm_edit_string, wm_icon_string );
 }
 
+void ONScripterLabel::moveCursorOnButton( int diff )
+{
+    int i;
+    
+    shortcut_mouse_line += diff;
+    if ( shortcut_mouse_line < 0 ) shortcut_mouse_line = 0;
+
+    ButtonLink *p_button_link = root_button_link.next;
+    
+    for ( i=0 ; i<shortcut_mouse_line && p_button_link ; i++ ) 
+        p_button_link  = p_button_link->next;
+    
+    if ( !p_button_link ){
+        if ( diff == -1 )
+            shortcut_mouse_line = 0;
+        else
+            shortcut_mouse_line = i-1;
+
+        p_button_link = root_button_link.next;
+        for ( i=0 ; i<shortcut_mouse_line ; i++ ) 
+            p_button_link  = p_button_link->next;
+    }
+    if ( p_button_link ){
+        SDL_WarpMouse( p_button_link->select_rect.x + p_button_link->select_rect.w / 2,
+                       p_button_link->select_rect.y + p_button_link->select_rect.h / 2 );
+    }
+}
 
 void ONScripterLabel::keyPressEvent( SDL_KeyboardEvent *event )
 {
     int i;
 
+    current_button_state.button = 0;
+    
     if ( event->type == SDL_KEYUP ){
         if ( variable_edit_mode ){
             variableEditMode( event );
@@ -354,35 +383,13 @@ void ONScripterLabel::keyPressEvent( SDL_KeyboardEvent *event )
            ( btndown_flag && event->keysym.sym == SDLK_RETURN) ) ){
         if ( event->keysym.sym == SDLK_UP || event->keysym.sym == SDLK_p ){
 
-            if ( --shortcut_mouse_line < 0 ) shortcut_mouse_line = 0;
-            struct ButtonLink *p_button_link = root_button_link.next;
-            for ( i=0 ; i<shortcut_mouse_line && p_button_link ; i++ ) 
-                p_button_link  = p_button_link->next;
-            if ( !p_button_link ){
-                shortcut_mouse_line = 0;
-                p_button_link = root_button_link.next;
-            }
-            if ( p_button_link ){
-                SDL_WarpMouse( p_button_link->select_rect.x + p_button_link->select_rect.w / 2,
-                               p_button_link->select_rect.y + p_button_link->select_rect.h / 2 );
-            }
+            moveCursorOnButton( -1 );
+            return;
         }
         else if ( event->keysym.sym == SDLK_DOWN || event->keysym.sym == SDLK_n ){
 
-            shortcut_mouse_line++;
-            struct ButtonLink *p_button_link = root_button_link.next;
-            for ( i=0 ; i<shortcut_mouse_line && p_button_link ; i++ ) 
-                p_button_link  = p_button_link->next;
-            if ( !p_button_link ){
-                shortcut_mouse_line = i-1;
-                p_button_link = root_button_link.next;
-                for ( i=0 ; i<shortcut_mouse_line ; i++ ) 
-                    p_button_link  = p_button_link->next;
-            }
-            if ( p_button_link ){
-                SDL_WarpMouse( p_button_link->select_rect.x + p_button_link->select_rect.w / 2,
-                               p_button_link->select_rect.y + p_button_link->select_rect.h / 2 );
-            }
+            moveCursorOnButton( 1 );
+            return;
         }
         else if ( event->keysym.sym == SDLK_RETURN || event->keysym.sym == SDLK_SPACE ){
             if ( event->keysym.sym == SDLK_RETURN ){
@@ -410,11 +417,42 @@ void ONScripterLabel::keyPressEvent( SDL_KeyboardEvent *event )
          ( autoclick_timer == 0 || (event_mode & WAIT_BUTTON_MODE)) ){
         if ( event->keysym.sym == SDLK_ESCAPE && rmode_flag ){
             current_button_state.button  = -1;
-            volatile_button_state.button = -1;
             if ( event_mode & WAIT_INPUT_MODE &&
                  root_menu_link.next ){
                 system_menu_mode = SYSTEM_MENU;
             }
+        }
+        else if ( gettab_flag && event->keysym.sym == SDLK_TAB ){
+            current_button_state.button  = -20;
+        }
+        else if ( getfunction_flag ){
+            if      ( event->keysym.sym == SDLK_F1 )
+                current_button_state.button = -21;
+            else if ( event->keysym.sym == SDLK_F2 )
+                current_button_state.button = -22;
+            else if ( event->keysym.sym == SDLK_F3 )
+                current_button_state.button = -23;
+            else if ( event->keysym.sym == SDLK_F4 )
+                current_button_state.button = -24;
+            else if ( event->keysym.sym == SDLK_F5 )
+                current_button_state.button = -25;
+            else if ( event->keysym.sym == SDLK_F6 )
+                current_button_state.button = -26;
+            else if ( event->keysym.sym == SDLK_F7 )
+                current_button_state.button = -27;
+            else if ( event->keysym.sym == SDLK_F8 )
+                current_button_state.button = -28;
+            else if ( event->keysym.sym == SDLK_F9 )
+                current_button_state.button = -29;
+            else if ( event->keysym.sym == SDLK_F10 )
+                current_button_state.button = -30;
+            else if ( event->keysym.sym == SDLK_F11 )
+                current_button_state.button = -31;
+            else if ( event->keysym.sym == SDLK_F12 )
+                current_button_state.button = -32;
+        }
+        if ( current_button_state.button != 0 ){
+            volatile_button_state.button = current_button_state.button;
             stopAnimation( clickstr_state );
             advancePhase();
             return;

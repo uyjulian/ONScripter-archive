@@ -198,14 +198,14 @@ void ONScripterLabel::parseTaggedString( AnimationInfo *anim )
         else if ( buffer[0] == 's' ){
             anim->trans_mode = AnimationInfo::TRANS_STRING;
             buffer++;
-            i=0;
             anim->num_of_cells = 0;
             if ( buffer[0] == '/' ){
                 buffer++;
-                script_h.pushCurrent( buffer );
+                script_h.pushCurrent( buffer, false );
                 anim->font_size_xy[0] = script_h.readInt();
                 anim->font_size_xy[1] = script_h.readInt();
                 anim->font_pitch = script_h.readInt() + anim->font_size_xy[0];
+                buffer = script_h.getNext();
                 script_h.popCurrent();
                 buffer++;
             }
@@ -214,6 +214,7 @@ void ONScripterLabel::parseTaggedString( AnimationInfo *anim )
                 anim->font_size_xy[1] = sentence_font.font_size_xy[1];
                 anim->font_pitch = sentence_font.pitch_xy[0];
             }
+            i=0;
             while( buffer[i] == '#' ){
                 anim->num_of_cells++;
                 i += 7;

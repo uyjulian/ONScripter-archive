@@ -12,7 +12,7 @@
 </CENTER>
 
 Created: Feb. 6, 2002<br>
-Last updated: Aug. 19, 2002<br>
+Last updated: Aug. 24, 2002<br>
 <HR>
 
 <table>
@@ -26,10 +26,10 @@ href="http://www2.osk.3web.ne.jp/~naokikun/index.htm">高橋直樹</a>氏が開発したゲ
 
 <p>ONScripter で何ができるのかについてはαβεさんの[<A HREF="http://abe.platina.sakura.ne.jp/onscripter/">ONScripter のスゝメ</A>]を参照してください。</p>
 
-<p>現在はベータ版<A HREF="onscripter-beta-20020819.tar.gz">onscripter-beta-20020819.tar.gz</A>を配布しております。<FONT color="#ff0000">サーバが prohosting の場合は直接ダウンロードできません。一旦左クリックして先に進み、そこでもう一回左クリックしてください。</FONT><br>
+<p>現在はベータ版<A HREF="onscripter-beta-20020824.tar.gz">onscripter-beta-20020824.tar.gz</A>を配布しております。<FONT color="#ff0000">サーバが prohosting の場合は直接ダウンロードできません。一旦左クリックして先に進み、そこでもう一回左クリックしてください。</FONT><br>
 ベータ版ゆえデバッグ出力が有効になっていますが、正式版になったら取り除きます。<br>
-(一つ前のベータ版<A HREF="onscripter-beta-20020816.tar.gz">onscripter-beta-20020816.tar.gz</A>)<br>
-ザウルス(SL-5500, SL-A300)用の人柱バイナリパッケージは<A HREF="zaurus/index.html">こちら</A>からどうぞ。</p>
+(一つ前のベータ版<A HREF="onscripter-beta-20020819.tar.gz">onscripter-beta-20020819.tar.gz</A>)<br>
+ザウルス(SL-5500, SL-A300)用のバイナリパッケージは<A HREF="zaurus/index.html">こちら</A>からどうぞ。</p>
 
 <p>更新内容については[<A HREF="onscripter_devel.html">開発日誌</A>]を参照して下さい。</p>
 
@@ -82,7 +82,7 @@ href="http://www2.osk.3web.ne.jp/~naokikun/index.htm">高橋直樹</a>氏が開発したゲ
 <OL>
   <LI> 全ての操作をキーボードから行えます。もちろんマウスも使えますが、使う必要はありません。
   <LI> CD Audio の演奏に対応していますが、これを MP3 ファイルの演奏に振り替える機能もあります。
-  <LI> マルチプラットフォームに対応しています。Windows, Linux, Mac OS X, <A HREF="zaurus/index.html">Zaurus(SL-5500)</A>, FreeBSD での動作が確認されていますが、下記の libjpeg, bzip2, SDL 及び SMPEG が動く環境ならどこでも同じソースをコンパイルするだけで動くはずです。<BR>
+  <LI> マルチプラットフォームに対応しています。Windows, Linux, Mac OS X, <A HREF="zaurus/index.html">Zaurus(SL-5500)</A>, FreeBSD, Solaris(on SPARC) での動作が確認されていますが、下記の libjpeg, bzip2, SDL 及び SMPEG が動く環境ならどこでも同じソースをコンパイルするだけで動くはずです。<BR>
   <LI> 全てのコマンド・仕様を実装していないため、ゲームによって挙動がおかしくなります。その場合は上記バグトラッキングシステムまで御報告下さい。
 </OL>
 
@@ -136,7 +136,7 @@ href="http://www2.osk.3web.ne.jp/~naokikun/index.htm">高橋直樹</a>氏が開発したゲ
 <p> 
 
 <p> 当方では Windows, Linux, <A HREF="zaurus/index.html">Zaurus(SL-5500)</A>で動作確認をしています。<BR>
-また MacOS X での<A HREF="http://www.freeml.com/message/sdl-fan-jp@freeml.com/0000316">動作報告</A>と FreeBSD での動作報告を受けています。<br>
+また<A HREF="http://www.freeml.com/message/sdl-fan-jp@freeml.com/0000316">MacOS X</A>および FreeBSD, Solaris(on SPARC) での動作報告をいただいております。<br>
 
 その他の多くの Unix 系 OS, BeOS, MacOS については上記のライブラリが対応しているため適切な Makefile を書けばコンパイル・実行できると思いますが、当方では確認できないので誰かやって下さい。</p>
 
@@ -171,11 +171,11 @@ href="http://www2.osk.3web.ne.jp/~naokikun/index.htm">高橋直樹</a>氏が開発したゲ
   <LI> (<FONT color="#ff8800">中</FONT>)効果 16, 17 の実装
   <LI> (<FONT color="#ff8800">中</FONT>)雪をスムーズに降らせる
   <LI> (<FONT color="#ff8800">中</FONT>)erasetextwindow off 時の選択画面での表示の正常化。
+  <LI> (<FONT color="#00ff00">低</FONT>)btntime2 を正規に実装
   <LI> (<FONT color="#00ff00">低</FONT>)archive の検索の高速化
   <LI> (<FONT color="#00ff00">低</FONT>)alpha blend が遅いのをなんとかしたい
   <LI> (<FONT color="#00ff00">低</FONT>)sprite の現在の表示 cell を保存する？
   <LI> (<FONT color="#00ff00">低</FONT>)skip でマイナス方向にラベルをまたぐと破綻するバグ？を取る。lchk とのからみも考えて調べる。
-  <LI> (<FONT color="#00ff00">低</FONT>)voicevol, sevol, mp3vol の引数の扱いを確認。
   <LI> (<FONT color="#00ff00">低</FONT>)文字の色を変えたあとに絵の描画が入ると、文字の色が全部同じになってしまう。
   <LI> (<FONT color="#00ff00">低</FONT>)コードの clean up。
 </OL>       

@@ -1130,6 +1130,36 @@ int ONScripterLabel::gettimerCommand()
     return RET_CONTINUE; 
 }
 
+int ONScripterLabel::gettextCommand()
+{
+    script_h.readToken();
+    char *p_buf = script_h.getStringBuffer()+1;
+    int no = script_h.parseInt( &p_buf );
+
+    char *buf = new char[ current_text_buffer->num_xy[1] * current_text_buffer->num_xy[0] * 2 ];
+    int c=0;
+    for ( int i=0 ; i<current_text_buffer->num_xy[1] * current_text_buffer->num_xy[0] ; i++ ){
+        if ( current_text_buffer->buffer[ i*2 ] != 0x0 ){
+            buf[ c*2 ]   = current_text_buffer->buffer[ i*2 ];
+            buf[ c*2+1 ] = current_text_buffer->buffer[ i*2+1 ];
+            c++;
+        }
+    }
+    buf[ c*2 ] = '\0';
+
+    setStr( &script_h.str_variables[ no ], buf );
+    delete[] buf;
+    
+    return RET_CONTINUE;
+}
+
+int ONScripterLabel::gettabCommand()
+{
+    gettab_flag = true;
+    
+    return RET_CONTINUE;
+}
+
 int ONScripterLabel::getregCommand()
 {
     char *path = NULL, *key = NULL;
@@ -1204,6 +1234,13 @@ int ONScripterLabel::getmouseposCommand()
     return RET_CONTINUE;
 }
 
+int ONScripterLabel::getfunctionCommand()
+{
+    getfunction_flag = true;
+    
+    return RET_CONTINUE;
+}
+
 int ONScripterLabel::getcursorposCommand()
 {
     script_h.readToken();
@@ -1211,6 +1248,13 @@ int ONScripterLabel::getcursorposCommand()
     
     script_h.readToken();
     script_h.setInt( script_h.getStringBuffer(), sentence_font.y() );
+    
+    return RET_CONTINUE;
+}
+
+int ONScripterLabel::getcursorCommand()
+{
+    getcursor_flag = true;
     
     return RET_CONTINUE;
 }
@@ -1665,8 +1709,10 @@ int ONScripterLabel::btnwaitCommand()
         internal_button_timer = SDL_GetTicks();
 
         if ( textbtn_flag ){
-            event_mode |= WAIT_ANIMATION_MODE;
-            advancePhase();
+            if ( btntime_value == 0 ){
+                event_mode |= WAIT_ANIMATION_MODE;
+                advancePhase();
+            }
         }
         
         return RET_WAIT;
@@ -1675,6 +1721,13 @@ int ONScripterLabel::btnwaitCommand()
 
 int ONScripterLabel::btntimeCommand()
 {
+    if ( script_h.isName( "btntime2" ) ){
+        ;
+    }
+    else{
+        ;
+    }
+    
     btntime_value = script_h.readInt();
     
     return RET_CONTINUE;
@@ -1702,6 +1755,9 @@ int ONScripterLabel::btndefCommand()
     }
     
     deleteButtonLink();
+
+    gettab_flag = false;
+    getfunction_flag = false;
     
     return RET_CONTINUE;
 }

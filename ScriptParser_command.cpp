@@ -215,8 +215,8 @@ int ScriptParser::rmenuCommand()
     last_menu_link = &root_menu_link;
     menu_link_num = 0;
     menu_link_width = 0;
-    
-    while ( *p_string_buffer == ' ' || *p_string_buffer == '\t' ) p_string_buffer++;
+
+    SKIP_SPACE( p_string_buffer );
     while ( *p_string_buffer ){
         MenuLink *menu = new MenuLink();
 
@@ -346,7 +346,7 @@ int ScriptParser::movCommand()
         count = 1;
     }
 
-    while( *p_string_buffer == ' ' || *p_string_buffer == '\t' ) p_string_buffer++;
+    SKIP_SPACE( p_string_buffer );
     
     if ( p_string_buffer[0] == '%' || p_string_buffer[0] == '?' ){
         char *p_buf = p_string_buffer;
@@ -391,7 +391,7 @@ int ScriptParser::midCommand()
     char *p_string_buffer = string_buffer + string_buffer_offset + 3; // strlen("mid") = 3
     int no, start, len;
     
-    while ( *p_string_buffer == ' ' || *p_string_buffer == '\t' ) p_string_buffer++;
+    SKIP_SPACE( p_string_buffer );
 
     if ( p_string_buffer[0] == '$'){
         p_string_buffer++;
@@ -537,7 +537,7 @@ int ScriptParser::ifCommand()
     //readStr( &p_string_buffer, tmp_string_buffer, false );
 
     while(1){
-        while ( *p_string_buffer == ' ' || *p_string_buffer == '\t' ) p_string_buffer++;
+        SKIP_SPACE( p_string_buffer );
 
         if ( *p_string_buffer == 'f' ){ // fchk
             readStr( &p_string_buffer, tmp_string_buffer );
@@ -555,7 +555,7 @@ int ScriptParser::ifCommand()
             left_value = readInt( &p_string_buffer );
             //printf("%s(%d) ", tmp_string_buffer, left_value );
 
-            while ( *p_string_buffer == ' ' || *p_string_buffer == '\t' ) p_string_buffer++;
+            SKIP_SPACE( p_string_buffer );
             token_start = p_string_buffer;
             while ( *p_string_buffer == '>' || *p_string_buffer == '<' ||
                     *p_string_buffer == '=' || *p_string_buffer == '!' ) p_string_buffer++;
@@ -563,7 +563,7 @@ int ScriptParser::ifCommand()
             eval_str[ p_string_buffer-token_start ] = '\0';
             //printf("%s ", eval_str );
 
-            while ( *p_string_buffer == ' ' || *p_string_buffer == '\t' ) p_string_buffer++;
+            SKIP_SPACE( p_string_buffer );
 
             right_value = readInt( &p_string_buffer );
             //printf("%s(%d) ", tmp_string_buffer, right_value );
@@ -578,7 +578,7 @@ int ScriptParser::ifCommand()
             else if ( !strcmp( eval_str, "=" ) )  f = (left_value == right_value);
         }
         condition_flag &= (if_flag)?(f):(!f);
-        while ( *p_string_buffer == ' ' || *p_string_buffer == '\t' ) p_string_buffer++;
+        SKIP_SPACE( p_string_buffer );
 
         if ( *p_string_buffer == '&' ){
             //printf("& " );
@@ -608,7 +608,7 @@ int ScriptParser::itoaCommand()
     char val_str[20], *tmp_buffer;
     char *p_string_buffer = string_buffer + string_buffer_offset + 4; // strlen("itoa") = 4
     
-    while ( *p_string_buffer == ' ' || *p_string_buffer == '\t' ) p_string_buffer++;
+    SKIP_SPACE( p_string_buffer );
 
     if ( p_string_buffer[0] != '$' ) errorAndExit( string_buffer + string_buffer_offset );
 
@@ -726,9 +726,9 @@ int ScriptParser::forCommand()
     ForInfo *info = new ForInfo();
     info->next = NULL;
 
-    while ( *p_string_buffer == ' ' || *p_string_buffer == '\t' ) p_string_buffer++;
+    SKIP_SPACE( p_string_buffer );
     char *p_buf = p_string_buffer;
-    readToken( &p_string_buffer, tmp_string_buffer );
+    readInt( &p_string_buffer );
     //char *p_dst_buf = tmp_string_buffer;
     //info->variable_no = readInt( &p_dst_buf );
     
@@ -755,7 +755,7 @@ int ScriptParser::forCommand()
     
     info->to = readInt( &p_string_buffer );
 
-    while ( *p_string_buffer == ' ' || *p_string_buffer == '\t' ) p_string_buffer++;
+    SKIP_SPACE( p_string_buffer );
     if ( !strncmp( p_string_buffer, "step", 4 ) ){
         readStr( &p_string_buffer, tmp_string_buffer );
         info->step = readInt( &p_string_buffer );
@@ -766,7 +766,7 @@ int ScriptParser::forCommand()
     
     /* ---------------------------------------- */
     /* Step forward callee's label info */
-    while ( *p_string_buffer == ' ' || *p_string_buffer == '\t' ) p_string_buffer++;
+    SKIP_SPACE( p_string_buffer );
     info->label_info = current_link_label_info->label_info;
     if ( *p_string_buffer == ':' ){
         info->current_line = current_link_label_info->current_line;
@@ -1051,7 +1051,7 @@ int ScriptParser::addCommand()
     char *tmp_buffer;
     int no;
     
-    while ( *p_string_buffer == ' ' || *p_string_buffer == '\t' ) p_string_buffer++;
+    SKIP_SPACE( p_string_buffer );
 
     if ( p_string_buffer[0] == '%' || p_string_buffer[0] == '?' ){
         char *p_buf = p_string_buffer;

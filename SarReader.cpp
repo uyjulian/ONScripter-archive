@@ -22,7 +22,6 @@
  */
 
 #include "SarReader.h"
-#define SAR_ARCHIVE_NAME "arc.sar"
 
 SarReader::SarReader()
 {
@@ -41,7 +40,7 @@ int SarReader::open( char *name )
     ArchiveInfo* info = new ArchiveInfo();
 
     if ( (info->file_handle = fopen( name, "rb" ) ) == NULL ){
-        fprintf( stderr, "can't open file %s\n", SAR_ARCHIVE_NAME );
+        fprintf( stderr, "can't open file %s\n", name );
         delete info;
         return -1;
     }

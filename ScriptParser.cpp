@@ -816,10 +816,14 @@ bool ScriptParser::readToken( char **src_buf, char *dst_buf, bool skip_space_fla
     }
 
     /* ---------------------------------------- */
-    /* Obatin a single word */
-    while ( **src_buf == ' ' || **src_buf == '\t' ) (*src_buf)++;
+    /* Get a single word */
+    SKIP_SPACE( *src_buf );
 
     //printf("token start %c:\n", **src_buf);
+    if ( **src_buf == '(' ){
+        *dst_buf++ = *(*src_buf)++;
+        SKIP_SPACE( *src_buf );
+    }
     if ( **src_buf == '"' ){
         quat_flag = true;
         (*src_buf)++;
@@ -834,6 +838,7 @@ bool ScriptParser::readToken( char **src_buf, char *dst_buf, bool skip_space_fla
                             **src_buf != '=' &&
                             **src_buf != '!' &&
                             **src_buf != '&' &&
+                            **src_buf != ')' &&
                             !(**src_buf & 0x80) ) ) &&
             ( quat_flag || skip_space_flag || ( **src_buf != ' ' &&
                                                 **src_buf != '\t' ) ) &&
@@ -850,12 +855,15 @@ bool ScriptParser::readToken( char **src_buf, char *dst_buf, bool skip_space_fla
     }
 
     if ( quat_flag && **src_buf == '"' ) (*src_buf)++;
+    SKIP_SPACE( *src_buf );
 
-    while ( **src_buf == ' ' || **src_buf == '\t' ) (*src_buf)++;
+    if ( **src_buf == ')' ) (*src_buf)++;
+    SKIP_SPACE( *src_buf );
+    
     if ( **src_buf == ',' ){
-        (*src_buf)++;
         end_with_comma_flag = true;
-        while ( **src_buf == ' ' || **src_buf == '\t' ) (*src_buf)++;
+        (*src_buf)++;
+        SKIP_SPACE( *src_buf );
     }
     *dst_buf++ = '\0';
     //printf("dst_buf %s\n",dst_buf_org);
@@ -867,6 +875,20 @@ bool ScriptParser::readStr( char **src_buf, char *dst_buf )
 {
     bool ret = readToken( src_buf, dst_buf );
 
+    if ( dst_buf[0] == '(' ){ // check condition code
+        if ( cBR->getAccessFlag( dst_buf + 1 ) ){
+            readStr( src_buf, dst_buf );
+            char *buf = new char[ strlen( dst_buf ) + 1 ];
+            memcpy( buf, dst_buf, strlen( dst_buf ) + 1 );
+            readStr( src_buf, dst_buf );
+            memcpy( dst_buf, buf, strlen( buf ) + 1 );
+            delete[] buf;
+        }
+        else{
+            readStr( src_buf, dst_buf );
+            readStr( src_buf, dst_buf );
+        }
+    }
     if ( dst_buf[0] == '$' ){
         char *p_dst_buf = dst_buf+1;
         int no = readInt( &p_dst_buf );
@@ -905,14 +927,14 @@ void ScriptParser::skipToken( void )
         }
         else if ( *buf == '"' ){
             quat_flag = !quat_flag;
-            while( *buf == ' ' || *buf == '\t' ) buf++;
+            SKIP_SPACE( buf );
         }
         else if ( !quat_flag && (*buf == ' ' || *buf == '\t') ){
-            while( *buf == ' ' || *buf == '\t' ) buf++;
+            SKIP_SPACE( buf );
             if ( *buf == ',' ){
                 buf++;
                 comma_flag = true;
-                while( *buf == ' ' || *buf == '\t' ) buf++;
+                SKIP_SPACE( buf );
             }
             if ( !first_flag && !comma_flag ) break;
             first_flag = false;
@@ -927,7 +949,7 @@ void ScriptParser::skipToken( void )
     }
     while ( *buf == ':' ){
         buf++;
-        while( *buf == ' ' || *buf == '\t' ) buf++;
+        SKIP_SPACE( buf );
     }
     if ( *buf == ';' ) while ( *buf != '\0' ) buf++;
     //printf("skipToken [%s] to [%s]\n",string_buffer + string_buffer_offset, buf );
@@ -1123,18 +1145,18 @@ void ScriptParser::errorAndExit( char *str )
 
 int ScriptParser::decodeArraySub( char **buf, struct ArrayVariable *array )
 {
-    while ( **buf == ' ' || **buf == '\t' ) (*buf)++;
+    SKIP_SPACE( *buf );
     
     (*buf)++; // skip '?'
     int no = readInt( buf );
 
-    while ( **buf == ' ' || **buf == '\t' ) (*buf)++;
+    SKIP_SPACE( *buf );
     array->num_dim = 0;
     while ( **buf == '[' ){
         (*buf)++;
         array->dim[array->num_dim] = readInt( buf );
         array->num_dim++;
-        while ( **buf == ' ' || **buf == '\t' ) (*buf)++;
+        SKIP_SPACE( *buf );
         if ( **buf != ']' ) errorAndExit( *buf );
         (*buf)++;
     }
@@ -1147,8 +1169,8 @@ int *ScriptParser::decodeArray( char **buf, int offset )
 {
     struct ArrayVariable array;
     int dim, i;
-    
-    while ( **buf == ' ' || **buf == '\t' ) (*buf)++;
+
+    SKIP_SPACE( *buf );
     int no = decodeArraySub( buf, &array );
     
     if ( array_variables[ no ].data == NULL ) errorAndExit( string_buffer + string_buffer_offset );
@@ -1169,7 +1191,7 @@ int ScriptParser::readInt( char **buf )
     int no;
 
     end_with_comma_flag = false;
-    while ( **buf == ' ' || **buf == '\t' ) (*buf)++;
+    SKIP_SPACE( *buf );
 
     if ( (*buf)[0] == '\0' || (*buf)[0] == ':' || (*buf)[0] == ';' ){
         no = 0;
@@ -1240,11 +1262,11 @@ int ScriptParser::readInt( char **buf )
         }
         no = alias_no;
     }
-    while ( **buf == ' ' || **buf == '\t' ) (*buf)++;
+    SKIP_SPACE( *buf );
     if ( **buf == ',' ){
         end_with_comma_flag = true;
         (*buf)++;
-        while ( **buf == ' ' || **buf == '\t' ) (*buf)++;
+        SKIP_SPACE( *buf );
     }
     return no;
 }
@@ -1253,8 +1275,7 @@ void ScriptParser::setInt( char *buf, int val, int offset )
 {
     char *p_buf;
 
-    while ( *buf == ' ' || *buf == '\t' ) buf++;
-
+    SKIP_SPACE( buf );
     if ( buf[0] == '%' ){
         p_buf = buf + 1;
         setNumVariable( readInt( &p_buf ) + offset, val );

@@ -315,7 +315,7 @@ int ONScripterLabel::selectCommand()
     if ( !strncmp( string_buffer + string_buffer_offset, "selnum", 6 ) ){
         select_mode = 2;
         p_string_buffer = string_buffer + string_buffer_offset + 6; // strlen("selnum") = 6
-        while( *p_string_buffer == ' ' || *p_string_buffer == '\t' ) p_string_buffer++;
+        SKIP_SPACE( p_string_buffer );
         p_buf = p_string_buffer;
         readInt( &p_string_buffer );
     }

@@ -44,6 +44,8 @@
 
 #define MAX_TEXT_BUFFER 10
 
+#define SKIP_SPACE(p) while ( *(p) == ' ' || *(p) == '\t' ) (p)++
+
 typedef unsigned char uchar3[3];
 
 class ScriptParser

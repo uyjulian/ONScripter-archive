@@ -24,7 +24,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+extern "C"{
 #include <jpeglib.h>
+};
 #include <bzlib.h>
 
 float scale_ratio;

@@ -209,7 +209,7 @@ protected:
     int decodeArraySub( char **buf, struct ArrayVariable *array );
     int *decodeArray( char **buf );
     int readInt( char **buf );
-    void setInt( char *buf, int val );
+    void setInt( char *buf, int val, int offset = 0 );
     void setNumVariable( int no, int val );
     
     int effect_blank;
@@ -305,8 +305,8 @@ protected:
         bool display_bold;
         bool display_shadow;
         bool display_transparency;
-        char window_color[8];
-        int  window_color_mask[3];
+        //char window_color[8];
+        uchar3  window_color;
         char *window_image;
         int window_rect[4]; // Top left and bottom right of the text window
     } sentence_font, system_font, menu_font;

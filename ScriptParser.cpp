@@ -60,6 +60,14 @@ static struct FuncLUT{
     {"next",    &ScriptParser::nextCommand},
     {"nsa",    &ScriptParser::arcCommand},
     {"mul",      &ScriptParser::mulCommand},
+    {"mov10",      &ScriptParser::movCommand},
+    {"mov9",      &ScriptParser::movCommand},
+    {"mov8",      &ScriptParser::movCommand},
+    {"mov7",      &ScriptParser::movCommand},
+    {"mov6",      &ScriptParser::movCommand},
+    {"mov5",      &ScriptParser::movCommand},
+    {"mov4",      &ScriptParser::movCommand},
+    {"mov3",      &ScriptParser::movCommand},
     {"mov",      &ScriptParser::movCommand},
     {"mod",      &ScriptParser::modCommand},
     {"mid",      &ScriptParser::midCommand},
@@ -214,10 +222,8 @@ ScriptParser::ScriptParser()
     menu_font.display_bold = system_font.display_bold = true;
     menu_font.display_shadow = system_font.display_shadow = true;
     menu_font.display_transparency = system_font.display_transparency = true;
-    memcpy( system_font.window_color, "#cccccc", 8 );
-    memcpy( menu_font.window_color, "#cccccc", 8 );
-    system_font.window_color_mask[0] = system_font.window_color_mask[1] = system_font.window_color_mask[2] = 0xcc;
-    menu_font.window_color_mask[0] = menu_font.window_color_mask[1] = menu_font.window_color_mask[2] = 0xcc;
+    system_font.window_color[0] = system_font.window_color[1] = system_font.window_color[2] = 0xcc;
+    menu_font.window_color[0] = menu_font.window_color[1] = menu_font.window_color[2] = 0xcc;
 
     for ( i=0 ; i<3 ; i++ ){
         menu_font.on_color[i] = 0xff;
@@ -1179,7 +1185,7 @@ int ScriptParser::readInt( char **buf )
     return no;
 }
 
-void ScriptParser::setInt( char *buf, int val )
+void ScriptParser::setInt( char *buf, int val, int offset )
 {
     char *p_buf;
 
@@ -1187,7 +1193,7 @@ void ScriptParser::setInt( char *buf, int val )
 
     if ( buf[0] == '%' ){
         p_buf = buf + 1;
-        setNumVariable( readInt( &p_buf ), val );
+        setNumVariable( readInt( &p_buf ) + offset, val );
     }
     else if ( buf[0] == '?' ){
         p_buf = buf;

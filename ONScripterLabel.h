@@ -201,6 +201,10 @@ private:
     SDL_Surface *shelter_text_surface; // Intermediate buffer to store text_surface when entering system menu
 
     /* ---------------------------------------- */
+    /* Text related variables */
+    struct TaggedInfo sentence_font_tag;
+    
+    /* ---------------------------------------- */
     /* Button related variables */
     struct ButtonState{
         int x, y, button;
@@ -313,6 +317,7 @@ private:
     int default_text_speed[3];
 
     void drawChar( char* text, struct FontInfo *info, bool flush_flag = true, SDL_Surface *surface = NULL );
+    void shadowTextDisplay();
     void clearCurrentTextBuffer();
     void enterNewPage();
     
@@ -329,7 +334,7 @@ private:
     SDL_Surface *loadPixmap( struct TaggedInfo *tag );
     void drawTaggedSurface( SDL_Surface *dst_surface, int x, int y, int w, int h,
                            SDL_Surface *src_surface, TaggedInfo *tagged_info );
-    void makeMonochromeSurface( SDL_Surface *surface, SDL_Rect *dst_rect=NULL );
+    void makeMonochromeSurface( SDL_Surface *surface, SDL_Rect *dst_rect=NULL, bool one_color_flag = true );
     void refreshAccumulationSruface( SDL_Surface *surface );
     void restoreTextBuffer();
     void mouseOverCheck( int x, int y );

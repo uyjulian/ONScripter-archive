@@ -312,15 +312,30 @@ int ScriptParser::mulCommand()
 
 int ScriptParser::movCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 3; // strlen("mov") = 3
-    int no;
+    char *p_string_buffer;
+    int count, i, no;
+    
+    if ( !strncmp( string_buffer + string_buffer_offset, "mov10", 5 ) ){
+        count = 10;
+        p_string_buffer = string_buffer + string_buffer_offset + 5; // strlen("mov10") = 5
+    }
+    else if ( string_buffer[string_buffer_offset+3] >= '3' && string_buffer[string_buffer_offset+3] <= '9' ){
+        count = string_buffer[string_buffer_offset+3] - '0';
+        p_string_buffer = string_buffer + string_buffer_offset + 4; // strlen("mov?") = 4
+    }
+    else{
+        p_string_buffer = string_buffer + string_buffer_offset + 3; // strlen("mov") = 3
+        count = 1;
+    }
 
     while( *p_string_buffer == ' ' || *p_string_buffer == '\t' ) p_string_buffer++;
     
     if ( p_string_buffer[0] == '%' || p_string_buffer[0] == '?' ){
         char *p_buf = p_string_buffer;
         no = readInt( &p_string_buffer );
-        setInt( p_buf, readInt( &p_string_buffer ) );
+        for ( i=0 ;  i<count ; i++ ){
+            setInt( p_buf, readInt( &p_string_buffer ), i );
+        }
     }
     else if ( p_string_buffer[0] == '$'){
         p_string_buffer++;
@@ -377,7 +392,6 @@ int ScriptParser::midCommand()
 int ScriptParser::menusetwindowCommand()
 {
     char *p_string_buffer = string_buffer + string_buffer_offset + 13; // strlen("menusetwindow") = 13
-    char mask[5] = "0x00";
 
     menu_font.font_valid_flag = false;
     menu_font.font_size = readInt( &p_string_buffer );
@@ -387,7 +401,6 @@ int ScriptParser::menusetwindowCommand()
     menu_font.display_bold = readInt( &p_string_buffer )?true:false;
     menu_font.display_shadow = readInt( &p_string_buffer )?true:false;
 
-    //menu_font.font.setPixelSize( menu_font.font_size );
     //menu_font.top_xy[1] += menu_font.font_size;
 #if 0
     printf("ONScripterLabel::menusetwindowCommand font=%d (%d,%d) bold=%d, shadow=%d\n",
@@ -397,17 +410,14 @@ int ScriptParser::menusetwindowCommand()
     readStr( &p_string_buffer, tmp_string_buffer );
 
     menu_font.display_transparency = true;
-    assert( strlen( tmp_string_buffer ) == 7 );
-    memcpy( menu_font.window_color, tmp_string_buffer, strlen( tmp_string_buffer ) + 1 );
-    mask[2] = menu_font.window_color[1]; mask[3] = menu_font.window_color[2];
-    sscanf( mask, "%i", &menu_font.window_color_mask[0] );
-    mask[2] = menu_font.window_color[3]; mask[3] = menu_font.window_color[4];
-    sscanf( mask, "%i", &menu_font.window_color_mask[1] );
-    mask[2] = menu_font.window_color[5]; mask[3] = menu_font.window_color[6];
-    sscanf( mask, "%i", &menu_font.window_color_mask[2] );
+    if ( strlen( tmp_string_buffer ) != 7 ) errorAndExit( string_buffer + string_buffer_offset );
+    menu_font.window_color[0] = convHexToDec( tmp_string_buffer[1] ) << 4 | convHexToDec( tmp_string_buffer[2] );
+    menu_font.window_color[1] = convHexToDec( tmp_string_buffer[3] ) << 4 | convHexToDec( tmp_string_buffer[4] );
+    menu_font.window_color[2] = convHexToDec( tmp_string_buffer[5] ) << 4 | convHexToDec( tmp_string_buffer[6] );
+    
 #if 0
-    printf("    trans %s\n",
-           menu_font.window_color );
+    printf("    trans %u %u %u\n",
+           menu_font.window_color[0], menu_font.window_color[1], menu_font.window_color[2] );
 #endif
     return RET_CONTINUE;
 }

@@ -39,9 +39,9 @@ static SDL_TimerID timer_id = NULL;
 #define ONS_TIMER_EVENT (SDL_USEREVENT)
 #define ONS_SOUND_EVENT (SDL_USEREVENT+1)
 
-#define DEFAULT_TEXT_SPEED1 60 // Low speed
-#define DEFAULT_TEXT_SPEED2 40 // Middle speed
-#define DEFAULT_TEXT_SPEED3 20 // High speed
+#define DEFAULT_TEXT_SPEED1 40 // Low speed
+#define DEFAULT_TEXT_SPEED2 20 // Middle speed
+#define DEFAULT_TEXT_SPEED3 10 // High speed
 
 #define CURSOR_WAIT_NO    0
 #define CURSOR_NEWPAGE_NO 1
@@ -363,8 +363,7 @@ ONScripterLabel::ONScripterLabel()
     sentence_font.display_bold = true;
     sentence_font.display_shadow = true;
     sentence_font.display_transparency = true;
-    memcpy( sentence_font.window_color, "#999999", 8 );
-    sentence_font.window_color_mask[0] = sentence_font.window_color_mask[1] = sentence_font.window_color_mask[2] = 0x99;
+    sentence_font.window_color[0] = sentence_font.window_color[1] = sentence_font.window_color[2] = 0x99;
     sentence_font.window_image = NULL;
     sentence_font.window_rect[0] = 0;
     sentence_font.window_rect[1] = 0;
@@ -844,8 +843,6 @@ void ONScripterLabel::executeLabel()
             ret2 = this->parseLine();
             if ( ret2 == RET_JUMP ){
                 goto executeLabelTop;
-                //startTimer( MINIMUM_TIMER_RESOLUTION );
-                //return;
             }
             else if ( ret2 == RET_CONTINUE ){
                 if ( string_buffer[ string_buffer_offset ] == '\0' ){
@@ -1301,14 +1298,10 @@ void ONScripterLabel::drawChar( char* text, struct FontInfo *info, bool flush_fl
         SDL_BlitSurface( tmp_surface, NULL, surface, &rect );
         SDL_FreeSurface( tmp_surface );
     }
-#if 0    
-    if ( not_selected_flag ) color.r = color.g = color.b = 0x80;
-    else{
-#endif        
-        color.r = info->color[0];
-        color.g = info->color[1];
-        color.b = info->color[2];
-        //}
+
+    color.r = info->color[0];
+    color.g = info->color[1];
+    color.b = info->color[2];
 
     tmp_surface = TTF_RenderGlyph_Blended( (TTF_Font*)info->ttf_font, unicode, color );
     rect.x--;
@@ -1427,13 +1420,10 @@ int ONScripterLabel::enterTextDisplayMode()
         else{
             flush();
             SDL_BlitSurface( text_surface, NULL, effect_src_surface, NULL );
-            SDL_FillRect( effect_dst_surface, NULL, SDL_MapRGBA( effect_dst_surface->format, 0, 0, 0, 0 ) );
-            alphaBlend( text_surface, 0, 0,
-                        select_surface, 0, 0, screen_width, screen_height,
-                        effect_dst_surface, 0, 0,
-                        0, 0, sentence_font.window_color_mask[0] );
 
+            shadowTextDisplay();
             restoreTextBuffer();
+
             SDL_BlitSurface( text_surface, NULL, effect_dst_surface, NULL );
 
             char *buf = new char[ strlen( string_buffer + string_buffer_offset ) + 1 ];
@@ -1663,7 +1653,30 @@ void ONScripterLabel::clearCurrentTextBuffer()
     }
 }
 
-void ONScripterLabel::enterNewPage( )
+void ONScripterLabel::shadowTextDisplay()
+{
+    if ( sentence_font.display_transparency ){
+        SDL_Rect rect;
+        SDL_BlitSurface( accumulation_surface, NULL, text_surface, NULL );
+        rect.x = sentence_font.window_rect[0];
+        rect.y = sentence_font.window_rect[1];
+        rect.w = sentence_font.window_rect[2] - sentence_font.window_rect[0] + 1;
+        rect.h = sentence_font.window_rect[3] - sentence_font.window_rect[1] + 1;
+        makeMonochromeSurface( text_surface, &rect, false );
+    }
+    else{
+        SDL_Surface *tmp_surface = loadPixmap( &sentence_font_tag );
+        if ( tmp_surface ){
+            alphaBlend( text_surface, sentence_font.window_rect[0], sentence_font.window_rect[1],
+                        accumulation_surface, sentence_font.window_rect[0], sentence_font.window_rect[1], tmp_surface->w, tmp_surface->h,
+                        tmp_surface, 0, 0,
+                        0, 0, -sentence_font_tag.trans_mode );
+            SDL_FreeSurface( tmp_surface );
+        }
+    }
+}
+
+void ONScripterLabel::enterNewPage()
 {
     /* ---------------------------------------- */
     /* Set forward the text buffer */
@@ -1673,12 +1686,7 @@ void ONScripterLabel::enterNewPage( )
 
     /* ---------------------------------------- */
     /* Clear the screen */
-    SDL_FillRect( effect_src_surface, NULL, SDL_MapRGB( effect_src_surface->format, 0, 0, 0 ) );
-    alphaBlend( text_surface, 0, 0,
-                accumulation_surface, 0, 0, screen_width, screen_height,
-                effect_src_surface, 0, 0,
-                0, 0, sentence_font.window_color_mask[0] );
-
+    shadowTextDisplay();
     flush();
 }
 
@@ -1864,12 +1872,11 @@ void ONScripterLabel::drawTaggedSurface( SDL_Surface *dst_surface, int x, int y,
     }
 }
 
-void ONScripterLabel::makeMonochromeSurface( SDL_Surface *surface, SDL_Rect *dst_rect )
+void ONScripterLabel::makeMonochromeSurface( SDL_Surface *surface, SDL_Rect *dst_rect, bool one_color_flag )
 {
     int i, j;
     SDL_Rect rect;
-    Uint32 *buf;
-    Uint16 c;
+    Uint32 *buf, c;
     
     if ( dst_rect ){
         rect.x = dst_rect->x;
@@ -1887,12 +1894,20 @@ void ONScripterLabel::makeMonochromeSurface( SDL_Surface *surface, SDL_Rect *dst
     buf = (Uint32 *)surface->pixels + rect.y * surface->w + rect.x;
     for ( i=rect.y ; i<rect.y + rect.h ; i++ ){
         for ( j=rect.x ; j<rect.x + rect.w ; j++, buf++ ){
-            c = (((*buf >> surface->format->Rshift) & 0xff) * 77 +
-                 ((*buf >> surface->format->Gshift) & 0xff) * 151 +
-                 ((*buf >> surface->format->Bshift) & 0xff) * 28 ) >> 8; 
-            *buf = monocro_color_lut[c][0] << surface->format->Rshift |
-                monocro_color_lut[c][1] << surface->format->Gshift |
-                monocro_color_lut[c][2] << surface->format->Bshift;
+            if ( one_color_flag ){
+                c = (((*buf >> surface->format->Rshift) & 0xff) * 77 +
+                     ((*buf >> surface->format->Gshift) & 0xff) * 151 +
+                     ((*buf >> surface->format->Bshift) & 0xff) * 28 ) >> 8; 
+                *buf = monocro_color_lut[c][0] << surface->format->Rshift |
+                    monocro_color_lut[c][1] << surface->format->Gshift |
+                    monocro_color_lut[c][2] << surface->format->Bshift;
+            }
+            else{
+                c = ((((*buf >> surface->format->Rshift) & 0xff) * sentence_font.window_color[0] >> 8) << surface->format->Rshift |
+                     (((*buf >> surface->format->Gshift) & 0xff) * sentence_font.window_color[1] >> 8) << surface->format->Gshift |
+                     (((*buf >> surface->format->Bshift) & 0xff) * sentence_font.window_color[2] >> 8) << surface->format->Bshift );
+                *buf = c;
+            }
         }
         buf += surface->w - rect.w;
     }
@@ -2394,11 +2409,7 @@ int ONScripterLabel::textclearCommand()
 
     /* ---------------------------------------- */
     /* Clear the screen */
-    SDL_FillRect( effect_src_surface, NULL, SDL_MapRGB( effect_src_surface->format, 0, 0, 0 ) );
-    alphaBlend( text_surface, 0, 0,
-                accumulation_surface, 0, 0, screen_width, screen_height,
-                effect_src_surface, 0, 0,
-                0, 0, sentence_font.window_color_mask[0] );
+    shadowTextDisplay();
     flush();
 
     return RET_CONTINUE;
@@ -2457,18 +2468,18 @@ int ONScripterLabel::setwindowCommand()
     readStr( &p_string_buffer, tmp_string_buffer );
     if ( tmp_string_buffer[0] == '#' ){
         sentence_font.display_transparency = true;
-        assert( strlen( tmp_string_buffer ) == 7 );
-        sentence_font.window_color_mask[0] = convHexToDec( tmp_string_buffer[1] ) << 4 | convHexToDec( tmp_string_buffer[2] );
-        sentence_font.window_color_mask[1] = convHexToDec( tmp_string_buffer[3] ) << 4 | convHexToDec( tmp_string_buffer[4] );
-        sentence_font.window_color_mask[2] = convHexToDec( tmp_string_buffer[5] ) << 4 | convHexToDec( tmp_string_buffer[6] );
+        if ( strlen( tmp_string_buffer ) != 7 ) errorAndExit( string_buffer + string_buffer_offset );
+        sentence_font.window_color[0] = convHexToDec( tmp_string_buffer[1] ) << 4 | convHexToDec( tmp_string_buffer[2] );
+        sentence_font.window_color[1] = convHexToDec( tmp_string_buffer[3] ) << 4 | convHexToDec( tmp_string_buffer[4] );
+        sentence_font.window_color[2] = convHexToDec( tmp_string_buffer[5] ) << 4 | convHexToDec( tmp_string_buffer[6] );
 
         sentence_font.window_rect[0] = readInt( &p_string_buffer );
         sentence_font.window_rect[1] = readInt( &p_string_buffer );
         sentence_font.window_rect[2] = readInt( &p_string_buffer );
         sentence_font.window_rect[3] = readInt( &p_string_buffer );
 #if 0
-        printf("    trans %s rect %d %d %d %d\n",
-               sentence_font.window_color,
+        printf("    trans %u %u %u rect %d %d %d %d\n",
+               sentence_font.window_color[0], sentence_font.window_color[1], sentence_font.window_color[2],
                sentence_font.window_rect[0], sentence_font.window_rect[1], sentence_font.window_rect[2], sentence_font.window_rect[3] );
 #endif        
     }
@@ -2477,6 +2488,7 @@ int ONScripterLabel::setwindowCommand()
         if ( sentence_font.window_image ) delete[] sentence_font.window_image;
         sentence_font.window_image = new char[ strlen( tmp_string_buffer ) + 1 ];
         memcpy( sentence_font.window_image, tmp_string_buffer, strlen( tmp_string_buffer ) + 1 );
+        parseTaggedString( sentence_font.window_image, &sentence_font_tag );
         sentence_font.window_rect[0] = readInt( &p_string_buffer );
         sentence_font.window_rect[1] = readInt( &p_string_buffer );
 #if 0        
@@ -2579,7 +2591,8 @@ int ONScripterLabel::selectCommand()
         }
         deleteSelectLink();
 
-        SDL_BlitSurface( background_surface, NULL, accumulation_surface, NULL );
+        refreshAccumulationSruface( accumulation_surface );
+        //SDL_BlitSurface( background_surface, NULL, accumulation_surface, NULL );
         enterNewPage();
 
         return RET_JUMP;
@@ -3406,8 +3419,8 @@ int ONScripterLabel::bltCommand()
     src_rect.w = readInt( &p_string_buffer );
     src_rect.h = readInt( &p_string_buffer );
     
-    SDL_BlitSurface( btndef_surface, &src_rect, text_surface, &dst_rect );
-    flush( dst_rect.x, dst_rect.y, dst_rect.w, dst_rect.h );
+    SDL_BlitSurface( btndef_surface, &src_rect, screen_surface, &dst_rect );
+    SDL_UpdateRect( screen_surface, dst_rect.x, dst_rect.y, dst_rect.w, dst_rect.h );
     
     return RET_CONTINUE;
 }
@@ -3504,10 +3517,11 @@ int ONScripterLabel::amspCommand()
     sprite_info[ no ].x = readInt( &p_string_buffer );
     sprite_info[ no ].y = readInt( &p_string_buffer );
     sprite_info[ no ].trans = readInt( &p_string_buffer );
+
     if ( sprite_info[ no ].trans > 255 ) sprite_info[ no ].trans = 255;
     else if ( sprite_info[ no ].trans < 0 ) sprite_info[ no ].trans = 0;
     //printf("amsp [%d] %d %d %d\n",no, sprite_info[ no ].x, sprite_info[ no ].y, sprite_info[ no ].trans );
-
+    
     return RET_CONTINUE;
 }
 

@@ -146,13 +146,21 @@ int ONScripterLabel::loadSaveFile( int no )
     sentence_font.display_shadow = (j==1)?true:false;
     loadInt( fp, &j );
     sentence_font.display_transparency = (j==1)?true:false;
+
+    /* Dummy, must be removed later !! */
     for ( i=0 ; i<8 ; i++ ){
+        loadInt( fp, &j );
+        //sentence_font.window_color[i] = j;
+    }
+    /* Should be char, not integer !! */
+    for ( i=0 ; i<3 ; i++ ){
         loadInt( fp, &j );
         sentence_font.window_color[i] = j;
     }
-    for ( i=0 ; i<3 ; i++ )
-        loadInt( fp, &sentence_font.window_color_mask[i] );
     loadStr( fp, &sentence_font.window_image );
+    if ( !sentence_font.display_transparency )
+        parseTaggedString( sentence_font.window_image, &sentence_font_tag );
+
     for ( i=0 ; i<4 ; i++ )
         loadInt( fp, &sentence_font.window_rect[i] );
 
@@ -264,12 +272,7 @@ int ONScripterLabel::loadSaveFile( int no )
     effect_counter = 0;
     doEffect( 1, NULL, TACHI_EFFECT_IMAGE );
 
-    SDL_FillRect( effect_dst_surface, NULL, SDL_MapRGBA( effect_dst_surface->format, 0, 0, 0, 0 ) );
-    alphaBlend( text_surface, 0, 0,
-                select_surface, 0, 0, screen_width, screen_height,
-                effect_dst_surface, 0, 0,
-                0, 0, sentence_font.window_color_mask[0] );
-    
+    shadowTextDisplay();
     restoreTextBuffer();
     flush();
     display_mode = TEXT_DISPLAY_MODE;
@@ -335,10 +338,12 @@ int ONScripterLabel::saveSaveFile( int no )
     saveInt( fp, (sentence_font.display_bold?1:0) );
     saveInt( fp, (sentence_font.display_shadow?1:0) );
     saveInt( fp, (sentence_font.display_transparency?1:0) );
+    /* Dummy, must be removed later !! */
     for ( i=0 ; i<8 ; i++ )
-        saveInt( fp, sentence_font.window_color[i] );
+        saveInt( fp, 0 );
+    /* Should be char, not integer !! */
     for ( i=0 ; i<3 ; i++ )
-        saveInt( fp, sentence_font.window_color_mask[i] );
+        saveInt( fp, sentence_font.window_color[i] );
     saveStr( fp, sentence_font.window_image );
     for ( i=0 ; i<4 ; i++ )
         saveInt( fp, sentence_font.window_rect[i] );
@@ -524,13 +529,8 @@ void ONScripterLabel::executeSystemMenu()
     }
     else{
         SDL_BlitSurface( shelter_select_surface, NULL, select_surface, NULL );
-        SDL_FillRect( effect_dst_surface, NULL, SDL_MapRGB( effect_dst_surface->format, 0, 0, 0 ) );
-        alphaBlend( text_surface, 0, 0,
-                    accumulation_surface, 0, 0, screen_width, screen_height,
-                    effect_dst_surface, 0, 0,
-                    0, 0, menu_font.window_color_mask[0] );
+        shadowTextDisplay();
 
-        //text_font.setPixelSize( menu_font.font_size );
         menu_font.num_xy[0] = menu_link_width;
         menu_font.num_xy[1] = menu_link_num;
         menu_font.top_xy[0] = (screen_width - menu_font.num_xy[0] * menu_font.pitch_xy[0]) / 2;
@@ -619,13 +619,8 @@ void ONScripterLabel::executeSystemLoad()
         searchSaveFiles();
     
         SDL_BlitSurface( shelter_select_surface, NULL, select_surface, NULL );
-        SDL_FillRect( effect_src_surface, NULL, SDL_MapRGB( effect_src_surface->format, 0, 0, 0 ) );
-        alphaBlend( text_surface, 0, 0,
-                    accumulation_surface, 0, 0, screen_width, screen_height,
-                    effect_src_surface, 0, 0,
-                    0, 0, menu_font.window_color_mask[0] );
+        shadowTextDisplay();
 
-        //text_font.setPixelSize( system_font.font_size );
         system_font.xy[0] = (system_font.num_xy[0] - strlen( load_menu_name ) / 2) / 2;
         system_font.xy[1] = 0;
         for ( i=0 ; i<strlen( load_menu_name )/2 ; i++ ){
@@ -696,13 +691,8 @@ void ONScripterLabel::executeSystemSave()
         searchSaveFiles();
 
         SDL_BlitSurface( shelter_select_surface, NULL, select_surface, NULL );
-        SDL_FillRect( effect_dst_surface, NULL, SDL_MapRGB( effect_dst_surface->format, 0, 0, 0 ) );
-        alphaBlend( text_surface, 0, 0,
-                    accumulation_surface, 0, 0, screen_width, screen_height,
-                    effect_dst_surface, 0, 0,
-                    0, 0, system_font.window_color_mask[0] );
+        shadowTextDisplay();
 
-        //ext_font.setPixelSize( system_font.font_size );
         system_font.xy[0] = (system_font.num_xy[0] - strlen( save_menu_name ) / 2 ) / 2;
         system_font.xy[1] = 0;
         for ( i=0 ; i<strlen( save_menu_name )/2 ; i++ ){
@@ -835,12 +825,8 @@ void ONScripterLabel::executeSystemLookback()
     int i;
     
     SDL_BlitSurface( shelter_select_surface, NULL, select_surface, NULL );
-    SDL_FillRect( effect_src_surface, NULL, SDL_MapRGB( effect_src_surface->format, 0, 0, 0 ) );
-    alphaBlend( text_surface, 0, 0,
-                accumulation_surface, 0, 0, screen_width, screen_height,
-                effect_src_surface, 0, 0,
-                0, 0, sentence_font.window_color_mask[0] );
-    
+    shadowTextDisplay();
+
     if ( event_mode & (WAIT_MOUSE_MODE | WAIT_BUTTON_MODE) ){
         if ( current_button_state.button == 0 ){
             event_mode = WAIT_MOUSE_MODE | WAIT_BUTTON_MODE;

@@ -97,6 +97,7 @@ public:
     ~ScriptParser();
 
     int open();
+    int skipLine( char **buf );
     int readLine( char **buf, bool raw_flag = false );
     bool getLabelAccessFlag( const char *label );
     struct LabelInfo lookupLabel( const char* label );
@@ -186,6 +187,7 @@ protected:
     BaseReader *cBR;
 
     int string_buffer_length, string_buffer_offset;
+    int line_cache;
     char *string_buffer, *tmp_string_buffer;
 
     struct LinkLabelInfo root_link_label_info, *current_link_label_info;

@@ -251,6 +251,8 @@ int ScriptParser::returnCommand()
     delete current_link_label_info->next;
     current_link_label_info->next = NULL;
 
+    text_line_flag = false;
+
     return RET_JUMP;
 }
 

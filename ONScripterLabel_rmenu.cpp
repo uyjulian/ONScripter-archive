@@ -520,6 +520,7 @@ void ONScripterLabel::leaveSystemCall( bool restore_flag )
     system_menu_mode = SYSTEM_NULL;
     system_menu_enter_flag = false;
     key_pressed_flag = false;
+    //text_line_flag = false;
 
     printf("leaveSystemCall %d %d\n",event_mode, clickstr_state);
 
@@ -635,6 +636,7 @@ void ONScripterLabel::executeSystemSkip()
 void ONScripterLabel::executeSystemReset()
 {
     resetCommand();
+    line_cache = -1;
     event_mode = WAIT_SLEEP_MODE;
     leaveSystemCall( false );
 }

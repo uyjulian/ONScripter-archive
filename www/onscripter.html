@@ -12,7 +12,7 @@
 </CENTER>
 
 Created: Feb. 6, 2002<br>
-Last updated: Apr. 5, 2002
+Last updated: Apr. 6, 2002
 
 <HR>
 
@@ -27,9 +27,9 @@ href="http://www2.osk.3web.ne.jp/~naokikun/index.htm">高橋直樹</a>氏が開発したゲ
 
 <p>ONScripter で何ができるのかについてはαβεさんの[<A HREF="http://abe.platina.sakura.ne.jp/onscripter/">ONScripter のスゝメ</A>]を参照してください。</p>
 
-<p>現在はベータ版<A HREF="onscripter-beta-20020405.tar.gz">onscripter-beta-20020405.tar.gz</A>を配布しております。<br>
+<p>現在はベータ版<A HREF="onscripter-beta-20020406.tar.gz">onscripter-beta-20020406.tar.gz</A>を配布しております。<br>
 ベータ版ゆえデバッグ出力・assert 等が有効になっていますが、正式版になったら取り除きます。<br>
-(一つ前のベータ版<A HREF="onscripter-beta-20020404.tar.gz">onscripter-beta-20020404.tar.gz</A>)</p>
+(一つ前のベータ版<A HREF="onscripter-beta-20020405.tar.gz">onscripter-beta-20020405.tar.gz</A>)</p>
 
 <p>更新内容については[<A HREF="onscripter_devel.html">開発日誌</A>]を参照して下さい。</p>
 
@@ -161,7 +161,6 @@ href="http://www2.osk.3web.ne.jp/~naokikun/index.htm">高橋直樹</a>氏が開発したゲ
 
 <OL>
   <LI> (<FONT color="#ff0000">高</FONT>)windowback の実装。
-  <LI> (<FONT color="#ff0000">高</FONT>)textgosub 時に、\@ の直後の同じ行に命令文があると、テキスト文としてデコードされたものを命令文として解釈しようとして破綻する。困った。大分書き換えないといけないかも。仕様書がないものを作ろうとすると往々にしてこうなる…。
   <LI> (<FONT color="#ff8800">中</FONT>)csel 系のセーブに関する不具合の解消。
   <LI> (<FONT color="#ff8800">中</FONT>)sprite の透明度サポート
   <LI> (<FONT color="#ff8800">中</FONT>)blt の拡大縮小に対応。
@@ -173,7 +172,6 @@ href="http://www2.osk.3web.ne.jp/~naokikun/index.htm">高橋直樹</a>氏が開発したゲ
   <LI> (<FONT color="#ff8800">中</FONT>)quake 系で、テキスト表示時にはテキストを表示したまま揺れるようにする。
   <LI> (<FONT color="#00ff00">低</FONT>)save/load 時に確認画面を表示する
   <LI> (<FONT color="#00ff00">低</FONT>)archive の検索の高速化
-  <LI> (<FONT color="#00ff00">低</FONT>)一文字毎に readLine するのをなんとかする（かも）
   <LI> (<FONT color="#00ff00">低</FONT>)alpha blend が遅いのをなんとかしたい
   <LI> (<FONT color="#00ff00">低</FONT>)sprite の現在の表示 cell を保存する？
   <LI> (<FONT color="#00ff00">低</FONT>)回想モードの表示がおかしい場合がある？
@@ -182,6 +180,7 @@ href="http://www2.osk.3web.ne.jp/~naokikun/index.htm">高橋直樹</a>氏が開発したゲ
   <LI> (<FONT color="#00ff00">低</FONT>)文字の色を変えたあとに絵の描画が入ると、文字の色が全部同じになってしまう。
   <LI> (<FONT color="#00ff00">低</FONT>)MacOS X の時に caption を UTF8 で書けるようにする。
   <LI> (<FONT color="#00ff00">低</FONT>)コードの clean up。
+  <LI> (<FONT color="#000000">０</FONT>)textgosub 時に、同じ行で最初に変数を設定しその後テキストとして使用すると、設定がテキストに正確に反映されない。こんなトリッキーなことをするゲームが存在しないことを願う。
 </OL>       
 
 </td></tr>

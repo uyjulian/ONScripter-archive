@@ -70,6 +70,7 @@ static struct FuncLUT{
     {"stop",   &ONScripterLabel::stopCommand},
     {"spstr",   &ONScripterLabel::spstrCommand},
     {"spbtn",   &ONScripterLabel::spbtnCommand},
+    {"skipoff",   &ONScripterLabel::skipoffCommand},
     {"sevol",   &ONScripterLabel::sevolCommand},
     {"setwindow",   &ONScripterLabel::setwindowCommand},
     {"setcursor",   &ONScripterLabel::setcursorCommand},
@@ -508,11 +509,10 @@ void ONScripterLabel::executeLabel()
                current_link_label_info->offset );
 
     int i, ret;
-    int line_cache = -1;
     bool first_read_flag = true;
 
     char *p_script_buffer = current_link_label_info->label_info.start_address;
-    for ( i=0 ; i<current_link_label_info->current_line  ; i++ ) readLine( &p_script_buffer );
+    for ( i=0 ; i<current_link_label_info->current_line  ; i++ ) skipLine( &p_script_buffer );
 
     i = current_link_label_info->current_line;
     while ( i<current_link_label_info->label_info.num_of_lines ){
@@ -529,7 +529,12 @@ void ONScripterLabel::executeLabel()
                 continue;
             }
         }
-
+        else if ( first_read_flag ){
+            first_read_flag = false;
+            skipLine( &p_script_buffer );
+            string_buffer_offset = current_link_label_info->offset;
+        }
+        
         current_link_label_info->current_line = i;
         current_link_label_info->offset = string_buffer_offset;
 
@@ -562,6 +567,7 @@ void ONScripterLabel::executeLabel()
             continue;
         }
         else if ( ret == RET_JUMP ){
+            line_cache = -1;
             goto executeLabelTop;
         }
         else if ( ret == RET_CONTINUE ){
@@ -569,7 +575,6 @@ void ONScripterLabel::executeLabel()
                 current_link_label_info->current_script = p_script_buffer;
                 string_buffer_offset = 0;
                 i++;
-                text_line_flag = false;
             }
         }
         else if ( ret == RET_WAIT ){
@@ -580,7 +585,6 @@ void ONScripterLabel::executeLabel()
                 current_link_label_info->current_script = p_script_buffer;
                 current_link_label_info->current_line = i+1;
                 current_link_label_info->offset = 0;
-                text_line_flag = false;
             }
             else
                 current_link_label_info->offset = string_buffer_offset;
@@ -648,6 +652,7 @@ SDL_Surface *ONScripterLabel::loadImage( char *file_name )
     unsigned char *buffer;
     SDL_Surface *ret = NULL, *tmp;
 
+    if ( !file_name ) return NULL;
     length = cBR->getFileLength( file_name );
     if ( length == 0 ){
         fprintf( stderr, " *** can't find file [%s] ***\n", file_name );
@@ -1170,6 +1175,8 @@ int ONScripterLabel::playMIDIFile()
 
     fclose( fp );
 
+    midi_play_once_flag = music_play_once_flag;
+    
     return playMIDI();
 }
 
@@ -1193,7 +1200,6 @@ int ONScripterLabel::playMIDI()
 
     Mix_VolumeMusic( mp3_volume );
     Mix_PlayMusic( midi_info, midi_looping );
-    midi_play_once_flag = music_play_once_flag;
     current_cd_track = -2; 
     
     return 0;
@@ -1314,8 +1320,7 @@ void ONScripterLabel::stopBGM( bool continue_flag )
     if ( midi_info ){
         midi_play_once_flag = true;
         Mix_HaltMusic();
-        midi_play_once_flag = music_play_once_flag;
-        //SDL_Delay(500);
+        //SDL_Delay(250);
         Mix_FreeMusic( midi_info );
         midi_info = NULL;
         setStr( &music_file_name, NULL );

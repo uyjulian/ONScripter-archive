@@ -229,6 +229,13 @@ int ONScripterLabel::spbtnCommand()
     return RET_CONTINUE;
 }
 
+int ONScripterLabel::skipoffCommand() 
+{ 
+    skip_flag = false; 
+ 
+    return RET_CONTINUE; 
+} 
+
 int ONScripterLabel::sevolCommand()
 {
     char *p_string_buffer = string_buffer + string_buffer_offset + 5; // strlen("sevol") = 5
@@ -339,6 +346,7 @@ int ONScripterLabel::selectCommand()
     int xy[2];
     char *p_script_buffer = current_link_label_info->current_script;
     readLine( &p_script_buffer );
+    line_cache = -1;
     int select_mode;
     SelectLink *last_select_link;
     char *p_string_buffer, *p_buf;
@@ -707,7 +715,10 @@ int ONScripterLabel::playCommand()
 #endif
     }
     else{ // play MIDI
+        //SDL_Delay( 300 );
         stopBGM( false );
+        //SDL_Delay( 100 );
+        
         setStr( &music_file_name, tmp_string_buffer );
         playMIDIFile();
     }

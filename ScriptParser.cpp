@@ -139,7 +139,8 @@ ScriptParser::ScriptParser()
     string_buffer_length = 512;
     string_buffer = new char[ string_buffer_length ];
     tmp_string_buffer  = new char[ string_buffer_length ];
-
+    line_cache = -1;
+    
     /* ---------------------------------------- */
     /* Global definitions */
     screen_width = 640;
@@ -462,6 +463,18 @@ void ScriptParser::readColor( uchar3 *color, char *buf ){
     (*color)[2] = convHexToDec( buf[4] ) << 4 | convHexToDec( buf[5] );
 }
 
+int ScriptParser::skipLine( char **buf )
+{
+    char *end_point = script_buffer + script_buffer_length;
+
+    while( 1 ){
+        if ( *buf == end_point ) return -1;
+        if ( *(*buf)++ == 0x0a ) break;
+    }
+
+    return 0;
+}
+
 int ScriptParser::readLine( char **buf, bool raw_flag )
 {
     char ch;
@@ -472,6 +485,8 @@ int ScriptParser::readLine( char **buf, bool raw_flag )
     char num_buf[10], num_sjis_buf[3];
     bool quat_flag = false, comment_flag = false;
     unsigned int i;
+
+    text_line_flag = false;
     
     while( 1 ){
         if ( *buf == end_point ) return -1;
@@ -548,6 +563,14 @@ int ScriptParser::readLine( char **buf, bool raw_flag )
             addStringBuffer( ch, string_counter++ );
             if ( !quat_flag )
                 text_flag = true;
+        }
+        else if ( (ch == '@' || ch == '\\') && textgosub_label ){
+            addStringBuffer( ch, string_counter++ );
+            if ( !quat_flag ){
+                head_flag = true;
+                text_flag = true;
+                continue;
+            }
         }
         else{
             addStringBuffer( ch, string_counter++ );
@@ -871,6 +894,10 @@ void ScriptParser::skipToken()
                 buf++;
             }
             continue;
+        }
+        else if ( !quat_flag && (*buf == '@' || *buf == '\\') && textgosub_label ){
+            comma_flag = false;
+            break;
         }
         else
             comma_flag = false;

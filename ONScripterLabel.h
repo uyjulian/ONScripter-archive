@@ -75,6 +75,7 @@ public:
     int stopCommand();
     int spstrCommand();
     int spbtnCommand();
+    int skipoffCommand();
     int sevolCommand();
     int setwindowCommand();
     int setcursorCommand();

@@ -72,7 +72,7 @@ struct BaseReader
         }
     };
 
-    virtual ~BaseReader();
+    virtual ~BaseReader(){};
     
     virtual int open( char *name=NULL ) = 0;
     virtual int close() = 0;

@@ -984,8 +984,6 @@ int ScriptParser::clickstrCommand()
 
 int ScriptParser::breakCommand()
 {
-    printf("breakCommand\n");
-
     const char *buf = script_h.readStr();
     if ( buf[0] == '*' ){
         current_link_label_info->label_info = script_h.lookupLabel( buf+1 );

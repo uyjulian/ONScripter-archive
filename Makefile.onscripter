@@ -7,9 +7,9 @@ GUI_OBJS = ONScripterLabel$(OBJSUFFIX) ONScripterLabel_command$(OBJSUFFIX) ONScr
 	ONScripterLabel_effect$(OBJSUFFIX) ONScripterLabel_event$(OBJSUFFIX) ONScripterLabel_rmenu$(OBJSUFFIX) \
 	ONScripterLabel_animation$(OBJSUFFIX) ONScripterLabel_sound$(OBJSUFFIX) \
 	AnimationInfo$(OBJSUFFIX) FontInfo$(OBJSUFFIX)
-SAR_OBJS = sardec$(OBJSUFFIX) DirectReader$(OBJSUFFIX) BaseReader$(OBJSUFFIX) SarReader$(OBJSUFFIX)
-NSA_OBJS = nsadec$(OBJSUFFIX) DirectReader$(OBJSUFFIX) BaseReader$(OBJSUFFIX) SarReader$(OBJSUFFIX) NsaReader$(OBJSUFFIX)
-DECODER_OBJS = BaseReader$(OBJSUFFIX) DirectReader$(OBJSUFFIX) SarReader$(OBJSUFFIX) NsaReader$(OBJSUFFIX)
+SAR_OBJS = sardec$(OBJSUFFIX) DirectReader$(OBJSUFFIX) SarReader$(OBJSUFFIX)
+NSA_OBJS = nsadec$(OBJSUFFIX) DirectReader$(OBJSUFFIX) SarReader$(OBJSUFFIX) NsaReader$(OBJSUFFIX)
+DECODER_OBJS = DirectReader$(OBJSUFFIX) SarReader$(OBJSUFFIX) NsaReader$(OBJSUFFIX)
 ONSCRIPTER_OBJS = onscripter$(OBJSUFFIX) $(DECODER_OBJS) ScriptHandler$(OBJSUFFIX) ScriptParser$(OBJSUFFIX) ScriptParser_command$(OBJSUFFIX) \
 	$(GUI_OBJS) sjis2utf16$(OBJSUFFIX) $(EXT_OBJS)
 PARSER_HEADER = BaseReader.h SarReader.h NsaReader.h DirectReader.h ScriptHandler.h ScriptParser.h AnimationInfo.h FontInfo.h
@@ -33,7 +33,6 @@ clean:
 .cpp$(OBJSUFFIX):
 	$(CC) $(CFLAGS) $<
 
-BaseReader$(OBJSUFFIX):   BaseReader.h
 SarReader$(OBJSUFFIX):    BaseReader.h SarReader.h 
 NsaReader$(OBJSUFFIX):    BaseReader.h SarReader.h NsaReader.h 
 DirectReader$(OBJSUFFIX): BaseReader.h DirectReader.h

@@ -197,7 +197,7 @@ private:
 
     char *kidoku_buffer;
 
-    bool text_flag;
+    bool text_flag; // true if the current token is text
     bool quat_flag;
     bool end_with_comma_flag;
 

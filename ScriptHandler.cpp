@@ -200,6 +200,7 @@ bool ScriptHandler::readToken()
 
     int string_counter=0, no;
     bool op_flag = true;
+    bool num_flag = false;
     char num_buf[10], num_sjis_buf[3];
 
     char ch = *buf++;
@@ -265,8 +266,16 @@ bool ScriptHandler::readToken()
 
         if ( (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') )
         {
+            if ( num_flag ) break; // if the first letter is a number, the token is a number
             if ( string_counter == 0 ) text_flag = false;
             if ( !text_flag && ch >= 'A' && ch <= 'Z' ) ch += 'a' - 'A';
+            addStringBuffer( ch, string_counter++ );
+        }
+        else if ( ch >= '0' && ch <= '9' ){
+            if ( string_counter == 0 ){
+                text_flag = false;
+                num_flag = true;
+            }
             addStringBuffer( ch, string_counter++ );
         }
         else if ( ch == ',' && string_counter == 0 ) // for select
@@ -337,7 +346,8 @@ bool ScriptHandler::readToken()
             break;
         }
         else if ( ch & 0x80 ){
-            if ( !text_flag ) break;
+            // if text appears immediately after a command, break.
+            if ( string_counter != 0 && !text_flag ) break;
             
             addStringBuffer( ch, string_counter++ );
             ch = *buf++;
@@ -346,21 +356,19 @@ bool ScriptHandler::readToken()
             text_line_flag = true;
             next_text_line_flag = true;
         }
-        else if ( !text_flag ){
-            if ( ch == ',' ||
-                 ch == ' ' ||
-                 ch == '\t' ||
-                 ch == '<' ||
-                 ch == '>' ||
-                 ch == '=' ||
-                 ch == '!' ||
-                 ch == '&' ||
-                 ch == ':' ||
-                 ch == ';' ||
-                 ch == ')' ) break;
-            addStringBuffer( ch, string_counter++ );
-        }
         else{
+            if ( !text_flag &&
+                 ( ch == ',' ||
+                   ch == ' ' ||
+                   ch == '\t' ||
+                   ch == '<' ||
+                   ch == '>' ||
+                   ch == '=' ||
+                   ch == '!' ||
+                   ch == '&' ||
+                   ch == ':' ||
+                   ch == ';' ||
+                   ch == ')')  ) break;
             addStringBuffer( ch, string_counter++ );
         }
             

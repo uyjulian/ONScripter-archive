@@ -218,7 +218,7 @@ bool ScriptHandler::readToken( bool advance_flag )
         addStringBuffer( ch, string_counter++ );
         buf++;
     }
-    else while ( ch != 0x0a && ch != '\0' )
+    else while ( ch != 0x0a && ch != '\0' && ch != '"' )
     {
         if ( op_flag && !text_flag ){
             while ( ch == '<' || ch == '>' ||
@@ -300,7 +300,7 @@ bool ScriptHandler::readToken( bool advance_flag )
                 addStringBuffer( ch, string_counter++ );
             }
         }
-        else if ( ch == '@' || ch == '\\' )
+        else if ( text_flag && (ch == '@' || ch == '\\') )
         {
             addStringBuffer( ch, string_counter++ );
             buf++;

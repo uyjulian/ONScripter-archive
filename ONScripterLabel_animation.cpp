@@ -229,9 +229,10 @@ void ONScripterLabel::parseTaggedString( AnimationInfo *anim )
             anim->trans_mode = AnimationInfo::TRANS_MASK;
             buffer++;
             script_h.pushCurrent( buffer );
-            const char *buf = script_h.readStr();
-            script_h.popCurrent();
+            const char *buf = script_h.readStr( NULL, true );
             setStr( &anim->mask_file_name, buf );
+            buffer = script_h.next_script;
+            script_h.popCurrent();
         }
         else if ( buffer[0] == '#' ){
             anim->trans_mode = AnimationInfo::TRANS_DIRECT;

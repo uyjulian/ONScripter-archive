@@ -548,6 +548,7 @@ void ONScripterLabel::enterSystemCall()
     shelter_text_buffer = current_text_buffer;
     event_mode = IDLE_EVENT_MODE;
     system_menu_enter_flag = true;
+    yesno_caller = SYSTEM_NULL;
 }
 
 void ONScripterLabel::leaveSystemCall( bool restore_flag )
@@ -568,6 +569,7 @@ void ONScripterLabel::leaveSystemCall( bool restore_flag )
 
     system_menu_mode = SYSTEM_NULL;
     system_menu_enter_flag = false;
+    yesno_caller = SYSTEM_NULL;
     key_pressed_flag = false;
     //text_line_flag = false;
 
@@ -585,7 +587,7 @@ void ONScripterLabel::leaveSystemCall( bool restore_flag )
 
 void ONScripterLabel::executeSystemCall()
 {
-    //printf("*****  executeSystemCall %d %d*****\n", system_menu_enter_flag, volatile_button_state.button );
+    //printf("*****  executeSystemCall %d %d %d*****\n", system_menu_enter_flag, volatile_button_state.button, system_menu_mode );
     
     if ( !system_menu_enter_flag ){
         enterSystemCall();
@@ -600,6 +602,9 @@ void ONScripterLabel::executeSystemCall()
         break;
       case SYSTEM_SAVE:
         executeSystemSave();
+        break;
+      case SYSTEM_YESNO:
+        executeSystemYesNo();
         break;
       case SYSTEM_LOAD:
         executeSystemLoad();
@@ -672,6 +677,7 @@ void ONScripterLabel::executeSystemMenu()
         event_mode = WAIT_INPUT_MODE | WAIT_BUTTON_MODE;
         refreshMouseOverButton();
         system_menu_mode = SYSTEM_MENU;
+        yesno_caller = SYSTEM_MENU;
     }
 }
 
@@ -685,10 +691,15 @@ void ONScripterLabel::executeSystemSkip()
 
 void ONScripterLabel::executeSystemReset()
 {
-    resetCommand();
-    line_cache = -1;
-    event_mode = WAIT_SLEEP_MODE;
-    leaveSystemCall( false );
+    if ( yesno_caller == SYSTEM_RESET ){
+        leaveSystemCall();
+    }
+    else{
+        if ( yesno_caller == SYSTEM_NULL )
+            yesno_caller = SYSTEM_RESET;
+        system_menu_mode = SYSTEM_YESNO;
+        startTimer( MINIMUM_TIMER_RESOLUTION );
+    }
 }
 
 void ONScripterLabel::executeWindowErase()
@@ -715,20 +726,19 @@ void ONScripterLabel::executeSystemLoad()
         event_mode = IDLE_EVENT_MODE;
 
         if ( current_button_state.button > 0 ){
-            if ( loadSaveFile( current_button_state.button ) ){
+            if ( !save_file_info[current_button_state.button-1].valid ){
                 event_mode  = WAIT_INPUT_MODE | WAIT_BUTTON_MODE;
                 refreshMouseOverButton();
                 return;
             }
             deleteButtonLink();
-            deleteSelectLink();
-
-            leaveSystemCall( false );
-            saveon_flag = true;
+            yesno_selected_file_no = current_button_state.button;
+            yesno_caller = SYSTEM_LOAD;
+            system_menu_mode = SYSTEM_YESNO;
+            startTimer( MINIMUM_TIMER_RESOLUTION );
         }
         else{
             deleteButtonLink();
-            deleteSelectLink();
             leaveSystemCall();
         }
     }
@@ -789,8 +799,13 @@ void ONScripterLabel::executeSystemSave()
 
         deleteButtonLink();
 
-        if ( current_button_state.button > 0 )
-            saveSaveFile( current_button_state.button );
+        if ( current_button_state.button > 0 ){
+            yesno_selected_file_no = current_button_state.button;
+            yesno_caller = SYSTEM_SAVE;
+            system_menu_mode = SYSTEM_YESNO;
+            startTimer( MINIMUM_TIMER_RESOLUTION );
+            return;
+        }
         leaveSystemCall();
     }
     else{
@@ -838,6 +853,83 @@ void ONScripterLabel::executeSystemSave()
         event_mode = WAIT_INPUT_MODE | WAIT_BUTTON_MODE;
         refreshMouseOverButton();
         system_menu_mode = SYSTEM_SAVE;
+    }
+}
+
+void ONScripterLabel::executeSystemYesNo()
+{
+	char name[64] = {'\0'};
+	
+    if ( event_mode & (WAIT_INPUT_MODE | WAIT_BUTTON_MODE) ){
+
+        if ( current_button_state.button == 0 ) return;
+        event_mode = IDLE_EVENT_MODE;
+
+        deleteButtonLink();
+
+        if ( current_button_state.button == 1 ){ // yes is selected
+            if ( yesno_caller == SYSTEM_SAVE ){
+                saveSaveFile( yesno_selected_file_no );
+                leaveSystemCall();
+            }
+            else if ( yesno_caller == SYSTEM_LOAD ){
+
+                loadSaveFile( yesno_selected_file_no );
+                leaveSystemCall( false );
+                saveon_flag = true;
+            }
+            else if ( yesno_caller == SYSTEM_RESET || 
+                      yesno_caller == SYSTEM_MENU ){
+
+                resetCommand();
+                line_cache = -1;
+                event_mode = WAIT_SLEEP_MODE;
+                leaveSystemCall( false );
+            }
+        }
+		else{
+            system_menu_mode = yesno_caller;
+            startTimer( MINIMUM_TIMER_RESOLUTION );
+        }
+    }
+    else{
+        refreshSurface( text_surface, NULL );
+        shadowTextDisplay( text_surface, text_surface, NULL, &menu_font );
+
+        if ( yesno_caller == SYSTEM_SAVE || yesno_caller == SYSTEM_LOAD )
+            sprintf( name, "%s%s", 
+                     save_item_name,
+                     save_file_info[yesno_selected_file_no-1].sjis_no );
+            
+        if ( yesno_caller == SYSTEM_SAVE )
+            strcat( name, "にセーブします。よろしいですか？" );
+        else if ( yesno_caller == SYSTEM_LOAD )
+            strcat( name, "をロードします。よろしいですか？" );
+        else if ( yesno_caller == SYSTEM_RESET || 
+                  yesno_caller == SYSTEM_MENU )
+            strcpy( name, "終了します。よろしいですか？" );
+        system_font.xy[0] = (system_font.num_xy[0] - strlen( name ) / 2 ) / 2;
+        system_font.xy[1] = 10;
+        drawString( name, system_font.color, &system_font, true, text_surface );
+
+        strcpy( name, "はい" );
+        system_font.xy[0] = 12;
+        system_font.xy[1] = 12;
+        last_button_link->next = getSelectableSentence( name, &system_font, false );
+        last_button_link = last_button_link->next;
+        last_button_link->no = 1;
+
+        strcpy( name, "いいえ" );
+        system_font.xy[0] = 18;
+        system_font.xy[1] = 12;
+        last_button_link->next = getSelectableSentence( name, &system_font, false );
+        last_button_link = last_button_link->next;
+        last_button_link->no = 2;
+
+        flush();
+        SDL_BlitSurface( text_surface, NULL, select_surface, NULL );
+        event_mode = WAIT_INPUT_MODE | WAIT_BUTTON_MODE;
+        refreshMouseOverButton();
     }
 }
 

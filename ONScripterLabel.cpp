@@ -431,7 +431,8 @@ void ONScripterLabel::mouseOverCheck( int x, int y )
     if ( current_over_button != button ){
         bool f_flag = false;
         if ( event_mode & WAIT_BUTTON_MODE && !first_mouse_over_flag ){
-            if ( current_button_link.button_type == SPRITE_BUTTON || current_button_link.button_type == EX_SPRITE_BUTTON ){
+            if ( current_button_link.button_type == SPRITE_BUTTON || 
+                 current_button_link.button_type == EX_SPRITE_BUTTON ){
                 sprite_info[ current_button_link.sprite_no ].current_cell = 0;
                 refreshSurface( text_surface, &current_button_link.image_rect, REFRESH_SHADOW_MODE );
             }
@@ -449,7 +450,8 @@ void ONScripterLabel::mouseOverCheck( int x, int y )
                      p_button_link->image_surface ){
                     SDL_BlitSurface( p_button_link->image_surface, NULL, text_surface, &p_button_link->image_rect );
                 }
-                else if ( p_button_link->button_type == SPRITE_BUTTON || p_button_link->button_type == EX_SPRITE_BUTTON ){
+                else if ( p_button_link->button_type == SPRITE_BUTTON || 
+                          p_button_link->button_type == EX_SPRITE_BUTTON ){
                     sprite_info[ p_button_link->sprite_no ].current_cell = 1;
                     refreshSurface( text_surface, &p_button_link->image_rect, REFRESH_SHADOW_MODE );
                     if ( p_button_link->button_type == EX_SPRITE_BUTTON ){
@@ -622,31 +624,52 @@ int ONScripterLabel::parseLine( )
     return ret;
 }
 
-SDL_Surface *ONScripterLabel::resizeSurface( SDL_Surface *src )
+int ONScripterLabel::resizeSurface( SDL_Surface *src, SDL_Rect *src_rect, SDL_Surface *dst, SDL_Rect *dst_rect )
 {
-    SDL_Rect rect;
-    SDL_Surface *dst;
+    SDL_Rect src_rect2, dst_rect2;
     Uint32 pixel[2][2], p;
     int i, j;
-    
-    rect.x = rect.y = 0;
-    if ( (rect.w = src->w * screen_ratio1 / screen_ratio2) == 0 ) rect.w = 1;
-    if ( (rect.h = src->h * screen_ratio1 / screen_ratio2) == 0 ) rect.h = 1;
-    dst = SDL_CreateRGBSurface( DEFAULT_SURFACE_FLAG, rect.w, rect.h, 32, rmask, gmask, bmask, amask );
 
+    if ( src_rect ){
+        src_rect2 = *src_rect;
+    }
+    else{
+        src_rect2.x = src_rect2.y = 0;
+        src_rect2.w = src->w;
+        src_rect2.h = src->h;
+    }
+    
+    if ( dst_rect ){
+        dst_rect2 = *dst_rect;
+    }
+    else{
+        dst_rect2.x = dst_rect2.y = 0;
+        dst_rect2.w = dst->w;
+        dst_rect2.h = dst->h;
+    }
+    
     SDL_LockSurface( dst );
     SDL_LockSurface( src );
     Uint32 *src_buffer = (Uint32 *)src->pixels;
-    Uint32 *dst_buffer = (Uint32 *)dst->pixels;
+    Uint32 *dst_buffer = (Uint32 *)dst->pixels + dst->w * dst_rect2.y + dst_rect2.x;
 
-    for ( i=0 ; i<dst->h ; i++ ){
-        for ( j=0 ; j<dst->w ; j++ ){
-            int x = (j << 3) * screen_ratio2 / screen_ratio1;
-            int y = (i << 3) * screen_ratio2 / screen_ratio1;
+    for ( i=0 ; i<dst_rect2.h ; i++ ){
+        for ( j=0 ; j<dst_rect2.w ; j++ ){
+
+            if ( dst_rect2.x + j < 0 ||
+                 dst_rect2.x + j >= dst->w ||
+                 dst_rect2.y + i < 0 ||
+                 dst_rect2.y + i >= dst->h ){
+                *dst_buffer++ = amask;
+                continue;
+            }
+
+            int x = (j << 3) * src_rect2.w / dst_rect2.w;
+            int y = (i << 3) * src_rect2.h / dst_rect2.h;
             int dx = x & 0x7;
             int dy = y & 0x7;
-            x >>= 3;
-            y >>= 3;
+            x = (x >> 3) + src_rect2.x;
+            y = (y >> 3) + src_rect2.y;
 
             pixel[0][0] = *(src_buffer + src->w * y + x);
             if ( x+1 == src->w )
@@ -680,12 +703,13 @@ SDL_Surface *ONScripterLabel::resizeSurface( SDL_Surface *src )
             
             *dst_buffer++ = p | amask;
         }
+        dst_buffer += dst->w - dst_rect2.w;
     }
     
     SDL_UnlockSurface( src );
     SDL_UnlockSurface( dst );
 
-    return dst;
+    return 0;
 }
 
 SDL_Surface *ONScripterLabel::loadImage( char *file_name )
@@ -712,7 +736,16 @@ SDL_Surface *ONScripterLabel::loadImage( char *file_name )
     ret = SDL_ConvertSurface( tmp, text_surface->format, DEFAULT_SURFACE_FLAG );
     if ( ret && screen_ratio2 != 1 ){
         SDL_Surface *ret2 = ret;
-        ret = resizeSurface( ret2 );
+
+        SDL_Rect src_rect, dst_rect;
+        src_rect.x = src_rect.y = dst_rect.x = dst_rect.y = 0;
+        src_rect.w = ret2->w;
+        src_rect.h = ret2->h;
+        if ( (dst_rect.w = ret2->w * screen_ratio1 / screen_ratio2) == 0 ) dst_rect.w = 1;
+        if ( (dst_rect.h = ret2->h * screen_ratio1 / screen_ratio2) == 0 ) dst_rect.h = 1;
+        ret = SDL_CreateRGBSurface( DEFAULT_SURFACE_FLAG, dst_rect.w, dst_rect.h, 32, rmask, gmask, bmask, amask );
+        
+        resizeSurface( ret2, &src_rect, ret, &dst_rect );
         SDL_FreeSurface( ret2 );
     }
     SDL_FreeSurface( tmp );
@@ -1093,8 +1126,6 @@ int ONScripterLabel::playMIDIFile()
 
     FILE *fp;
 
-    printf( "playMIDI %s once %d\n", music_file_name, music_play_once_flag );
-    
     if ( (fp = fopen( TMP_MIDI_FILE, "wb" )) == NULL ){
         fprintf( stderr, "can't open temporaly MIDI file %s\n", TMP_MIDI_FILE );
         return -1;
@@ -1120,6 +1151,8 @@ int ONScripterLabel::playMIDIFile()
 int ONScripterLabel::playMIDI()
 {
     int midi_looping = music_play_once_flag ? 0 : -1;
+    char *midi_file = new char[ strlen(archive_path) + strlen(TMP_MIDI_FILE) + 1 ];
+    sprintf( midi_file, "%s%s", archive_path, TMP_MIDI_FILE );
 
     char *music_cmd = getenv( "MUSIC_CMD" );
 
@@ -1130,8 +1163,8 @@ int ONScripterLabel::playMIDI()
 
     Mix_SetMusicCMD( music_cmd );
 
-    if ( (midi_info = Mix_LoadMUS( TMP_MIDI_FILE )) == NULL ) {
-        printf( "can't load MIDI file %s\n", TMP_MIDI_FILE );
+    if ( (midi_info = Mix_LoadMUS( midi_file )) == NULL ) {
+        printf( "can't load MIDI file %s\n", midi_file );
         return -1;
     }
 

@@ -1012,7 +1012,6 @@ int ONScripterLabel::loadgameCommand()
         deleteSelectLink();
         key_pressed_flag = false;
         saveon_flag = true;
-        printf("loadGame %d %d\n",event_mode,skip_flag);
         if ( event_mode & WAIT_INPUT_MODE ) return RET_WAIT;
         return RET_JUMP;
     }
@@ -1540,7 +1539,6 @@ int ONScripterLabel::captionCommand()
     setStr( &wm_title_string, tmp_string_buffer );
     setStr( &wm_icon_string,  tmp_string_buffer );
 
-    printf("caption \"%s\"\n", wm_title_string );
     SDL_WM_SetCaption( wm_title_string, wm_icon_string );
 
     return RET_CONTINUE;
@@ -1761,17 +1759,24 @@ int ONScripterLabel::bltCommand()
     src_rect.w = readInt( &p_string_buffer ) * screen_ratio1 / screen_ratio2;
     src_rect.h = readInt( &p_string_buffer ) * screen_ratio1 / screen_ratio2;
 
-    clip.x = clip.y = 0;
-    clip.w = screen_width;
-    clip.h = screen_height;
-    doClipping( &dst_rect, &clip, &clipped );
-    src_rect.x += clipped.x;
-    src_rect.y += clipped.y;
-    src_rect.w -= clipped.x;
-    src_rect.h -= clipped.y;
+    if ( src_rect.w == dst_rect.w && src_rect.h == dst_rect.h ){
 
-    SDL_BlitSurface( btndef_info.image_surface, &src_rect, screen_surface, &dst_rect );
-    SDL_UpdateRect( screen_surface, dst_rect.x, dst_rect.y, dst_rect.w, dst_rect.h );
+        clip.x = clip.y = 0;
+        clip.w = screen_width;
+        clip.h = screen_height;
+        doClipping( &dst_rect, &clip, &clipped );
+        src_rect.x += clipped.x;
+        src_rect.y += clipped.y;
+        src_rect.w -= clipped.x;
+        src_rect.h -= clipped.y;
+        
+        SDL_BlitSurface( btndef_info.image_surface, &src_rect, screen_surface, &dst_rect );
+        SDL_UpdateRect( screen_surface, dst_rect.x, dst_rect.y, dst_rect.w, dst_rect.h );
+    }
+    else{
+        resizeSurface( btndef_info.image_surface, &src_rect, text_surface, &dst_rect );
+        flush( &dst_rect );
+    }
     
     return RET_CONTINUE;
 }

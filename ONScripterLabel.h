@@ -207,6 +207,8 @@ private:
     FILE *tmp_save_fp;
     bool saveon_flag;
     bool shelter_soveon_flag; // used by csel
+    int yesno_caller;
+    int yesno_selected_file_no;
 
     bool monocro_flag, monocro_flag_new;
     uchar3 monocro_color, monocro_color_new;
@@ -431,7 +433,7 @@ private:
                      SDL_Surface *mask_surface, int x3,
                      int trans_mode, unsigned char mask_value = 255, unsigned int effect_value=0, SDL_Rect *clip=NULL, uchar3 *direct_color=NULL );
     int enterTextDisplayMode();
-    SDL_Surface *resizeSurface( SDL_Surface *src );
+    int resizeSurface( SDL_Surface *src, SDL_Rect *src_rect, SDL_Surface *dst, SDL_Rect *dst_rect );
     SDL_Surface *loadImage( char *file_name );
     void drawTaggedSurface( SDL_Surface *dst_surface, AnimationInfo *anim, SDL_Rect *clip );
     void makeMonochromeSurface( SDL_Surface *surface, SDL_Rect *dst_rect=NULL, FontInfo *info=NULL );
@@ -461,6 +463,7 @@ private:
     void executeWindowErase();
     void executeSystemLoad();
     void executeSystemSave();
+    void executeSystemYesNo();
     void executeSystemLookback();
 };
 

@@ -96,7 +96,8 @@ public:
                       SYSTEM_LOAD = 4,
                       SYSTEM_LOOKBACK = 5,
                       SYSTEM_WINDOWERASE = 6,
-                      SYSTEM_MENU = 7
+                      SYSTEM_MENU = 7,
+                      SYSTEM_YESNO = 8
                       } SYSTEM_CALLS;
 
     typedef enum{ RET_COMMENT = 0,

@@ -23,7 +23,8 @@
 
 #include "ONScripterLabel.h"
 #if defined(LINUX)
-#include <wait.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 #endif
 
 #define ONS_TIMER_EVENT   (SDL_USEREVENT)
@@ -119,13 +120,13 @@ void ONScripterLabel::mousePressEvent( SDL_MouseButtonEvent *event )
          ( rmode_flag || (event_mode & WAIT_BUTTON_MODE) ) ) {
         current_button_state.button = -1;
         volatile_button_state.button = -1;
-        last_mouse_state.button = -1;
+        //last_mouse_state.button = -1;
     }
     else if ( event->button == SDL_BUTTON_LEFT &&
               ( event->type == SDL_MOUSEBUTTONUP || btndown_flag ) ){
         current_button_state.button = current_over_button;
         volatile_button_state.button = current_over_button;
-        last_mouse_state.button = current_over_button;
+        //last_mouse_state.button = current_over_button;
         if ( event->type == SDL_MOUSEBUTTONUP )
                 current_button_state.down_flag = true;
         if ( trap_flag ){
@@ -145,7 +146,9 @@ void ONScripterLabel::mousePressEvent( SDL_MouseButtonEvent *event )
     
     if ( skip_flag ) skip_flag = false;
     
-    if ( event_mode & WAIT_INPUT_MODE && volatile_button_state.button == -1 && root_menu_link.next ){
+    if ( event_mode & WAIT_INPUT_MODE && 
+         volatile_button_state.button == -1 && 
+         root_menu_link.next ){
         system_menu_mode = SYSTEM_MENU;
     }
     
@@ -333,22 +336,31 @@ void ONScripterLabel::keyPressEvent( SDL_KeyboardEvent *event )
          ( event->type == SDL_KEYUP ||
            ( btndown_flag && event->keysym.sym == SDLK_RETURN) ) ){
         if ( event->keysym.sym == SDLK_UP || event->keysym.sym == SDLK_p ){
+
             if ( --shortcut_mouse_line < 0 ) shortcut_mouse_line = 0;
             struct ButtonLink *p_button_link = root_button_link.next;
-            for ( i=0 ; i<shortcut_mouse_line && p_button_link ; i++ ) p_button_link  = p_button_link->next;
+            for ( i=0 ; i<shortcut_mouse_line && p_button_link ; i++ ) 
+                p_button_link  = p_button_link->next;
+            if ( !p_button_link ){
+                shortcut_mouse_line = 0;
+                p_button_link = root_button_link.next;
+            }
             if ( p_button_link ){
                 SDL_WarpMouse( p_button_link->select_rect.x + p_button_link->select_rect.w / 2,
                                p_button_link->select_rect.y + p_button_link->select_rect.h / 2 );
             }
         }
         else if ( event->keysym.sym == SDLK_DOWN || event->keysym.sym == SDLK_n ){
+
             shortcut_mouse_line++;
             struct ButtonLink *p_button_link = root_button_link.next;
-            for ( i=0 ; i<shortcut_mouse_line && p_button_link ; i++ ) p_button_link  = p_button_link->next;
+            for ( i=0 ; i<shortcut_mouse_line && p_button_link ; i++ ) 
+                p_button_link  = p_button_link->next;
             if ( !p_button_link ){
                 shortcut_mouse_line = i-1;
                 p_button_link = root_button_link.next;
-                for ( i=0 ; i<shortcut_mouse_line ; i++ ) p_button_link  = p_button_link->next;
+                for ( i=0 ; i<shortcut_mouse_line ; i++ ) 
+                    p_button_link  = p_button_link->next;
             }
             if ( p_button_link ){
                 SDL_WarpMouse( p_button_link->select_rect.x + p_button_link->select_rect.w / 2,
@@ -380,7 +392,8 @@ void ONScripterLabel::keyPressEvent( SDL_KeyboardEvent *event )
         if ( event->keysym.sym == SDLK_ESCAPE && rmode_flag ){
             current_button_state.button  = -1;
             volatile_button_state.button = -1;
-            if ( event_mode & WAIT_INPUT_MODE && root_menu_link.next ){
+            if ( event_mode & WAIT_INPUT_MODE &&
+                 root_menu_link.next ){
                 system_menu_mode = SYSTEM_MENU;
             }
             stopAnimation( clickstr_state );
@@ -390,7 +403,8 @@ void ONScripterLabel::keyPressEvent( SDL_KeyboardEvent *event )
     }
     
     if ( event_mode & WAIT_INPUT_MODE && !key_pressed_flag ){
-        if (event->keysym.sym == SDLK_RETURN || event->keysym.sym == SDLK_SPACE ){
+        if (event->keysym.sym == SDLK_RETURN || 
+            event->keysym.sym == SDLK_SPACE ){
             skip_flag = false;
             key_pressed_flag = true;
             stopAnimation( clickstr_state );
@@ -398,7 +412,8 @@ void ONScripterLabel::keyPressEvent( SDL_KeyboardEvent *event )
         }
     }
     
-    if ( event_mode & ( WAIT_INPUT_MODE | WAIT_TEXTBTN_MODE ) && !key_pressed_flag ){
+    if ( event_mode & ( WAIT_INPUT_MODE | WAIT_TEXTBTN_MODE ) && 
+         !key_pressed_flag ){
         if (event->keysym.sym == SDLK_s){
             skip_flag = true;
             printf("toggle skip to true\n");
@@ -485,7 +500,9 @@ void ONScripterLabel::timerEvent( void )
         return;
     }
     else{
-        if ( system_menu_mode != SYSTEM_NULL || (event_mode & WAIT_INPUT_MODE && volatile_button_state.button == -1)  )
+        if ( system_menu_mode != SYSTEM_NULL || 
+             ( event_mode & WAIT_INPUT_MODE && 
+               volatile_button_state.button == -1 ) )
             executeSystemCall();
         else
             executeLabel();

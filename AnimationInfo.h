@@ -46,7 +46,7 @@ public:
 
     /* Variables from TaggedInfo */
     int trans_mode;
-    char direct_color[8];
+    uchar3 direct_color;
     int pallet_number;
     uchar3 color;
     SDL_Rect pos; // pose and size of the current cell

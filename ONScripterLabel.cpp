@@ -185,11 +185,11 @@ int ONScripterLabel::SetVideoMode()
 	return(0);
 }
 
-ONScripterLabel::ONScripterLabel( bool cdaudio_flag, char *default_font, char *default_registry, bool edit_flag )
+ONScripterLabel::ONScripterLabel( bool cdaudio_flag, char *default_font, char *default_registry, char *default_archive_path, bool edit_flag )
 {
     int i;
 
-    if ( open() ) exit(-1);
+    if ( open( default_archive_path ) ) exit(-1);
 
     printf("ONScripter\n");
 
@@ -321,9 +321,14 @@ ONScripterLabel::ONScripterLabel( bool cdaudio_flag, char *default_font, char *d
 
     /* ---------------------------------------- */
     /* Initialize font */
-    font_file = NULL;
-    if ( default_font ) setStr( &font_file, default_font );
-    else                setStr( &font_file, FONT_FILE );
+    if ( default_font ){
+        font_file = new char[ strlen(default_font) + 1 ];
+        sprintf( font_file, "%s", default_font );
+    }
+    else{
+        font_file = new char[ strlen(archive_path) + strlen(FONT_FILE) + 1 ];
+        sprintf( font_file, "%s%s", archive_path, FONT_FILE );
+    }
     
     text_char_flag = false;
     text_speed_no = 1;
@@ -771,7 +776,7 @@ void ONScripterLabel::alphaBlend( SDL_Surface *dst_surface, SDL_Rect dst_rect,
                                   SDL_Surface *src1_surface, int x1, int y1,
                                   SDL_Surface *src2_surface, int x2, int y2,
                                   SDL_Surface *mask_surface, int x3,
-                                  int trans_mode, unsigned char mask_value, unsigned int effect_value, SDL_Rect *clip )
+                                  int trans_mode, unsigned char mask_value, unsigned int effect_value, SDL_Rect *clip, uchar3 *direct_color )
 {
     int i, j;
     SDL_Rect src1_rect, src2_rect, clip_rect, clipped_rect;
@@ -846,11 +851,27 @@ void ONScripterLabel::alphaBlend( SDL_Surface *dst_surface, SDL_Rect dst_rect,
         if ( mask_surface && src2_surface != mask_surface ) SDL_UnlockSurface( mask_surface );
     }
     else if ( trans_mode == AnimationInfo::TRANS_TOPLEFT ||
-              trans_mode == AnimationInfo::TRANS_TOPRIGHT ){
+              trans_mode == AnimationInfo::TRANS_TOPRIGHT ||
+              trans_mode == AnimationInfo::TRANS_DIRECT ){
         *src2_buffer &= ~amask;
         Uint32 ref;
-        if ( trans_mode == AnimationInfo::TRANS_TOPLEFT ) ref = *src2_buffer;
-        else                                              ref = *(src2_buffer + src2_surface->w - 1);
+        if ( trans_mode == AnimationInfo::TRANS_TOPLEFT ){
+            ref = *src2_buffer;
+        }
+        else if ( trans_mode == AnimationInfo::TRANS_TOPRIGHT ){
+            ref = *(src2_buffer + src2_surface->w - 1);
+        }
+        else{
+            if ( direct_color ) {
+                ref = (*direct_color)[0] << src2_surface->format->Rshift |
+                    (*direct_color)[1] << src2_surface->format->Gshift |
+                    (*direct_color)[2] << src2_surface->format->Bshift;
+            }
+            else{
+                ref = 0;
+            }
+        }
+        
         mask = (Uint32)mask_value << src2_surface->format->Ashift;
         src2_buffer += src2_surface->w * y2 + x2;
         for ( i=0; i<dst_rect.h ; i++ ) {
@@ -980,7 +1001,7 @@ void ONScripterLabel::shadowTextDisplay( SDL_Surface *dst_surface, SDL_Surface *
                     src_surface, sentence_font_info.pos.x, sentence_font_info.pos.y,
                     sentence_font_info.image_surface, 0, 0,
                     sentence_font_info.mask_surface, sentence_font_info.alpha_offset,
-                    sentence_font_info.trans_mode, 255, 0, clip );
+                    sentence_font_info.trans_mode, 255, 0, clip, &sentence_font_info.direct_color );
     }
 }
 
@@ -1061,7 +1082,7 @@ int ONScripterLabel::playMP3( int cd_no )
     if ( music_file_name == NULL ){
         char file_name[128];
         
-        sprintf( file_name, "cd%ctrack%2.2d.mp3", DELIMITER, cd_no );
+        sprintf( file_name, "%scd%ctrack%2.2d.mp3", archive_path, DELIMITER, cd_no );
         mp3_sample = SMPEG_new( file_name, NULL, 0 );
     }
     else{

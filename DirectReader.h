@@ -32,7 +32,7 @@
 class DirectReader : virtual public BaseReader
 {
 public:
-    DirectReader();
+    DirectReader( char *path=NULL );
     ~DirectReader();
 
     int open( char *name=NULL );
@@ -48,8 +48,10 @@ public:
     size_t getFile( char *file_name, unsigned char *buffer );
 
 protected:
+    char *archive_path;
     int  getbit_mask;
-    
+
+    FILE *fopen(const char *path, const char *mode);
     unsigned char readChar( FILE *fp );
     unsigned short readShort( FILE *fp );
     unsigned long readLong( FILE *fp );

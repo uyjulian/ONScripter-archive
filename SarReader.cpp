@@ -23,7 +23,8 @@
 
 #include "SarReader.h"
 
-SarReader::SarReader()
+SarReader::SarReader( char *path )
+        :DirectReader( path )
 {
     root_archive_info = last_archive_info = &archive_info;
     num_of_sar_archives = 0;

@@ -1423,6 +1423,7 @@ int ONScripterLabel::cselbtnCommand()
 int ONScripterLabel::clickCommand()
 {
     if ( event_mode & WAIT_INPUT_MODE ){
+        event_mode = IDLE_EVENT_MODE;
         return RET_CONTINUE;
     }
     else{

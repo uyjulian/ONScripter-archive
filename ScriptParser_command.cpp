@@ -283,7 +283,7 @@ int ScriptParser::numaliasCommand()
 int ScriptParser::nsaCommand()
 {
     delete cBR;
-    cBR = new NsaReader();
+    cBR = new NsaReader( archive_path );
     if ( cBR->open() ){
         printf(" *** failed to open Nsa archive, exitting ...  ***\n");
         exit(-1);
@@ -1032,7 +1032,7 @@ int ScriptParser::arcCommand()
 
     if ( strcmp( cBR->getArchiveName(), "sar" ) ){
         delete cBR;
-        cBR = new SarReader();
+        cBR = new SarReader( archive_path );
     }
     if ( cBR->open( tmp_string_buffer ) ){
         printf(" *** failed to open archive %s ...  ***\n", tmp_string_buffer );

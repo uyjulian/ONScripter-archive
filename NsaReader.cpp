@@ -32,7 +32,8 @@
 #define N (1 << EI)  /* buffer size */
 #define F ((1 << EJ) + P)  /* lookahead buffer size */
 
-NsaReader::NsaReader()
+NsaReader::NsaReader( char *path )
+        :SarReader( path ),DirectReader( path )
 {
     sar_flag = true;
     num_of_nsa_archives = 0;

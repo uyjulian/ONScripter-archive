@@ -125,12 +125,11 @@ ScriptParser::ScriptParser()
 {
     unsigned int i;
     
-    cBR = new DirectReader();
-    cBR->open();
     script_buffer = NULL;
 
     debug_level = 0;
-    
+
+    archive_path = "";
     globalon_flag = false;
     filelog_flag = false;
     labellog_flag = false;
@@ -317,8 +316,16 @@ ScriptParser::~ScriptParser()
     delete[] tmp_string_buffer;
 }
 
-int ScriptParser::open()
+int ScriptParser::open( char *path )
 {
+    if ( path ){
+        archive_path = new char[ strlen(path) + 2 ];
+        sprintf( archive_path, "%s%c", path, DELIMITER );
+    }
+    
+    cBR = new DirectReader( archive_path );
+    cBR->open();
+    
     if ( readScript() ) return -1;
     if ( labelScript() ) return -1;
     
@@ -1302,4 +1309,12 @@ int ScriptParser::readEffect( char **buf, struct EffectLink *effect )
     if ( effect->effect == 1 ) effect->duration = 0;
     //printf("readEffect %d: %d %d %s\n", num, effect->effect, effect->duration, effect->image );
     return num;
+}
+
+FILE *ScriptParser::fopen(const char *path, const char *mode)
+{
+    char file_name[256];
+
+    sprintf( file_name, "%s%s", archive_path, path );
+    return ::fopen( file_name, mode );
 }

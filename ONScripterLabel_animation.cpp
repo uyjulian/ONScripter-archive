@@ -217,8 +217,7 @@ void ONScripterLabel::parseTaggedString( AnimationInfo *anim )
         }
         else if ( buffer[0] == '#' ){
             anim->trans_mode = AnimationInfo::TRANS_DIRECT;
-            memcpy( anim->direct_color, buffer, 7 );
-            anim->direct_color[7] = '\0';
+            readColor( &anim->direct_color, buffer + 1 );
             buffer += 7;
         }
         else if ( buffer[0] == '!' ){
@@ -326,7 +325,7 @@ void ONScripterLabel::drawTaggedSurface( SDL_Surface *dst_surface, AnimationInfo
                 dst_surface, dst_rect.x, dst_rect.y,
                 anim->image_surface, offset, 0,
                 anim->mask_surface, offset + anim->alpha_offset,
-                anim->trans_mode, anim->trans, 0, clip );
+                anim->trans_mode, anim->trans, 0, clip, &anim->direct_color );
 }
 
 void ONScripterLabel::stopAnimation( int click )

@@ -29,7 +29,7 @@
 class SarReader : virtual public DirectReader
 {
 public:
-    SarReader();
+    SarReader( char *path=NULL );
     ~SarReader();
 
     int open( char *name=NULL );

@@ -30,7 +30,7 @@
 class NsaReader : virtual public SarReader
 {
 public:
-    NsaReader();
+    NsaReader( char *path=NULL );
     ~NsaReader();
 
     int open( char *name=NULL );

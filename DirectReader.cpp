@@ -30,12 +30,27 @@
 
 #define READ_LENGTH 4096
 
-DirectReader::DirectReader()
+DirectReader::DirectReader( char *path )
 {
+    if ( path ){
+        archive_path = new char[ strlen(path) + 1 ];
+        memcpy( archive_path, path, strlen(path) + 1 );
+    }
+    else{
+        archive_path = "";
+    }
 }
 
 DirectReader::~DirectReader()
 {
+}
+
+FILE *DirectReader::fopen(const char *path, const char *mode)
+{
+    char file_name[256];
+
+    sprintf( file_name, "%s%s", archive_path, path );
+    return ::fopen( file_name, mode );
 }
 
 unsigned char DirectReader::readChar( FILE *fp )

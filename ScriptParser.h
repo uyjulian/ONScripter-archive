@@ -38,7 +38,7 @@
 #define M_PI 3.14159265358979323846
 #endif
 
-#define MINIMUM_TIMER_RESOLUTION 10
+#define MINIMUM_TIMER_RESOLUTION 1
 
 #define VARIABLE_RANGE 4096
 #define ARRAY_VARIABLE_RANGE 200
@@ -123,7 +123,7 @@ public:
     ScriptParser();
     ~ScriptParser();
 
-    int open();
+    int open( char *path );
     int skipLine( char **buf );
     int readLine( char **buf, bool raw_flag = false );
     bool getLabelAccessFlag( const char *label );
@@ -133,6 +133,7 @@ public:
 
     bool readToken( char **src_buf, char *dst_buf, bool skip_space_flag = false );
     bool readStr( char **src_buf, char *dst_buf );
+    FILE *fopen(const char *path, const char *mode);
     void skipToken();
     void saveGlovalData();
     void saveFileLog();
@@ -203,6 +204,7 @@ protected:
     MODE current_mode;
     int  debug_level;
 
+    char *archive_path;
     bool globalon_flag;
     bool filelog_flag;
     bool labellog_flag;

@@ -54,7 +54,7 @@
 class ONScripterLabel : public ScriptParser
 {
 public:
-    ONScripterLabel( bool cdaudio_flag, char *default_font, char *default_registry, bool edit_flag );
+    ONScripterLabel( bool cdaudio_flag, char *default_font, char *default_registry, char *default_archive_path, bool edit_flag );
     ~ONScripterLabel();
 
     bool skip_flag;
@@ -423,7 +423,7 @@ private:
                      SDL_Surface *src1_surface, int x1, int y1,
                      SDL_Surface *src2_surface, int x2, int y2,
                      SDL_Surface *mask_surface, int x3,
-                     int trans_mode, unsigned char mask_value = 255, unsigned int effect_value=0, SDL_Rect *clip=NULL );
+                     int trans_mode, unsigned char mask_value = 255, unsigned int effect_value=0, SDL_Rect *clip=NULL, uchar3 *direct_color=NULL );
     int enterTextDisplayMode();
     SDL_Surface *loadImage( char *file_name );
     void drawTaggedSurface( SDL_Surface *dst_surface, AnimationInfo *anim, SDL_Rect *clip );

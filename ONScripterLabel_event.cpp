@@ -113,7 +113,8 @@ void ONScripterLabel::mousePressEvent( SDL_MouseButtonEvent *event )
     current_button_state.x = event->x;
     current_button_state.y = event->y;
     
-    if ( event->button == SDL_BUTTON_RIGHT && rmode_flag ){
+    if ( event->button == SDL_BUTTON_RIGHT &&
+         ( rmode_flag || (event_mode & WAIT_BUTTON_MODE) ) ) {
         current_button_state.button = -1;
         volatile_button_state.button = -1;
         last_mouse_state.button = -1;

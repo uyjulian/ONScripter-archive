@@ -29,6 +29,7 @@ void optionHelp()
     printf( "      --cdaudio\t\tuse CD audio if available\n");
     printf( "      --font file\tuse file as a default font\n");
     printf( "      --registry file\tuse file as a default registry file\n");
+    printf( "      --arc path\tuse pathe as a root path for archives\n");
     printf( "      --edit\t\tedit volumes and variables when 'z' is pressed\n");
     printf( "  -h, --help\t\tdisplay this help and exit\n");
     printf( "  -v, --version\t\toutput version information and exit\n");
@@ -49,6 +50,7 @@ int main( int argc, char **argv )
     bool cdaudio_flag = false;
     char *default_font = NULL;
     char *default_registry = NULL;
+    char *default_archive_path = NULL;
     bool edit_flag = false;
     
     /* ---------------------------------------- */
@@ -79,6 +81,13 @@ int main( int argc, char **argv )
                 default_registry = new char[ strlen( argv[0] ) + 1 ];
                 memcpy( default_registry, argv[0], strlen( argv[0] ) + 1 );
             }
+            else if ( !strcmp( argv[0]+1, "-arc" ) ){
+                argc--;
+                argv++;
+                if ( default_archive_path ) delete[] default_archive_path;
+                default_archive_path = new char[ strlen( argv[0] ) + 1 ];
+                memcpy( default_archive_path, argv[0], strlen( argv[0] ) + 1 );
+            }
             else if ( !strcmp( argv[0]+1, "-edit" ) ){
                 edit_flag = true;
             }
@@ -95,7 +104,7 @@ int main( int argc, char **argv )
     
     /* ---------------------------------------- */
     /* Run ONScripter */
-    ONScripterLabel *ons = new ONScripterLabel( cdaudio_flag, default_font, default_registry, edit_flag );
+    ONScripterLabel *ons = new ONScripterLabel( cdaudio_flag, default_font, default_registry, default_archive_path, edit_flag );
     ons->eventLoop();
     
     exit(0);

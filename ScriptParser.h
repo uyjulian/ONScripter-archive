@@ -152,6 +152,9 @@ public:
     int effectCommand();
     int divCommand();
     int dimCommand();
+    int defvoicevolCommand();
+    int defsevolCommand();
+    int defmp3volCommand();
     int decCommand();
     int dateCommand();
     int cmpCommand();
@@ -188,6 +191,7 @@ protected:
     int screen_width, screen_height;
     char *version_str;
     int underline_value;
+    bool end_with_comma_flag;
     
     /* ---------------------------------------- */
     /* Number, string and array variables */
@@ -255,7 +259,8 @@ protected:
             TRANS_COPY = 3,
             TRANS_STRING = 4,
             TRANS_DIRECT = 5,
-            TRANS_PALLET = 6
+            TRANS_PALLET = 6,
+            TRANS_TOPRIGHT = 7
             } TRANS_MODE;
     int trans_mode;
     
@@ -288,6 +293,12 @@ protected:
     char *clickstr_list;
     int  clickstr_line;
     int  clickstr_state;
+    
+    /* ---------------------------------------- */
+    /* Sound related variables */
+    int mp3_volume;
+    int voice_volume;
+    int se_volume;
     
     /* ---------------------------------------- */
     /* Menu related variables */

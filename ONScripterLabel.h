@@ -28,7 +28,7 @@
 #include <SDL.h>
 #include <SDL_image.h>
 #include <SDL_ttf.h>
-#include <SDL_sound.h>
+#include <smpeg.h>
 #include <SDL_mixer.h>
 
 #define FONT_NAME "default.ttf"
@@ -64,9 +64,12 @@ public:
     int waittimerCommand();
     int waitCommand();
     int vspCommand();
+    int voicevolCommand();
     int textclearCommand();
     int systemcallCommand();
     int stopCommand();
+    int spbtnCommand();
+    int sevolCommand();
     int setwindowCommand();
     int setcursorCommand();
     int selectCommand();
@@ -81,6 +84,7 @@ public:
     int playonceCommand();
     int playCommand();
     int mspCommand();
+    int mp3volCommand();
     int mp3Command();
     int monocroCommand();
     int lspCommand();
@@ -100,6 +104,7 @@ public:
     int cspCommand();
     int clickCommand();
     int clCommand();
+    int cellCommand();
     int btnwait2Command();
     int btnwaitCommand();
     int btndefCommand();
@@ -142,6 +147,8 @@ private:
         uchar3 color;
 
         int num_of_cells;
+        int current_cell;
+        int direction;
         int *duration_list;
         uchar3 *color_list;
         int loop_mode;
@@ -149,7 +156,9 @@ private:
         char *file_name;
 
         TaggedInfo(){
+            current_cell = 0;
             num_of_cells = 0;
+            direction = 1;
             duration_list = NULL;
             color_list = NULL;
             file_name = NULL;
@@ -209,10 +218,15 @@ private:
     struct ButtonState{
         int x, y, button;
     } current_button_state, volatile_button_state, last_mouse_state, shelter_mouse_state;
-    
+
+    typedef enum{ NORMAL_BUTTON = 0,
+                      SPRITE_BUTTON = 1
+                      } BUTTON_TYPE;
     struct ButtonLink{
         struct ButtonLink *next;
+        BUTTON_TYPE button_type;
         int no;
+        int sprite_no;
         SDL_Rect select_rect;
         SDL_Rect image_rect;
         SDL_Surface *image_surface;
@@ -265,29 +279,24 @@ private:
     SDL_Surface *tachi_image_surface[3];
     
     /* ---------------------------------------- */
-    /* Sprite related variables */
-    struct SpriteInfo{
-        bool valid;
-        int x, y;
+    /* Animation related variables */
+    struct AnimationInfo{
+        bool valid; // valid flag for sprite and absolute flag for cursor
+        SDL_Rect pos;
         int trans;
-        struct TaggedInfo tag;
-        char *name;
-        SDL_Surface *image_surface;
-    } sprite_info[MAX_SPRITE_NUM];
-    
-    /* ---------------------------------------- */
-    /* Cursor related variables */
-    struct CursorInfo{
-        int xy[2];
-        bool abs_flag;
-        int w, h;
-        int count;
-        int direction;
         struct TaggedInfo tag;
         char *image_name;
         SDL_Surface *image_surface;
         SDL_Surface *preserve_surface;
-    } cursor_info[2];
+    };
+
+    /* ---------------------------------------- */
+    /* Sprite related variables */
+    struct AnimationInfo sprite_info[MAX_SPRITE_NUM];
+    
+    /* ---------------------------------------- */
+    /* Cursor related variables */
+    struct AnimationInfo cursor_info[2];
 
     void loadCursor( int no, char *str, int x, int y, bool abs_flag = false );
     void startCursor( int click );
@@ -295,18 +304,21 @@ private:
     
     /* ---------------------------------------- */
     /* Sound related variables */
+    SDL_AudioSpec audio_format;
     bool audio_open_flag;
-    Sound_Sample *mp3_sample;
+
     int current_cd_track;
     bool mp3_play_once_flag;
     char *mp3_file_name;
     unsigned char *mp3_buffer;
-
-    Mix_Chunk *wave_sample;
+    SMPEG_Info mp3_info;
+    SMPEG *mp3_sample;
+    
+    Mix_Chunk *wave_sample[MIX_CHANNELS];
     bool wave_play_once_flag;
 
     int playMP3( int cd_no );
-    int playWave( char *file_name, bool loop_flag );
+    int playWave( char *file_name, bool loop_flag, int channel );
     
     /* ---------------------------------------- */
     /* Text event related variables */
@@ -322,20 +334,22 @@ private:
     void enterNewPage();
     
     void deleteLabelLink();
-    void flush( int x=-1, int y=-1, int wx=-1, int wy=-1 );
+    void flush( SDL_Rect *rect=NULL );
+    void flush( int x, int y, int w, int h );
     void executeLabel();
     int parseLine();
     void parseTaggedString( char *buffer, struct TaggedInfo *tag );
+    void setupAnimationInfo( struct AnimationInfo *anim );
     void alphaBlend( SDL_Surface *dst_surface, int x, int y,
                      SDL_Surface *src1_surface, int x1, int y1, int wx, int wy,
                      SDL_Surface *src2_surface, int x2, int y2,
                      int x3, int y3, int mask_value );
     int enterTextDisplayMode();
     SDL_Surface *loadPixmap( struct TaggedInfo *tag );
-    void drawTaggedSurface( SDL_Surface *dst_surface, int x, int y, int w, int h,
+    void drawTaggedSurface( SDL_Surface *dst_surface, SDL_Rect *pos,
                            SDL_Surface *src_surface, TaggedInfo *tagged_info );
     void makeMonochromeSurface( SDL_Surface *surface, SDL_Rect *dst_rect=NULL, bool one_color_flag = true );
-    void refreshAccumulationSruface( SDL_Surface *surface );
+    void refreshAccumulationSurface( SDL_Surface *surface, SDL_Rect *rect=NULL );
     void restoreTextBuffer();
     void mouseOverCheck( int x, int y );
     

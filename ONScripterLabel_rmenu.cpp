@@ -235,8 +235,8 @@ int ONScripterLabel::loadSaveFile( int no )
 
     for ( i=0 ; i<MAX_SPRITE_NUM ; i++ ){
         sprite_info[i].valid = false;
-        if ( sprite_info[i].name ) delete[] sprite_info[i].name;
-        sprite_info[i].name = NULL;
+        if ( sprite_info[i].image_name ) delete[] sprite_info[i].image_name;
+        sprite_info[i].image_name = NULL;
     }
 
     effect_counter = 0;
@@ -258,12 +258,12 @@ int ONScripterLabel::loadSaveFile( int no )
     for ( i=0 ; i<MAX_SPRITE_NUM ; i++ ){
         loadInt( fp, &j );
         sprite_info[i].valid = (j==1)?true:false;
-        loadInt( fp, &sprite_info[i].x );
-        loadInt( fp, &sprite_info[i].y );
+        loadInt( fp, &j ); sprite_info[i].pos.x = j;
+        loadInt( fp, &j ); sprite_info[i].pos.y = j;
         loadInt( fp, &sprite_info[i].trans );
-        loadStr( fp, &sprite_info[i].name );
-        if ( sprite_info[i].name ){
-            parseTaggedString( sprite_info[i].name, &sprite_info[i].tag );
+        loadStr( fp, &sprite_info[i].image_name );
+        if ( sprite_info[i].image_name ){
+            parseTaggedString( sprite_info[i].image_name, &sprite_info[i].tag );
             if ( sprite_info[i].image_surface ) SDL_FreeSurface( sprite_info[i].image_surface );
             sprite_info[i].image_surface = loadPixmap( &sprite_info[i].tag );
         }
@@ -393,10 +393,10 @@ int ONScripterLabel::saveSaveFile( int no )
     /* Save current sprites */
     for ( i=0 ; i<MAX_SPRITE_NUM ; i++ ){
         saveInt( fp, sprite_info[i].valid?1:0 );
-        saveInt( fp, sprite_info[i].x );
-        saveInt( fp, sprite_info[i].y );
+        saveInt( fp, sprite_info[i].pos.x );
+        saveInt( fp, sprite_info[i].pos.y );
         saveInt( fp, sprite_info[i].trans );
-        saveStr( fp, sprite_info[i].name );
+        saveStr( fp, sprite_info[i].image_name );
     }
 
     /* ---------------------------------------- */

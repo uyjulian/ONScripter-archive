@@ -3,8 +3,8 @@
 # Makefile.Linux - Makefile rules for linux
 #
 
-INCS = `sdl-config --cflags`
-LIBS = `sdl-config --libs` -lSDL_ttf -lSDL_image -lSDL_sound -lSDL_mixer -lbz2
+INCS = `sdl-config --cflags` `smpeg-config --cflags`
+LIBS = `sdl-config --libs` `smpeg-config --libs` -lSDL_ttf -lSDL_image -lSDL_mixer -lbz2
 
 EXESUFFIX =
 OBJSUFFIX = .o

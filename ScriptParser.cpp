@@ -36,6 +36,8 @@
 #define DEFAULT_LOOKBACK_NAME2 "doncur.bmp"
 #define DEFAULT_LOOKBACK_NAME3 "doffcur.bmp"
 
+#define DEFAULT_VOLUME 100
+
 typedef int (ScriptParser::*FuncList)();
 static struct FuncLUT{
     char command[40];
@@ -91,6 +93,9 @@ static struct FuncLUT{
     {"effect",   &ScriptParser::effectCommand},
     {"div",   &ScriptParser::divCommand},
     {"dim",   &ScriptParser::dimCommand},
+    {"defvoicevol",   &ScriptParser::defvoicevolCommand},
+    {"defsevol",   &ScriptParser::defsevolCommand},
+    {"defmp3vol",   &ScriptParser::defmp3volCommand},
     {"dec",   &ScriptParser::decCommand},
     {"date",   &ScriptParser::dateCommand},
     {"cmp",      &ScriptParser::cmpCommand},
@@ -137,6 +142,7 @@ ScriptParser::ScriptParser()
     jumpf_flag = false;
     srand( time(NULL) );
     z_order = 25;
+    end_with_comma_flag = false;
     
     /* ---------------------------------------- */
     /* Lookback related variables */
@@ -207,6 +213,10 @@ ScriptParser::ScriptParser()
     clickstr_line = 0;
     clickstr_state = CLICK_NONE;
     
+    /* ---------------------------------------- */
+    /* Sound related variables */
+    mp3_volume = voice_volume = se_volume = DEFAULT_VOLUME;
+
     /* ---------------------------------------- */
     /* Menu related variables */
     menu_font.ttf_font  = system_font.ttf_font  = NULL;
@@ -782,7 +792,8 @@ bool ScriptParser::readToken( char **src_buf, char *dst_buf, bool skip_space_fla
     //char *dst_buf_org = dst_buf;
     bool first_flag = true;
     bool quat_flag = false;
-    bool end_with_comma_flag = false;
+
+    end_with_comma_flag = false;
     
     /* If it reaces to the end of the buffer, just return. */
     if ( *src_buf >= string_buffer + strlen(string_buffer) ){
@@ -830,6 +841,7 @@ bool ScriptParser::readToken( char **src_buf, char *dst_buf, bool skip_space_fla
     if ( **src_buf == ',' ){
         (*src_buf)++;
         end_with_comma_flag = true;
+        while ( **src_buf == ' ' || **src_buf == '\t' ) (*src_buf)++;
     }
     *dst_buf++ = '\0';
     //printf("dst_buf %s\n",dst_buf_org);
@@ -1109,6 +1121,8 @@ int *ScriptParser::decodeArray( char **buf )
 int ScriptParser::readInt( char **buf )
 {
     int no;
+
+    end_with_comma_flag = false;
     while ( **buf == ' ' || **buf == '\t' ) (*buf)++;
 
     if ( (*buf)[0] == '\0' || (*buf)[0] == ':' || (*buf)[0] == ';' ){
@@ -1180,8 +1194,11 @@ int ScriptParser::readInt( char **buf )
         no = alias_no;
     }
     while ( **buf == ' ' || **buf == '\t' ) (*buf)++;
-    if ( **buf == ',' ) (*buf)++;
-
+    if ( **buf == ',' ){
+        end_with_comma_flag = true;
+        (*buf)++;
+        while ( **buf == ' ' || **buf == '\t' ) (*buf)++;
+    }
     return no;
 }
 

@@ -65,9 +65,10 @@ int ScriptParser::transmodeCommand()
     char *p_string_buffer = string_buffer + string_buffer_offset + 9; // strlen("transmode") = 9
 
     readStr( &p_string_buffer, tmp_string_buffer );
-    if ( !strcmp( tmp_string_buffer, "leftup" ) )     trans_mode = TRANS_TOPLEFT;
-    else if ( !strcmp( tmp_string_buffer, "copy" ) )  trans_mode = TRANS_COPY;
-    else if ( !strcmp( tmp_string_buffer, "alpha" ) ) trans_mode = TRANS_ALPHA;
+    if ( !strcmp( tmp_string_buffer, "leftup" ) )        trans_mode = TRANS_TOPLEFT;
+    else if ( !strcmp( tmp_string_buffer, "copy" ) )     trans_mode = TRANS_COPY;
+    else if ( !strcmp( tmp_string_buffer, "alpha" ) )    trans_mode = TRANS_ALPHA;
+    else if ( !strcmp( tmp_string_buffer, "righttup" ) ) trans_mode = TRANS_TOPRIGHT;
 
     return RET_CONTINUE;
 }
@@ -239,7 +240,7 @@ int ScriptParser::rmenuCommand()
 
 int ScriptParser::returnCommand()
 {
-    label_stack_depth--;
+    if ( --label_stack_depth < 0 ) errorAndExit( string_buffer + string_buffer_offset );
     
     current_link_label_info = current_link_label_info->previous;
     delete current_link_label_info->next;
@@ -269,7 +270,7 @@ int ScriptParser::numaliasCommand()
 
 int ScriptParser::nextCommand()
 {
-    printf("nextCommand %d( %d -> %d)\n", for_stack_depth, *current_for_link->p_var, *current_for_link->p_var + current_for_link->step );
+    //printf("nextCommand %d( %d -> %d)\n", for_stack_depth, *current_for_link->p_var, *current_for_link->p_var + current_for_link->step );
 
     /* ***** Ugly code !! ***** */
     if ( current_for_link->var_type == VAR_INT )
@@ -382,7 +383,7 @@ int ScriptParser::midCommand()
         str_variables[ no ] = new char[ len + 1 ];
         memcpy( str_variables[ no ], tmp_string_buffer + start, len );
         str_variables[ no ][ len ] = '\0';
-        printf(" mid %d -> %s\n",no,str_variables[ no ]);
+        //printf(" mid %d -> %s\n",no,str_variables[ no ]);
     }
     else errorAndExit( string_buffer + string_buffer_offset );
 
@@ -888,6 +889,30 @@ int ScriptParser::dimCommand()
         array_variables[ no ].data = new int[ dim ];
     }
     
+    return RET_CONTINUE;
+}
+
+int ScriptParser::defvoicevolCommand()
+{
+    char *p_string_buffer = string_buffer + string_buffer_offset + 11; // strlen("defvoicevol") = 11
+    voice_volume = readInt( &p_string_buffer );
+
+    return RET_CONTINUE;
+}
+
+int ScriptParser::defsevolCommand()
+{
+    char *p_string_buffer = string_buffer + string_buffer_offset + 8; // strlen("defsevol") = 8
+    se_volume = readInt( &p_string_buffer );
+
+    return RET_CONTINUE;
+}
+
+int ScriptParser::defmp3volCommand()
+{
+    char *p_string_buffer = string_buffer + string_buffer_offset + 9; // strlen("defmp3vol") = 9
+    mp3_volume = readInt( &p_string_buffer );
+
     return RET_CONTINUE;
 }
 

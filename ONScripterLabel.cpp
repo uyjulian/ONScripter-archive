@@ -190,6 +190,10 @@ void ONScripterLabel::initSDL( bool cdaudio_flag )
     }
 #if defined(PDA)
     int bpp = 16;
+#if defined(PDA_VGA)
+    screen_width  *= 2; // for checking VGA screen
+    screen_height *= 2;
+#endif
 #else
     int bpp = 32;
 #endif
@@ -197,8 +201,25 @@ void ONScripterLabel::initSDL( bool cdaudio_flag )
     screen_surface = SDL_SetVideoMode( screen_width, screen_height, bpp, DEFAULT_SURFACE_FLAG );
 #else    
     screen_surface = SDL_SetVideoMode( screen_height, screen_width, bpp, DEFAULT_SURFACE_FLAG );
-#endif    
+#endif
 
+    /* ---------------------------------------- */
+    /* Check if VGA screen is abailable. */
+#if defined(PDA) && defined(PDA_VGA)
+    if ( screen_surface == NULL ){
+        screen_width  /= 2;
+        screen_height /= 2;
+#ifndef SCREEN_ROTATION
+        screen_surface = SDL_SetVideoMode( screen_width, screen_height, bpp, DEFAULT_SURFACE_FLAG );
+#else    
+        screen_surface = SDL_SetVideoMode( screen_height, screen_width, bpp, DEFAULT_SURFACE_FLAG );
+#endif
+    }
+    else{
+        screen_ratio1 *= 2;
+    }
+#endif
+    
     if ( screen_surface == NULL ) {
         fprintf( stderr, "Couldn't set %dx%dx%d video mode: %s\n",
                  screen_width, screen_height, bpp, SDL_GetError() );

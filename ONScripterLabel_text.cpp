@@ -34,11 +34,44 @@ extern unsigned short convSJIS2UTF16( unsigned short in );
           ( *(x) == (char)0x81 && *((x)+1) == (char)0x76 ) || \
           ( *(x) == (char)0x81 && *((x)+1) == (char)0x5b ) )
 
+inline void ONScripterLabel::drawGlyph( SDL_Surface *dst_surface, char *text, FontInfo *info, SDL_Color &color, unsigned short unicode, int xy[2], int minx, int maxy, int shadow_offset, bool flush_flag, SDL_Rect *clip )
+{
+    SDL_Rect dst_rect, src_rect, clipped_rect;
+    SDL_Surface *tmp_surface;
+    
+    dst_rect.x = xy[0] + shadow_offset + minx;
+    if ( !(text[0] & 0x80) && text[1] ) dst_rect.x += info->pitch_xy[0] / 2 * screen_ratio1 / screen_ratio2;
+    dst_rect.y = xy[1] + TTF_FontAscent( (TTF_Font*)info->ttf_font ) + shadow_offset - maxy;
+    src_rect.x = src_rect.y = 0;
+    
+    tmp_surface = TTF_RenderGlyph_Blended( (TTF_Font*)info->ttf_font, unicode, color );
+
+    if ( tmp_surface ){
+        dst_rect.w = src_rect.w = tmp_surface->w;
+        dst_rect.h = src_rect.h = tmp_surface->h;
+        if ( dst_surface ){
+            bool out_of_region = false;
+            if ( clip ){
+                if ( doClipping( &dst_rect, clip, &clipped_rect ) ){
+                    out_of_region = true;
+                }
+                else{
+                    src_rect.x += clipped_rect.x;
+                    src_rect.y += clipped_rect.y;
+                }
+            }
+            if ( !out_of_region )
+                SDL_BlitSurface( tmp_surface, &src_rect, dst_surface, &dst_rect );
+        }
+        SDL_FreeSurface( tmp_surface );
+    }
+
+    if ( flush_flag ) flush( dst_rect.x, dst_rect.y, src_rect.w + 1, src_rect.h + 1 );
+}
+
 void ONScripterLabel::drawChar( char* text, FontInfo *info, bool flush_flag, SDL_Surface *surface, bool buffering_flag, SDL_Rect *clip )
 {
     int xy[2];
-    SDL_Rect src_rect, dst_rect, clipped_rect;
-    SDL_Surface *tmp_surface = NULL;
     SDL_Color color;
     unsigned short index, unicode;
     int minx, maxx, miny, maxy, advanced;
@@ -89,65 +122,15 @@ void ONScripterLabel::drawChar( char* text, FontInfo *info, bool flush_flag, SDL
     xy[0] = info->x( tateyoko_mode ) * screen_ratio1 / screen_ratio2;
     xy[1] = info->y( tateyoko_mode ) * screen_ratio1 / screen_ratio2;
     
-    dst_rect.x = xy[0] + 1 + minx;
-    if ( !(text[0] & 0x80) && text[1] ) dst_rect.x += info->pitch_xy[0] / 2 * screen_ratio1 / screen_ratio2;
-    dst_rect.y = xy[1] + TTF_FontAscent( (TTF_Font*)info->ttf_font ) - maxy;
     if ( info->is_shadow ){
         color.r = color.g = color.b = 0;
-        tmp_surface = TTF_RenderGlyph_Blended( (TTF_Font*)info->ttf_font, unicode, color );
-        src_rect.x = src_rect.y = 0;
-
-        if ( tmp_surface ){
-            dst_rect.w = src_rect.w = tmp_surface->w;
-            dst_rect.h = src_rect.h = tmp_surface->h;
-            if ( surface ){
-                bool out_of_region = false;
-                if ( clip ){
-                    if ( doClipping( &dst_rect, clip, &clipped_rect ) ){
-                        out_of_region = true;
-                    }
-                    else{
-                        src_rect.x += clipped_rect.x;
-                        src_rect.y += clipped_rect.y;
-                    }
-                }
-                if ( !out_of_region )
-                    SDL_BlitSurface( tmp_surface, &src_rect, surface, &dst_rect );
-            }
-            SDL_FreeSurface( tmp_surface );
-        }
+        drawGlyph( surface, text, info, color, unicode, xy, minx, maxy, 1, false, clip );
     }
-
+    
     color.r = info->color[0];
     color.g = info->color[1];
     color.b = info->color[2];
-
-    tmp_surface = TTF_RenderGlyph_Blended( (TTF_Font*)info->ttf_font, unicode, color );
-    dst_rect.x = xy[0] + minx;
-    if ( !(text[0] & 0x80) && text[1] ) dst_rect.x += info->pitch_xy[0] / 2;
-    dst_rect.y = xy[1] + TTF_FontAscent( (TTF_Font*)info->ttf_font ) - maxy;
-    src_rect.x = src_rect.y = 0;
-
-    if ( tmp_surface ){
-        dst_rect.w = src_rect.w = tmp_surface->w;
-        dst_rect.h = src_rect.h = tmp_surface->h;
-        if ( surface ){
-            bool out_of_region = false;
-            if ( clip ){
-                if ( doClipping( &dst_rect, clip, &clipped_rect ) ){
-                    out_of_region = true;
-                }
-                else{
-                    src_rect.x += clipped_rect.x;
-                    src_rect.y += clipped_rect.y;
-                }
-            }
-            if ( !out_of_region )
-                SDL_BlitSurface( tmp_surface, &src_rect, surface, &dst_rect );
-        }
-        SDL_FreeSurface( tmp_surface );
-    }
-    if ( flush_flag ) flush( dst_rect.x, dst_rect.y, src_rect.w + 1, src_rect.h );
+    drawGlyph( surface, text, info, color, unicode, xy, minx, maxy, 0, flush_flag, clip );
 
     /* ---------------------------------------- */
     /* Update text buffer */

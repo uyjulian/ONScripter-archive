@@ -30,7 +30,7 @@
 #include <time.h>
 #elif defined(WIN32)
 #include <windows.h>
-#elif
+#else
 #endif
 
 #define SAVEFILE_MAGIC_NUMBER "ONS"
@@ -543,11 +543,7 @@ void ONScripterLabel::leaveSystemCall( bool restore_flag )
         root_select_link.next = shelter_select_link;
         event_mode = shelter_event_mode;
         if ( event_mode & WAIT_BUTTON_MODE ){
-#ifndef SCREEN_ROTATION
             SDL_WarpMouse( shelter_mouse_state.x, shelter_mouse_state.y );
-#else            
-            SDL_WarpMouse( screen_height - shelter_mouse_state.y - 1, shelter_mouse_state.x );
-#endif
         }
         current_text_buffer = shelter_text_buffer;
     }

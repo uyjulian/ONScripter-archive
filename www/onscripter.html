@@ -12,7 +12,7 @@
 </CENTER>
 
 Created: Feb. 6, 2002<br>
-Last updated: May 18, 2002
+Last updated: May 20, 2002
 
 <HR>
 
@@ -27,9 +27,9 @@ href="http://www2.osk.3web.ne.jp/~naokikun/index.htm">高橋直樹</a>氏が開発したゲ
 
 <p>ONScripter で何ができるのかについてはαβεさんの[<A HREF="http://abe.platina.sakura.ne.jp/onscripter/">ONScripter のスゝメ</A>]を参照してください。</p>
 
-<p>現在はベータ版<A HREF="onscripter-beta-20020518.tar.gz">onscripter-beta-20020518.tar.gz</A>を配布しております。<br>
+<p>現在はベータ版<A HREF="onscripter-beta-20020520.tar.gz">onscripter-beta-20020520.tar.gz</A>を配布しております。<br>
 ベータ版ゆえデバッグ出力が有効になっていますが、正式版になったら取り除きます。<br>
-(一つ前のベータ版<A HREF="onscripter-beta-20020506.tar.gz">onscripter-beta-20020506.tar.gz</A>)</p>
+(一つ前のベータ版<A HREF="onscripter-beta-20020518.tar.gz">onscripter-beta-20020518.tar.gz</A>)</p>
 
 <p>更新内容については[<A HREF="onscripter_devel.html">開発日誌</A>]を参照して下さい。</p>
 
@@ -82,7 +82,7 @@ href="http://www2.osk.3web.ne.jp/~naokikun/index.htm">高橋直樹</a>氏が開発したゲ
 <OL>
   <LI> 全ての操作をキーボードから行えます。もちろんマウスも使えますが、使う必要はありません。
   <LI> CD Audio の演奏に対応していますが、これを MP3 ファイルの演奏に振り替える機能もあります。
-  <LI> マルチプラットフォームに対応しています。Windows, Linux, MacOS X での動作が確認されていますが、下記の libjpeg, bzip2, SDL 及び SMPEG が動く環境ならどこでも同じソースをコンパイルするだけで動くはずです。<BR>
+  <LI> マルチプラットフォームに対応しています。Windows, Linux, MacOS X, Zaurus(SL-5500) での動作が確認されていますが、下記の libjpeg, bzip2, SDL 及び SMPEG が動く環境ならどこでも同じソースをコンパイルするだけで動くはずです。<BR>
   <LI> 全てのコマンド・仕様を実装していないため、ゲームによって挙動がおかしくなります。その場合は上記バグトラッキングシステムまで御報告下さい。
 </OL>
 
@@ -122,7 +122,7 @@ href="http://www2.osk.3web.ne.jp/~naokikun/index.htm">高橋直樹</a>氏が開発したゲ
   <DD> SDL-1.2.4, SDL_image-1.2.2, SDL_mixer-1.2.3, SDL_ttf-2.0.5
   <DT> ・<A HREF="http://www.lokigames.com/development/smpeg.php3">SMPEG (SDL Mpeg Player Library)</A>
   <DD> SMPEG-0.4.4
-  <DT> ・<A HREF="http://www.freetype.org/"> FreeType 2.0 </A>
+  <DT> ・<A HREF="http://www.freetype.org/"> FreeType 2.0.9 </A>
   <DT> ・Unicode で指定された日本語 TTF フォント
   <DT> ・C++ 処理系
   <DD> Linux g++ 2.95.4
@@ -130,8 +130,7 @@ href="http://www2.osk.3web.ne.jp/~naokikun/index.htm">高橋直樹</a>氏が開発したゲ
 </DL>
 <p> 
 
-<p> 当方では Windows と Linux で動作確認をしています。<BR>
-Linux の Frame Buffer Console でも問題無く動作しました。（SL-5500 とかで動くようにならないかな？）<BR>
+<p> 当方では Windows と Linux と Zaurus(SL-5500) で動作確認をしています。<BR>
 また MacOS X での<A HREF="http://www.freeml.com/message/sdl-fan-jp@freeml.com/0000316">動作報告</A>を受けています。<br>
 
 その他の多くの Unix 系 OS, BeOS, MacOS については上記のライブラリが対応しているため適切な Makefile を書けばコンパイル・実行できると思いますが、当方では確認できないので誰かやって下さい。</p>
@@ -349,7 +348,7 @@ registry.txt を一カ所にまとめておくことができます。--registry を指定し
 この時、現在のディレクトリに tmp.mid という一時ファイルを作ります。美しくないですが、SDL_mixer の MIDI 読み込み部がファイルからの読み込みしかサポートしていないためやむをえません。</p>
 
 <DL>
-  <DT> Unix系(動作確認は Linux)でソフトウェア音源で演奏する場合（デフォルト）。
+  <DT> Unix系(動作確認は Linux と Zaurus)でソフトウェア音源で演奏する場合（デフォルト）。
   <DD> SDL_mixer に取り込まれている timidity を使用してソフトウェア音源で演奏します。この場合、MIDIの音色データ<A HREF="http://www.libsdl.org/projects/SDL_mixer/timidity/timidity.tar.gz">timidity.tar.gz</A>をダウンロードして /usr/local/lib/ 以下に展開してください。
   <DT> Windows の場合。
   <DD> <A HREF="http://www.libsdl.org/projects/SDL_mixer/timidity/timidity.tar.gz">timidity.tar.gz</A>をダウンロードして c:\ 以下に展開してください。

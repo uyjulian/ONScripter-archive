@@ -34,7 +34,7 @@
 #define DELIMITER '/'
 #elif defined(WIN32)
 #define DELIMITER '\\'
-#elif
+#else
 #define DELIMITER '/'
 #endif
 

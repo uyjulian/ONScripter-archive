@@ -48,10 +48,7 @@
 
 #define SKIP_SPACE(p) while ( *(p) == ' ' || *(p) == '\t' ) (p)++
 
-//#define PDA
-
 #if defined(PDA)
-#define SCREEN_ROTATION
 #define SCREEN_RATIO 2
 #else
 #define SCREEN_RATIO 1

@@ -1735,13 +1735,8 @@ int ONScripterLabel::bltCommand()
     src_rect.w -= clipped.x;
     src_rect.h -= clipped.y;
 
-#ifndef SCREEN_ROTATION    
     SDL_BlitSurface( btndef_info.image_surface, &src_rect, screen_surface, &dst_rect );
     SDL_UpdateRect( screen_surface, dst_rect.x, dst_rect.y, dst_rect.w, dst_rect.h );
-#else    
-    blitRotation( btndef_info.image_surface, &src_rect, screen_surface, &dst_rect );
-    SDL_UpdateRect( screen_surface, screen_height - dst_rect.y - dst_rect.h, dst_rect.x, dst_rect.h, dst_rect.w );
-#endif    
     
     return RET_CONTINUE;
 }

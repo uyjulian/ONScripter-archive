@@ -23,18 +23,7 @@
 
 #include "ONScripterLabel.h"
 
-bool ONScripterLabel::proceedAnimation()
-{
-    int duration = proceedAnimationSub();
-    if ( duration == 0 ) return false;
-    
-    resetRemainingTime( duration );
-    startTimer( duration );
-
-    return true;
-}
-
-int ONScripterLabel::proceedAnimationSub()
+int ONScripterLabel::proceedAnimation()
 {
     int i, minimum_duration = 0;
     AnimationInfo *anim;

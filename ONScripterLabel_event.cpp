@@ -103,24 +103,15 @@ void midiCallback( int sig )
  * **************************************** */
 void ONScripterLabel::mouseMoveEvent( SDL_MouseMotionEvent *event )
 {
-#ifndef SCREEN_ROTATION
     mouseOverCheck( event->x, event->y );
-#else
-    mouseOverCheck( event->y, screen_height - event->x - 1 );
-#endif    
 }
 
 void ONScripterLabel::mousePressEvent( SDL_MouseButtonEvent *event )
 {
     if ( variable_edit_mode ) return;
     
-#ifndef SCREEN_ROTATION
     current_button_state.x = event->x;
     current_button_state.y = event->y;
-#else
-    current_button_state.x = event->y;
-    current_button_state.y = screen_height - event->x - 1;
-#endif
     
     if ( event->button == SDL_BUTTON_RIGHT && rmode_flag ){
         current_button_state.button = -1;
@@ -336,13 +327,8 @@ void ONScripterLabel::keyPressEvent( SDL_KeyboardEvent *event )
             struct ButtonLink *p_button_link = root_button_link.next;
             for ( i=0 ; i<shortcut_mouse_line && p_button_link ; i++ ) p_button_link  = p_button_link->next;
             if ( p_button_link ){
-#ifndef SCREEN_ROTATION
                 SDL_WarpMouse( p_button_link->select_rect.x + p_button_link->select_rect.w / 2,
                                p_button_link->select_rect.y + p_button_link->select_rect.h / 2 );
-#else
-                SDL_WarpMouse( screen_height - (p_button_link->select_rect.y + p_button_link->select_rect.h / 2) - 1,
-                               p_button_link->select_rect.x + p_button_link->select_rect.w / 2 );
-#endif                
             }
         }
         else if ( event->keysym.sym == SDLK_DOWN || event->keysym.sym == SDLK_n ){
@@ -355,13 +341,8 @@ void ONScripterLabel::keyPressEvent( SDL_KeyboardEvent *event )
                 for ( i=0 ; i<shortcut_mouse_line ; i++ ) p_button_link  = p_button_link->next;
             }
             if ( p_button_link ){
-#ifndef SCREEN_ROTATION
                 SDL_WarpMouse( p_button_link->select_rect.x + p_button_link->select_rect.w / 2,
                                p_button_link->select_rect.y + p_button_link->select_rect.h / 2 );
-#else
-                SDL_WarpMouse( screen_height - (p_button_link->select_rect.y + p_button_link->select_rect.h / 2) - 1,
-                               p_button_link->select_rect.x + p_button_link->select_rect.w / 2 );
-#endif
             }
         }
         else if ( event->keysym.sym == SDLK_RETURN || event->keysym.sym == SDLK_SPACE ){
@@ -448,7 +429,15 @@ void ONScripterLabel::timerEvent( void )
     int ret;
 
     if ( event_mode & WAIT_ANIMATION_MODE ){
-        if ( !proceedAnimation() ) event_mode &= ~WAIT_ANIMATION_MODE;
+        int duration = proceedAnimation();
+
+        if ( duration == 0 ){
+            event_mode &= ~WAIT_ANIMATION_MODE;
+        }
+        else{
+            resetRemainingTime( duration );
+            startTimer( duration );
+        }
     }
     else if ( event_mode & EFFECT_EVENT_MODE ){
         if ( display_mode & TEXT_DISPLAY_MODE && erase_text_window_mode != 0 && strncmp( effect_command, "quake", 5 ) ){

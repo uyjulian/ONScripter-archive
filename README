@@ -32,6 +32,12 @@ ONScripter
 	$ make -f Makefile.MacOSX
 	$ onscripter
 
+	Zaurus (SL-5500) の場合
+	別のマシン(Linux 等)上でクロスコンパイル
+	$ make -f Makefile.ARMLinux
+	Zaurus のコンソールから実行
+	$ onscripter
+
 	それ以外のプラットフォームでは、Makefile.Linux を雛形にして Makefile.### を作ってください。
 
 	ONScripter は、カレントディレクトリの 0.txt もしくは nscript.dat を自動的に読み込み、それにしたがってカレントディレクトリの arc.sar もしくは arc.nsa を読み込みます。

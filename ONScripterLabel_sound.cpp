@@ -166,7 +166,7 @@ int ONScripterLabel::playWave( char *file_name, bool loop_flag, int channel )
     else                Mix_Volume( channel, se_volume * 128 / 100 );
 
     if ( debug_level > 0 )
-        printf("playWave %s at vol %d\n", file_name, (channel==0)?voice_volume:se_volume );
+        printf("playWave %s %d at vol %d\n", file_name, length, (channel==0)?voice_volume:se_volume );
     
     Mix_PlayChannel( channel, wave_sample[channel], loop_flag?-1:0 );
 

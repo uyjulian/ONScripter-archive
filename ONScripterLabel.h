@@ -79,6 +79,7 @@ public:
     int textoffCommand();
     int textclearCommand();
     int texecCommand();
+    int talCommand();
     int tablegotoCommand();
     int systemcallCommand();
     int stopCommand();
@@ -86,6 +87,7 @@ public:
     int spbtnCommand();
     int skipoffCommand();
     int sevolCommand();
+    int setwindow2Command();
     int setwindowCommand();
     int setcursorCommand();
     int selectCommand();
@@ -93,6 +95,7 @@ public:
     int saveonCommand();
     int saveoffCommand();
     int savegameCommand();
+    int savefileexistCommand();
     int resettimerCommand();
     int resetCommand();
     int repaintCommand();

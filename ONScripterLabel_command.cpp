@@ -173,6 +173,29 @@ int ONScripterLabel::texecCommand()
     return RET_CONTINUE;
 }
 
+int ONScripterLabel::talCommand()
+{
+    char *p_string_buffer = string_buffer + string_buffer_offset + 3;
+    
+    readStr( &p_string_buffer, tmp_string_buffer );
+    char loc = tmp_string_buffer[0];
+
+    int no;
+
+    if      ( loc == 'l' ) no = 0;
+    else if ( loc == 'c' ) no = 1;
+    else if ( loc == 'r' ) no = 2;
+
+    int trans = readInt( &p_string_buffer );
+
+    if      ( trans > 255 ) trans = 255;
+    else if ( trans < 0   ) trans = 0;
+
+    tachi_info[ no ].trans = trans;
+
+    return RET_CONTINUE;
+}
+
 int ONScripterLabel::tablegotoCommand()
 {
     char *p_string_buffer = string_buffer + string_buffer_offset + 9;
@@ -265,6 +288,27 @@ int ONScripterLabel::sevolCommand()
     for ( int i=1 ; i<MIX_CHANNELS ; i++ )
         if ( wave_sample[i] ) Mix_Volume( i, se_volume * 128 / 100 );
         
+    return RET_CONTINUE;
+}
+
+int ONScripterLabel::setwindow2Command()
+{
+    char *p_string_buffer = string_buffer + string_buffer_offset + 10;
+
+    readStr( &p_string_buffer, tmp_string_buffer );
+    if ( tmp_string_buffer[0] == '#' ){
+        sentence_font.is_transparent = true;
+        if ( strlen( tmp_string_buffer ) != 7 ) errorAndExit( string_buffer + string_buffer_offset );
+        readColor( &sentence_font.window_color, tmp_string_buffer + 1 );
+    }
+    else{
+        sentence_font.is_transparent = false;
+        sentence_font_info.setImageName( tmp_string_buffer );
+        parseTaggedString( &sentence_font_info );
+        setupAnimationInfo( &sentence_font_info );
+    }
+    flush();
+
     return RET_CONTINUE;
 }
 
@@ -574,6 +618,27 @@ int ONScripterLabel::savegameCommand()
         shelter_event_mode = event_mode;
         saveSaveFile( no );
     }
+
+    return RET_CONTINUE;
+}
+
+int ONScripterLabel::savefileexistCommand()
+{
+    char *p_string_buffer = string_buffer + string_buffer_offset + 13;
+    char *p_buf = p_string_buffer;
+    int val;
+
+    readInt( &p_string_buffer );
+    int no = readInt( &p_string_buffer );
+
+    searchSaveFiles( no );
+
+    if ( save_file_info[no].valid )
+        val = 1;
+    else
+        val = 0;
+
+    setInt( p_buf, val );
 
     return RET_CONTINUE;
 }

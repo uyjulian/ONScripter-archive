@@ -45,13 +45,13 @@ int ONScripterLabel::proceedAnimation()
     if ( !textgosub_label &&
          ( clickstr_state == CLICK_WAIT ||
            clickstr_state == CLICK_NEWPAGE ) ){
-        if ( clickstr_state == CLICK_WAIT )
+        
+        if      ( clickstr_state == CLICK_WAIT )
             anim = &cursor_info[CURSOR_WAIT_NO];
         else if ( clickstr_state == CLICK_NEWPAGE )
             anim = &cursor_info[CURSOR_NEWPAGE_NO];
 
-        if ( anim->valid &&
-             anim->is_animatable ){
+        if ( anim->valid && anim->is_animatable ){
             SDL_Rect dst_rect = anim->pos;
             if ( !anim->abs_flag ){
                 dst_rect.x += sentence_font.x() * screen_ratio1 / screen_ratio2;
@@ -355,7 +355,7 @@ void ONScripterLabel::stopAnimation( int click )
     
     dst_rect = cursor_info[ no ].pos;
 
-    if ( !cursor_info[ no ].abs_flag ) {
+    if ( !cursor_info[ no ].abs_flag ){
         dst_rect.x += sentence_font.x() * screen_ratio1 / screen_ratio2;
         dst_rect.y += sentence_font.y() * screen_ratio1 / screen_ratio2;
     }

@@ -163,6 +163,9 @@ size_t NsaReader::getFileSub( ArchiveInfo *ai, char *file_name, unsigned char *b
     else if ( ai->fi_list[i].compression_type == LZSS_COMPRESSION ){
         return decodeLZSS( ai, i, buffer );
     }
+    else if ( ai->fi_list[i].compression_type == NBZ_COMPRESSION ){
+        return decodeNBZ( ai->file_handle, ai->fi_list[i].offset, buffer );
+    }
 
     return 0;
 }

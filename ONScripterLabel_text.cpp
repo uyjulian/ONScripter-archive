@@ -46,8 +46,6 @@ void ONScripterLabel::drawChar( char* text, struct FontInfo *info, bool flush_fl
 
     //printf("draw %x-%x[%s] %d, %d\n", text[0], text[1], text, system_menu_enter_flag, buffering_flag );
 
-    //if ( !surface ) surface = text_surface;
-    
     if ( !info->font_valid_flag && info->ttf_font ){
         TTF_CloseFont( (TTF_Font*)info->ttf_font );
         info->ttf_font = NULL;
@@ -208,7 +206,7 @@ void ONScripterLabel::restoreTextBuffer( SDL_Surface *surface )
         out_text[0] = current_text_buffer->buffer[ i * 2 ];
         if ( !(out_text[0] & 0x80) ){
             out_text[1] = '\0';
-            drawChar( out_text, &f_info, false, surface );
+            drawChar( out_text, &f_info, false, surface, false );
             f_info.xy[0]--;
         }
         out_text[1] = current_text_buffer->buffer[ i * 2 + 1];

@@ -12,7 +12,7 @@
 </CENTER>
 
 Created: Feb. 6, 2002<br>
-Last updated: Apr. 9, 2002
+Last updated: Apr. 10, 2002
 
 <HR>
 
@@ -27,9 +27,9 @@ href="http://www2.osk.3web.ne.jp/~naokikun/index.htm">高橋直樹</a>氏が開発したゲ
 
 <p>ONScripter で何ができるのかについてはαβεさんの[<A HREF="http://abe.platina.sakura.ne.jp/onscripter/">ONScripter のスゝメ</A>]を参照してください。</p>
 
-<p>現在はベータ版<A HREF="onscripter-beta-20020409.tar.gz">onscripter-beta-20020409.tar.gz</A>を配布しております。<br>
+<p>現在はベータ版<A HREF="onscripter-beta-20020410.tar.gz">onscripter-beta-20020410.tar.gz</A>を配布しております。<br>
 ベータ版ゆえデバッグ出力が有効になっていますが、正式版になったら取り除きます。<br>
-(一つ前のベータ版<A HREF="onscripter-beta-20020407.tar.gz">onscripter-beta-20020407.tar.gz</A>)</p>
+(一つ前のベータ版<A HREF="onscripter-beta-20020409tar.gz">onscripter-beta-20020409.tar.gz</A>)</p>
 
 <p>更新内容については[<A HREF="onscripter_devel.html">開発日誌</A>]を参照して下さい。</p>
 
@@ -131,6 +131,7 @@ href="http://www2.osk.3web.ne.jp/~naokikun/index.htm">高橋直樹</a>氏が開発したゲ
 <p> 
 
 <p> 当方では Windows と Linux で動作確認をしています。<BR>
+Linux の Frame Buffer Console でも問題無く動作しました。（SL-5500 とかで動くようにならないかな？）<BR>
 また MacOS X での<A HREF="http://www.freeml.com/message/sdl-fan-jp@freeml.com/0000316">動作報告</A>を受けています。<br>
 
 その他の多くの Unix 系 OS, BeOS, MacOS については上記のライブラリが対応しているため適切な Makefile を書けばコンパイル・実行できると思いますが、当方では確認できないので誰かやって下さい。</p>
@@ -160,6 +161,7 @@ href="http://www2.osk.3web.ne.jp/~naokikun/index.htm">高橋直樹</a>氏が開発したゲ
 <p>現在把握しており直す予定のバグ・未実装機能。先頭の文字は優先度。</p>
 
 <OL>
+  <LI> (<FONT color="#ff8800">中</FONT>)puttext 内の文字列で \@/ を取り扱えるようにする
   <LI> (<FONT color="#ff8800">中</FONT>)sprite の透明度サポート
   <LI> (<FONT color="#ff8800">中</FONT>)blt の拡大縮小に対応。
   <LI> (<FONT color="#ff8800">中</FONT>)雪をスムーズに降らせる

@@ -310,7 +310,7 @@ private:
     bool erase_text_window_flag;
     bool text_on_flag;
 
-    void drawChar( char* text, struct FontInfo *info, bool flush_flag = true, SDL_Surface *surface = NULL, bool buffering_flag = true );
+    void drawChar( char* text, struct FontInfo *info, bool flush_flag, SDL_Surface *surface, bool buffering_flag = true );
     void drawString( char *str, uchar3 color, FontInfo *info, bool flush_flag, SDL_Surface *surface, SDL_Rect *rect = NULL, bool buffering_flag = false );
     void restoreTextBuffer( SDL_Surface *surface = NULL );
     int clickWait( char *out_text );

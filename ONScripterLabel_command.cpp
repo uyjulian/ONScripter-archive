@@ -62,12 +62,14 @@ int ONScripterLabel::waittimerCommand()
     char *p_string_buffer = string_buffer + string_buffer_offset + 9; // strlen("waittimer") = 9
 
     int count = readInt( &p_string_buffer ) + internal_timer - SDL_GetTicks();
-    if ( count > 0 ){
+    if ( count > MINIMUM_TIMER_RESOLUTION ){
         startTimer( count );
-        return RET_WAIT_NEXT;
     }
-    else
-        return RET_CONTINUE;
+    else{
+        startTimer( MINIMUM_TIMER_RESOLUTION );
+    }
+    
+    return RET_WAIT_NEXT;
 }
 
 int ONScripterLabel::waitCommand()
@@ -84,9 +86,9 @@ int ONScripterLabel::vspCommand()
     char *p_string_buffer = string_buffer + string_buffer_offset + 3; // strlen("vsp") = 3
 
     int no = readInt( &p_string_buffer );
-    int v = readInt( &p_string_buffer );
-     sprite_info[ no ].valid = (v==1)?true:false;
-
+    int v  = readInt( &p_string_buffer );
+    sprite_info[ no ].valid = (v==1)?true:false;
+     
     return RET_CONTINUE;
 }
 
@@ -168,21 +170,20 @@ int ONScripterLabel::spstrCommand()
 
 int ONScripterLabel::spbtnCommand()
 {
-    int sprite_no, no;
-    
     char *p_string_buffer = string_buffer + string_buffer_offset + 5; // strlen("spbtn") = 5
     printf("spbtnCommand %s\n",string_buffer + string_buffer_offset);
-    sprite_no = readInt( &p_string_buffer );
-    no = readInt( &p_string_buffer );
+
+    int sprite_no = readInt( &p_string_buffer );
+    int no        = readInt( &p_string_buffer );
 
     //if ( !sprite_info[ sprite_no ].valid ) return RET_CONTINUE;
-    
+
     last_button_link->next = new ButtonLink();
     last_button_link = last_button_link->next;
 
     last_button_link->button_type = SPRITE_BUTTON;
-    last_button_link->sprite_no = sprite_no;
-    last_button_link->no = no;
+    last_button_link->sprite_no   = sprite_no;
+    last_button_link->no          = no;
     
     if ( sprite_info[ sprite_no ].image_surface )
         last_button_link->image_rect = last_button_link->select_rect = sprite_info[ last_button_link->sprite_no ].pos;
@@ -270,10 +271,9 @@ int ONScripterLabel::setwindowCommand()
 
 int ONScripterLabel::setcursorCommand()
 {
-    int x, y, no;
-    char *buf;
-    bool abs_flag;
     char *p_string_buffer;
+    bool abs_flag;
+
     if ( !strncmp( string_buffer + string_buffer_offset, "abssetcursor", 12 ) ) {
         abs_flag = true;
         p_string_buffer = string_buffer + string_buffer_offset + 12; // strlen("abssetcursor") = 12
@@ -283,14 +283,14 @@ int ONScripterLabel::setcursorCommand()
         p_string_buffer = string_buffer + string_buffer_offset + 9; // strlen("setcursor") = 9
     }
     
-    no = readInt( &p_string_buffer );
+    int no = readInt( &p_string_buffer );
 
     readStr( &p_string_buffer, tmp_string_buffer );
-    buf = new char[ strlen( tmp_string_buffer ) + 1 ];
+    char *buf = new char[ strlen( tmp_string_buffer ) + 1 ];
     memcpy( buf, tmp_string_buffer, strlen( tmp_string_buffer ) + 1 );
 
-    x = readInt( &p_string_buffer );
-    y = readInt( &p_string_buffer );
+    int x = readInt( &p_string_buffer );
+    int y = readInt( &p_string_buffer );
 
     loadCursor( no, buf, x, y, abs_flag );
     delete[] buf;
@@ -474,7 +474,7 @@ int ONScripterLabel::savegameCommand()
 int ONScripterLabel::rndCommand()
 {
     char *p_string_buffer, *p_buf;
-    int upper, lower;
+    int  upper, lower;
     
     if ( !strncmp( string_buffer + string_buffer_offset, "rnd2", 4 ) ){
         p_string_buffer = string_buffer + string_buffer_offset + 4; // strlen("rnd2") = 4
@@ -514,9 +514,7 @@ int ONScripterLabel::resettimerCommand()
 
 int ONScripterLabel::resetCommand()
 {
-    int i=0;
-
-    for ( i=0 ; i<199 ; i++ ){
+    for ( int i=0 ; i<199 ; i++ ){
         num_variables[i] = 0;
         if ( str_variables[i] ) delete[] str_variables[i];
         str_variables[i] = NULL;
@@ -525,8 +523,8 @@ int ONScripterLabel::resetCommand()
     sentence_font.xy[0] = 0;
     sentence_font.xy[1] = 0;
     text_char_flag = false;
-    skip_flag = false;
-    monocro_flag = false;
+    skip_flag      = false;
+    monocro_flag   = false;
 
     deleteLabelLink();
     current_link_label_info->label_info = lookupLabel( "start" );
@@ -602,17 +600,9 @@ int ONScripterLabel::playstopCommand()
     if ( mp3_sample ){
         SMPEG_stop( mp3_sample );
         SMPEG_delete( mp3_sample );
-        //Mix_FadeOutMusic( 1000 );
         Mix_HookMusic( NULL, NULL );
-#if 0        
-        if ( mp3_sample->flags & SOUND_SAMPLEFLAG_ERROR ){
-            fprintf(stderr, "Error in decoding sound file!\n"
-                    "  reason: [%s].\n", Sound_GetError());
-        }
-
-        Sound_FreeSample( mp3_sample );
-#endif        
         mp3_sample = NULL;
+
         if ( mp3_buffer ){
             delete[] mp3_buffer;
             mp3_buffer = NULL;
@@ -712,7 +702,6 @@ int ONScripterLabel::mp3Command()
 
 int ONScripterLabel::monocroCommand()
 {
-    int i;
     char *p_string_buffer = string_buffer + string_buffer_offset + 7; // strlen("monocro") = 7
 
     readStr( &p_string_buffer, tmp_string_buffer );
@@ -728,7 +717,7 @@ int ONScripterLabel::monocroCommand()
         monocro_color[0] = convHexToDec( tmp_string_buffer[1] ) << 4 | convHexToDec( tmp_string_buffer[2] );
         monocro_color[1] = convHexToDec( tmp_string_buffer[3] ) << 4 | convHexToDec( tmp_string_buffer[4] );
         monocro_color[2] = convHexToDec( tmp_string_buffer[5] ) << 4 | convHexToDec( tmp_string_buffer[6] );
-        for ( i=0 ; i<256 ; i++ ){
+        for ( int i=0 ; i<256 ; i++ ){
             monocro_color_lut[i][0] = (monocro_color[0] * i) >> 8;
             monocro_color_lut[i][1] = (monocro_color[1] * i) >> 8;
             monocro_color_lut[i][2] = (monocro_color[2] * i) >> 8;
@@ -756,10 +745,7 @@ int ONScripterLabel::lspCommand()
     sprite_info[ no ].valid = v;
 
     readStr( &p_string_buffer, tmp_string_buffer );
-    if ( sprite_info[ no ].image_name ) delete[] sprite_info[ no ].image_name;
-    sprite_info[ no ].image_name = new char[ strlen(tmp_string_buffer) + 1 ];
-    memcpy( sprite_info[ no ].image_name, tmp_string_buffer, strlen(tmp_string_buffer) + 1 );
-
+    sprite_info[ no ].setImageName( tmp_string_buffer );
     parseTaggedString( sprite_info[ no ].image_name, &sprite_info[ no ].tag );
     setupAnimationInfo( &sprite_info[ no ] );
 
@@ -840,13 +826,10 @@ int ONScripterLabel::ldCommand()
         else if ( loc == 'c' ) no = 1;
         else if ( loc == 'r' ) no = 2;
         
-        if ( tachi_info[ no ].image_name ) delete[] tachi_info[ no ].image_name;
-        tachi_info[ no ].image_name = new char[ strlen(tmp_string_buffer) + 1 ];
-        memcpy( tachi_info[ no ].image_name, tmp_string_buffer, strlen(tmp_string_buffer) + 1 );
-        parseTaggedString( tachi_info[ no ].image_name, &tagged_info );
-    
-        if ( tachi_info[ no ].image_surface ) SDL_FreeSurface( tachi_info[ no ].image_surface );
-        tachi_info[ no ].image_surface = loadPixmap( &tagged_info );
+        tachi_info[ no ].setImageName( tmp_string_buffer );
+        parseTaggedString( tachi_info[ no ].image_name, &tachi_info[ no ].tag );
+        tachi_info[ no ].deleteImageSurface();
+        tachi_info[ no ].image_surface = loadPixmap( &tachi_info[ no ].tag );
 
         char *buf = new char[512];
         sprintf( buf, "ld %c, \"%s\",", loc, tmp_string_buffer );
@@ -898,8 +881,7 @@ int ONScripterLabel::gameCommand()
 
     /* ---------------------------------------- */
     /* Lookback related variables */
-    int i;
-    for ( i=0 ; i<4 ; i++ ){
+    for ( int i=0 ; i<4 ; i++ ){
         parseTaggedString( lookback_image_name[i], &lookback_image_tag[i] );
         lookback_image_surface[i] = loadPixmap( &lookback_image_tag[i] );
     }
@@ -932,9 +914,9 @@ int ONScripterLabel::exbtnCommand()
     //if ( !sprite_info[ sprite_no ].valid ) return RET_CONTINUE;
 
     button->button_type = EX_SPRITE_BUTTON;
-    button->sprite_no = sprite_no;
-    button->no = no;
-    button->exbtn_ctl = new char[ strlen( tmp_string_buffer ) + 1 ];
+    button->sprite_no   = sprite_no;
+    button->no          = no;
+    button->exbtn_ctl   = new char[ strlen( tmp_string_buffer ) + 1 ];
     memcpy( button->exbtn_ctl, tmp_string_buffer, strlen( tmp_string_buffer ) + 1 );
     
     if ( sprite_no >= 0 && sprite_info[ sprite_no ].image_surface )
@@ -969,7 +951,6 @@ int ONScripterLabel::dwavestopCommand()
 int ONScripterLabel::dwaveCommand()
 {
     char *p_string_buffer;
-    int ch;
     
     if ( !strncmp( string_buffer + string_buffer_offset, "dwaveloop", 9 ) ){
         wave_play_once_flag = true;
@@ -982,7 +963,7 @@ int ONScripterLabel::dwaveCommand()
 
     wavestopCommand();
 
-    ch = readInt( &p_string_buffer );
+    int ch = readInt( &p_string_buffer );
     readStr( &p_string_buffer, tmp_string_buffer );
     playWave( tmp_string_buffer, wave_play_once_flag, ch );
         
@@ -993,19 +974,16 @@ int ONScripterLabel::delayCommand()
 {
     char *p_string_buffer = string_buffer + string_buffer_offset + 5; // strlen("delay") = 5
 
-    int t = readInt( &p_string_buffer );
-
     if ( event_mode & (WAIT_SLEEP_MODE | WAIT_MOUSE_MODE | WAIT_KEY_MODE) ){
         event_mode = IDLE_EVENT_MODE;
+        return RET_CONTINUE;
     }
     else{
         event_mode = WAIT_SLEEP_MODE | WAIT_MOUSE_MODE | WAIT_KEY_MODE;
         key_pressed_flag = false;
-        startTimer( t );
+        startTimer( readInt( &p_string_buffer ) );
         return RET_WAIT;
     }
-
-    return RET_CONTINUE;
 }
 
 int ONScripterLabel::cspCommand()
@@ -1017,14 +995,8 @@ int ONScripterLabel::cspCommand()
         for ( int i=0 ; i<MAX_SPRITE_NUM ; i++ ) sprite_info[i].valid = false;
     else{
         sprite_info[no].valid = false;
-        if ( sprite_info[no].image_name ){
-            delete[] sprite_info[no].image_name;
-            sprite_info[no].image_name = NULL;
-        }
-        if ( sprite_info[no].image_surface ){
-            SDL_FreeSurface( sprite_info[no].image_surface );
-            sprite_info[no].image_surface = NULL;
-        }
+        sprite_info[no].deleteImageName();
+        sprite_info[no].deleteImageSurface();
     }
 
     return RET_CONTINUE;
@@ -1050,22 +1022,16 @@ int ONScripterLabel::clCommand()
     char loc = tmp_string_buffer[0];
     
     if ( loc == 'l' || loc == 'a' ){
-        if ( tachi_info[0].image_name ) delete[] tachi_info[0].image_name;
-        tachi_info[0].image_name = NULL;
-        if ( tachi_info[0].image_surface ) SDL_FreeSurface( tachi_info[0].image_surface );
-        tachi_info[0].image_surface = NULL;
+        tachi_info[0].deleteImageName();
+        tachi_info[0].deleteImageSurface();
     }
     if ( loc == 'c' || loc == 'a' ){
-        if ( tachi_info[1].image_name ) delete[] tachi_info[1].image_name;
-        tachi_info[1].image_name = NULL;
-        if ( tachi_info[1].image_surface ) SDL_FreeSurface( tachi_info[1].image_surface );
-        tachi_info[1].image_surface = NULL;
+        tachi_info[1].deleteImageName();
+        tachi_info[1].deleteImageSurface();
     }
     if ( loc == 'r' || loc == 'a' ){
-        if ( tachi_info[2].image_name ) delete[] tachi_info[2].image_name;
-        tachi_info[2].image_name = NULL;
-        if ( tachi_info[2].image_surface ) SDL_FreeSurface( tachi_info[2].image_surface );
-        tachi_info[2].image_surface = NULL;
+        tachi_info[2].deleteImageName();
+        tachi_info[2].deleteImageSurface();
     }
 
     if ( event_mode & EFFECT_EVENT_MODE ){
@@ -1084,12 +1050,10 @@ int ONScripterLabel::clCommand()
 
 int ONScripterLabel::cellCommand()
 {
-    int sprite_no, no;
-    
     char *p_string_buffer = string_buffer + string_buffer_offset + 4; // strlen("cell") = 4
-    printf("cellCommand %s\n",string_buffer + string_buffer_offset);
-    sprite_no = readInt( &p_string_buffer );
-    no = readInt( &p_string_buffer );
+    
+    int sprite_no = readInt( &p_string_buffer );
+    int no        = readInt( &p_string_buffer );
 
     if ( sprite_info[ sprite_no ].tag.num_of_cells > 0 )
         sprite_info[ sprite_no ].tag.current_cell = no;
@@ -1122,21 +1086,24 @@ int ONScripterLabel::btndefCommand()
 
 int ONScripterLabel::btnCommand()
 {
-    int x3, y3;
+    SDL_Rect src_rect;
     
     last_button_link->next = new ButtonLink();
     last_button_link = last_button_link->next;
     
     char *p_string_buffer = string_buffer + string_buffer_offset + 3; // strlen("btn") = 3
-    last_button_link->button_type = NORMAL_BUTTON;
-    last_button_link->no = readInt( &p_string_buffer );
+    last_button_link->button_type  = NORMAL_BUTTON;
+    last_button_link->no           = readInt( &p_string_buffer );
     last_button_link->image_rect.x = readInt( &p_string_buffer );
     last_button_link->image_rect.y = readInt( &p_string_buffer );
     last_button_link->image_rect.w = readInt( &p_string_buffer );
     last_button_link->image_rect.h = readInt( &p_string_buffer );
     last_button_link->select_rect = last_button_link->image_rect;
-    x3 = readInt( &p_string_buffer );
-    y3 = readInt( &p_string_buffer );
+
+    src_rect.x = readInt( &p_string_buffer );
+    src_rect.y = readInt( &p_string_buffer );
+    src_rect.w = last_button_link->image_rect.w;
+    src_rect.h = last_button_link->image_rect.h;
 #if 0
     printf("ONScripterLabel::btnCommand %d,%d,%d,%d,%d,%d,%d\n",
            last_button_link->no,
@@ -1144,17 +1111,12 @@ int ONScripterLabel::btnCommand()
            last_button_link->image_rect.y,
            last_button_link->image_rect.w,
            last_button_link->image_rect.h,
-           x3,
-           y3 );
+           src_rect.x,
+           src_rect.y );
 #endif
 
     last_button_link->image_surface = SDL_CreateRGBSurface( DEFAULT_SURFACE_FLAG, last_button_link->image_rect.w, last_button_link->image_rect.h, 32, rmask, gmask, bmask, amask );
 
-    SDL_Rect src_rect;
-    src_rect.x = x3;
-    src_rect.y = y3;
-    src_rect.w = last_button_link->image_rect.w;
-    src_rect.h = last_button_link->image_rect.h;
     SDL_BlitSurface( btndef_surface, &src_rect, last_button_link->image_surface, NULL );
 
     return RET_CONTINUE;
@@ -1225,8 +1187,8 @@ int ONScripterLabel::brCommand()
 
 int ONScripterLabel::bltCommand()
 {
-    SDL_Rect src_rect, dst_rect;
     char *p_string_buffer = string_buffer + string_buffer_offset + 3; // strlen("blt") = 3
+    SDL_Rect src_rect, dst_rect;
 
     dst_rect.x = readInt( &p_string_buffer );
     dst_rect.y = readInt( &p_string_buffer );
@@ -1276,12 +1238,8 @@ int ONScripterLabel::bgCommand()
         /* ---------------------------------------- */
         /* Delete all tachi iamges if exist */
         for ( int i=0 ; i<3 ; i++ ){
-            if ( tachi_info[i].image_name ){
-                delete[] tachi_info[i].image_name;
-                tachi_info[i].image_name = NULL;
-            }
-            if ( tachi_info[i].image_surface ) SDL_FreeSurface( tachi_info[i].image_surface );
-            tachi_info[i].image_surface = NULL;
+            tachi_info[i].deleteImageName();
+            tachi_info[i].deleteImageSurface();
         }
 
         char *buf = new char[ 512 ];

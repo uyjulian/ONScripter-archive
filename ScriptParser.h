@@ -124,6 +124,7 @@ public:
     int selectcolorCommand();
     int savenumberCommand();
     int savenameCommand();
+    int roffCommand();
     int rmenuCommand();
     int returnCommand();
     int numaliasCommand();
@@ -177,6 +178,7 @@ protected:
     bool jumpf_flag;
     LinkLabelInfo last_tilde;
     int z_order;
+    bool rmode_flag;
 
     BaseReader *cBR;
 
@@ -192,7 +194,7 @@ protected:
     char *version_str;
     int underline_value;
     bool end_with_comma_flag;
-    
+
     /* ---------------------------------------- */
     /* Number, string and array variables */
     typedef enum{ VAR_INT, VAR_STR, VAR_ARRAY } VARIABLE_TYPE;
@@ -211,7 +213,7 @@ protected:
     } array_variables[ ARRAY_VARIABLE_RANGE ], tmp_array_variable;
 
     int decodeArraySub( char **buf, struct ArrayVariable *array );
-    int *decodeArray( char **buf );
+    int *decodeArray( char **buf, int offset = 0 );
     int readInt( char **buf );
     void setInt( char *buf, int val, int offset = 0 );
     void setNumVariable( int no, int val );

@@ -195,7 +195,6 @@ private:
     uchar3 monocro_color;
     uchar3 monocro_color_lut[256];
 
-    bool rmode_flag;
     bool trap_flag;
     char *trap_dist;
 
@@ -306,6 +305,19 @@ private:
             image_surface = NULL;
             preserve_surface = NULL;
             trans = 255;
+        }
+        void deleteImageName(){
+            if ( image_name ) delete[] image_name;
+            image_name = NULL;
+        }
+        void setImageName( char *name ){
+            deleteImageName();
+            image_name = new char[ strlen(name) + 1 ];
+            memcpy( image_name, name, strlen(name) + 1 );
+        }
+        void deleteImageSurface(){
+            if ( image_surface ) SDL_FreeSurface( image_surface );
+            image_surface = NULL;
         }
     };
 

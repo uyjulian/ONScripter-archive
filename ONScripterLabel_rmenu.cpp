@@ -213,8 +213,6 @@ int ONScripterLabel::loadSaveFile( int no )
     
     /* ---------------------------------------- */
     /* Load current images */
-    TaggedInfo tagged_info;
-
     bg_image_tag.color[0] = (unsigned char)fgetc( fp );
     bg_image_tag.color[1] = (unsigned char)fgetc( fp );
     bg_image_tag.color[2] = (unsigned char)fgetc( fp );
@@ -227,16 +225,13 @@ int ONScripterLabel::loadSaveFile( int no )
     bg_effect_image = (EFFECT_IMAGE)fgetc( fp );
 
     for ( i=0 ; i<3 ; i++ ){
-        if ( tachi_info[i].image_surface ) SDL_FreeSurface( tachi_info[i].image_surface );
-        tachi_info[i].image_surface = NULL;
-        if ( tachi_info[i].image_name ) delete[] tachi_info[i].image_name;
-        tachi_info[i].image_name = NULL;
+        tachi_info[i].deleteImageName();
+        tachi_info[i].deleteImageSurface();
     }
 
     for ( i=0 ; i<MAX_SPRITE_NUM ; i++ ){
         sprite_info[i].valid = false;
-        if ( sprite_info[i].image_name ) delete[] sprite_info[i].image_name;
-        sprite_info[i].image_name = NULL;
+        sprite_info[i].deleteImageName();
     }
 
     effect_counter = 0;
@@ -246,10 +241,9 @@ int ONScripterLabel::loadSaveFile( int no )
     /* Load Tachi image and Sprite */
     for ( i=0 ; i<3 ; i++ ){
         loadStr( fp, &tachi_info[i].image_name );
-        tachi_info[i].image_surface = NULL;
         if ( tachi_info[i].image_name ){
-            parseTaggedString( tachi_info[i].image_name, &tagged_info );
-            tachi_info[i].image_surface = loadPixmap( &tagged_info );
+            parseTaggedString( tachi_info[i].image_name, &tachi_info[i].tag );
+            tachi_info[i].image_surface = loadPixmap( &tachi_info[i].tag );
         }
     }
 
@@ -264,7 +258,7 @@ int ONScripterLabel::loadSaveFile( int no )
         loadStr( fp, &sprite_info[i].image_name );
         if ( sprite_info[i].image_name ){
             parseTaggedString( sprite_info[i].image_name, &sprite_info[i].tag );
-            if ( sprite_info[i].image_surface ) SDL_FreeSurface( sprite_info[i].image_surface );
+            sprite_info[i].deleteImageSurface();
             sprite_info[i].image_surface = loadPixmap( &sprite_info[i].tag );
         }
     }

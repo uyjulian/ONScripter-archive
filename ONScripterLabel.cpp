@@ -259,7 +259,6 @@ ONScripterLabel::ONScripterLabel()
     key_pressed_flag = false;
     display_mode = NORMAL_DISPLAY_MODE;
     event_mode = IDLE_EVENT_MODE;
-    rmode_flag = true;
     
     start_delayed_effect_info = NULL;
     
@@ -550,6 +549,8 @@ void ONScripterLabel::mousePressEvent( SDL_MouseButtonEvent *event )
             return;
         }
     }
+    else return;
+    
 #if 0
     printf("mousePressEvent %d %d %d %d\n", event_mode,
            current_button_state.x,
@@ -1682,10 +1683,15 @@ void ONScripterLabel::shadowTextDisplay()
     else{
         SDL_Surface *tmp_surface = loadPixmap( &sentence_font_tag );
         if ( tmp_surface ){
+            int tmp_w, tmp_x3;
+            if ( sentence_font_tag.trans_mode == TRANS_ALPHA )
+                tmp_x3 = tmp_w = tmp_surface->w / 2;
+            else
+                tmp_x3 = 0, tmp_w  = tmp_surface->w;
             alphaBlend( text_surface, sentence_font.window_rect[0], sentence_font.window_rect[1],
-                        accumulation_surface, sentence_font.window_rect[0], sentence_font.window_rect[1], tmp_surface->w, tmp_surface->h,
+                        accumulation_surface, sentence_font.window_rect[0], sentence_font.window_rect[1], tmp_w, tmp_surface->h,
                         tmp_surface, 0, 0,
-                        0, 0, -sentence_font_tag.trans_mode );
+                        tmp_x3, 0, -sentence_font_tag.trans_mode );
             SDL_FreeSurface( tmp_surface );
         }
     }
@@ -1707,9 +1713,9 @@ void ONScripterLabel::enterNewPage()
 
 int ONScripterLabel::playMP3( int cd_no )
 {
-    char file_name[128];
-
     if ( mp3_file_name == NULL ){
+        char file_name[128];
+        
         sprintf( file_name, "cd%ctrack%2.2d.mp3", DELIMITER, cd_no );
         printf("playMP3 %s", file_name );
         mp3_sample = SMPEG_new( file_name, &mp3_info, 0 );
@@ -1985,9 +1991,8 @@ void ONScripterLabel::makeMonochromeSurface( SDL_Surface *surface, SDL_Rect *dst
 
 void ONScripterLabel::refreshAccumulationSurface( SDL_Surface *surface, SDL_Rect *rect )
 {
-    int i, w, h;
+    int i, w;
     SDL_Rect pos, clip;
-    TaggedInfo tag;
 
     if ( !rect ){
         clip.x = 0;
@@ -2007,14 +2012,12 @@ void ONScripterLabel::refreshAccumulationSurface( SDL_Surface *surface, SDL_Rect
     }
     for ( i=0 ; i<3 ; i++ ){
         if ( tachi_info[i].image_name ){
-            parseTaggedString( tachi_info[i].image_name, &tag );
             w = tachi_info[i].image_surface->w;
-            h = tachi_info[i].image_surface->h;
-            if ( tag.trans_mode == TRANS_ALPHA ) w /= 2;
+            if ( tachi_info[i].tag.trans_mode == TRANS_ALPHA ) w /= 2;
             pos.x = screen_width * (i+1) / 4 - w / 2;
-            pos.y = underline_value - h + 1;
+            pos.y = underline_value - tachi_info[i].image_surface->h + 1;
             drawTaggedSurface( surface, &pos, &clip,
-                               tachi_info[i].image_surface, &tag );
+                               tachi_info[i].image_surface, &tachi_info[i].tag );
         }
     }
     for ( i=z_order ; i>=0 ; i-- ){
@@ -2188,7 +2191,7 @@ void ONScripterLabel::drawExbtn( SDL_Surface *surface, char *ctl_str )
 
 void ONScripterLabel::setupAnimationInfo( struct AnimationInfo *anim )
 {
-    if ( anim->image_surface ) SDL_FreeSurface( anim->image_surface );
+    anim->deleteImageSurface();
     anim->image_surface = loadPixmap( &anim->tag );
 
     if ( anim->image_surface ){
@@ -2204,10 +2207,7 @@ void ONScripterLabel::setupAnimationInfo( struct AnimationInfo *anim )
 void ONScripterLabel::loadCursor( int no, char *str, int x, int y, bool abs_flag )
 {
     //printf("load Cursor %s\n",str);
-    if ( cursor_info[ no ].image_name ) delete[] cursor_info[ no ].image_name;
-    cursor_info[ no ].image_name = new char[ strlen( str ) + 1 ];
-    memcpy( cursor_info[ no ].image_name, str, strlen( str ) + 1 );
-
+    cursor_info[ no ].setImageName( str );
     cursor_info[ no ].valid = abs_flag;
     cursor_info[ no ].pos.x = x;
     cursor_info[ no ].pos.y = y;

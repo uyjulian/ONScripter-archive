@@ -35,26 +35,25 @@ int ScriptParser::underlineCommand()
 
 int ScriptParser::versionstrCommand()
 {
-    char *p_string_buffer, *tmp_buffer;
+    char *p_string_buffer = string_buffer + string_buffer_offset + 10; // strlen("versionstr") = 10
     int  length[2];
     
     delete[] version_str;
-    
-    p_string_buffer = string_buffer + string_buffer_offset + 10; // strlen("versionstr") = 10
 
     printf("versionstr %s\n",p_string_buffer);
     
     readStr( &p_string_buffer, tmp_string_buffer );
     length[0] = strlen(tmp_string_buffer) + strlen("\n");
-    tmp_buffer = new char[ length[0] ];
-    memcpy( tmp_buffer, tmp_string_buffer, length[0] );
+
+    char *buf = new char[ length[0] ];
+    memcpy( buf, tmp_string_buffer, length[0] );
 
     readStr( &p_string_buffer, tmp_string_buffer );
     length[1] = strlen(tmp_string_buffer) + strlen("\n");
     version_str = new char[ length[0] + length[1] + 1 ];
-    sprintf( version_str, "%s\n%s\n", tmp_buffer, tmp_string_buffer );
+    sprintf( version_str, "%s\n%s\n", buf, tmp_string_buffer );
 
-    delete[] tmp_buffer;
+    delete[] buf;
     
     return RET_CONTINUE;
 }
@@ -131,7 +130,7 @@ int ScriptParser::straliasCommand()
 int ScriptParser::skipCommand()
 {
     char *p_string_buffer = string_buffer + string_buffer_offset + 4; // strlen("skip") = 4
-    int skip_num = readInt( &p_string_buffer );
+    int skip_num    = readInt( &p_string_buffer );
     int skip_offset = current_link_label_info->current_line + skip_num;
 
     while ( skip_offset >= current_link_label_info->label_info.num_of_lines ){ 
@@ -197,8 +196,17 @@ int ScriptParser::savenameCommand()
     return RET_CONTINUE;
 }
 
+int ScriptParser::roffCommand()
+{
+    if ( current_mode != DEFINE_MODE ) errorAndExit( string_buffer + string_buffer_offset );
+    rmode_flag = false;
+
+    return RET_CONTINUE;
+}
+
 int ScriptParser::rmenuCommand()
 {
+    char *p_string_buffer = string_buffer + string_buffer_offset + 5; // strlen("rmode") = 5
     MenuLink *menu;
     
     /* ---------------------------------------- */
@@ -214,10 +222,7 @@ int ScriptParser::rmenuCommand()
     menu_link_num = 0;
     menu_link_width = 0;
     
-    char *p_string_buffer = string_buffer + string_buffer_offset + 5; // strlen("rmode") = 5
-
     while ( *p_string_buffer == ' ' || *p_string_buffer == '\t' ) p_string_buffer++;
-
     while ( *p_string_buffer ){
         MenuLink *menu = new MenuLink();
 
@@ -313,19 +318,23 @@ int ScriptParser::mulCommand()
 
 int ScriptParser::movCommand()
 {
-    char *p_string_buffer;
-    int count, i, no;
+    char *p_string_buffer = string_buffer + string_buffer_offset;
+    int count, no;
     
     if ( !strncmp( string_buffer + string_buffer_offset, "mov10", 5 ) ){
+        p_string_buffer += 5; // strlen("mov10") = 5
         count = 10;
-        p_string_buffer = string_buffer + string_buffer_offset + 5; // strlen("mov10") = 5
+    }
+    else if ( !strncmp( string_buffer + string_buffer_offset, "movl", 4 ) ){
+        p_string_buffer += 4; // strlen("movl") = 4
+        count = 20;
     }
     else if ( string_buffer[string_buffer_offset+3] >= '3' && string_buffer[string_buffer_offset+3] <= '9' ){
+        p_string_buffer += 4; // strlen("mov?") = 4
         count = string_buffer[string_buffer_offset+3] - '0';
-        p_string_buffer = string_buffer + string_buffer_offset + 4; // strlen("mov?") = 4
     }
     else{
-        p_string_buffer = string_buffer + string_buffer_offset + 3; // strlen("mov") = 3
+        p_string_buffer += 3; // strlen("mov") = 3
         count = 1;
     }
 
@@ -333,9 +342,13 @@ int ScriptParser::movCommand()
     
     if ( p_string_buffer[0] == '%' || p_string_buffer[0] == '?' ){
         char *p_buf = p_string_buffer;
-        no = readInt( &p_string_buffer );
-        for ( i=0 ;  i<count ; i++ ){
-            setInt( p_buf, readInt( &p_string_buffer ), i );
+        readInt( &p_string_buffer );
+        bool loop_flag = end_with_comma_flag;
+        int i=0;
+        while ( i<count && loop_flag ){
+            no = readInt( &p_string_buffer );
+            loop_flag = end_with_comma_flag;
+            setInt( p_buf, no, i++ );
         }
     }
     else if ( p_string_buffer[0] == '$'){
@@ -874,20 +887,22 @@ int ScriptParser::divCommand()
 
 int ScriptParser::dimCommand()
 {
-    int i, no, dim = 1;
-    struct ArrayVariable array;
-    char *p_string_buffer = string_buffer + string_buffer_offset + 3; // strlen("dim") = 3
     if ( current_mode != DEFINE_MODE ) errorAndExit( string_buffer + string_buffer_offset );
+    char *p_string_buffer = string_buffer + string_buffer_offset + 3; // strlen("dim") = 3
+
+    struct ArrayVariable array;
+    int dim = 1;
     
-    no = decodeArraySub( &p_string_buffer, &array );
+    int no = decodeArraySub( &p_string_buffer, &array );
 
     array_variables[ no ].num_dim = array.num_dim;
-    printf("dimCommand no=%d dim=%d\n",no,array.num_dim);
-    for ( i=0 ; i<array.num_dim ; i++ ){
-        printf("%d ",array.dim[i]);
+    //printf("dimCommand no=%d dim=%d\n",no,array.num_dim);
+    for ( int i=0 ; i<array.num_dim ; i++ ){
+        //printf("%d ",array.dim[i]);
         array_variables[ no ].dim[i] = array.dim[i]+1;
         dim *= (array.dim[i]+1);
         array_variables[ no ].data = new int[ dim ];
+        memset( array_variables[ no ].data, 0, sizeof(int) * dim );
     }
     
     return RET_CONTINUE;

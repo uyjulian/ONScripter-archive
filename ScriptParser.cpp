@@ -54,6 +54,7 @@ static struct FuncLUT{
     {"selectcolor",     &ScriptParser::selectcolorCommand},
     {"savenumber",     &ScriptParser::savenumberCommand},
     {"savename",     &ScriptParser::savenameCommand},
+    {"roff",    &ScriptParser::roffCommand},
     {"rmenu",    &ScriptParser::rmenuCommand},
     {"return",   &ScriptParser::returnCommand},
     {"numalias", &ScriptParser::numaliasCommand},
@@ -61,6 +62,7 @@ static struct FuncLUT{
     {"next",    &ScriptParser::nextCommand},
     {"nsa",    &ScriptParser::arcCommand},
     {"mul",      &ScriptParser::mulCommand},
+    {"movl",      &ScriptParser::movCommand},
     {"mov10",      &ScriptParser::movCommand},
     {"mov9",      &ScriptParser::movCommand},
     {"mov8",      &ScriptParser::movCommand},
@@ -119,6 +121,7 @@ ScriptParser::ScriptParser()
     labellog_flag = false;
     num_of_label_accessed = 0;
     underline_value = 479;
+    rmode_flag = true;
     
     num_of_labels = 0;
     label_info = NULL;
@@ -1123,14 +1126,15 @@ int ScriptParser::decodeArraySub( char **buf, struct ArrayVariable *array )
         if ( **buf != ']' ) errorAndExit( *buf );
         (*buf)++;
     }
+    for ( int i=array->num_dim ; i<20 ; i++ ) array->dim[i] = 0;
 
     return no;
 }
 
-int *ScriptParser::decodeArray( char **buf )
+int *ScriptParser::decodeArray( char **buf, int offset )
 {
     struct ArrayVariable array;
-    int dim;
+    int dim, i;
     
     while ( **buf == ' ' || **buf == '\t' ) (*buf)++;
     int no = decodeArraySub( buf, &array );
@@ -1138,10 +1142,12 @@ int *ScriptParser::decodeArray( char **buf )
     if ( array_variables[ no ].data == NULL ) errorAndExit( string_buffer + string_buffer_offset );
     if ( array_variables[ no ].dim[0] <= array.dim[0] ) errorAndExit( string_buffer + string_buffer_offset );
     dim = array.dim[0];
-    for ( int i=1 ; i<array_variables[ no ].num_dim ; i++ ){
+    for ( i=1 ; i<array_variables[ no ].num_dim ; i++ ){
         if ( array_variables[ no ].dim[i] <= array.dim[i] ) errorAndExit( string_buffer + string_buffer_offset );
         dim = dim * array_variables[ no ].dim[i] + array.dim[i];
     }
+    if ( array_variables[ no ].dim[i-1] <= array.dim[i-1] + offset ) errorAndExit( string_buffer + string_buffer_offset );
+    dim += offset;
 
     return &array_variables[ no ].data[ dim ];
 }
@@ -1242,7 +1248,7 @@ void ScriptParser::setInt( char *buf, int val, int offset )
     }
     else if ( buf[0] == '?' ){
         p_buf = buf;
-        *(decodeArray( &p_buf )) = val;
+        *(decodeArray( &p_buf, offset )) = val;
     }
     else{
         errorAndExit( string_buffer + string_buffer_offset );

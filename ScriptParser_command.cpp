@@ -108,8 +108,9 @@ int ScriptParser::subCommand()
 
 int ScriptParser::straliasCommand()
 {
-    if ( current_mode != DEFINE_MODE ) errorAndExit( string_buffer + string_buffer_offset );
     char *p_string_buffer = string_buffer + string_buffer_offset + 8; // strlen("stralias") = 8
+    if ( current_mode != DEFINE_MODE ) errorAndExit( string_buffer + string_buffer_offset );
+
     StringAlias *p_str_alias = new StringAlias();
     
     readStr( &p_string_buffer, tmp_string_buffer );
@@ -899,7 +900,8 @@ int ScriptParser::dimCommand()
         array_variables[ no ].data = new int[ dim ];
         memset( array_variables[ no ].data, 0, sizeof(int) * dim );
     }
-    
+
+    string_buffer_offset = p_string_buffer - string_buffer;
     return RET_CONTINUE;
 }
 

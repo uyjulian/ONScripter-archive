@@ -27,6 +27,7 @@ void optionHelp()
 {
     printf( "Usage: onscripter [option ...]\n" );
     printf( "      --cdaudio\t\tuse CD audio if available\n");
+    printf( "      --font font_file\t\tuse font_file as a default font\n");
     printf( "  -h, --help\t\tdisplay this help and exit\n");
     printf( "  -v, --version\t\toutput version information and exit\n");
     exit(0);
@@ -44,6 +45,7 @@ void optionVersion()
 int main( int argc, char **argv )
 {
     bool cdaudio_flag = false;
+    char *default_font = NULL;
     
     /* ---------------------------------------- */
     /* Parse options */
@@ -59,6 +61,13 @@ int main( int argc, char **argv )
             else if ( !strcmp( argv[0]+1, "-cdaudio" ) ){
                 cdaudio_flag = true;
             }
+            else if ( !strcmp( argv[0]+1, "-font" ) ){
+                argc--;
+                argv++;
+                if ( default_font ) delete[] default_font;
+                default_font = new char[ strlen( argv[0] ) + 1 ];
+                memcpy( default_font, argv[0], strlen( argv[0] ) + 1 );
+            }
             else{
                 optionHelp();
             }
@@ -72,7 +81,7 @@ int main( int argc, char **argv )
     
     /* ---------------------------------------- */
     /* Run ONScripter */
-    ONScripterLabel *ons = new ONScripterLabel( cdaudio_flag );
+    ONScripterLabel *ons = new ONScripterLabel( cdaudio_flag, default_font );
     ons->eventLoop();
     
     exit(0);

@@ -39,9 +39,6 @@
 #define ARRAY_VARIABLE_RANGE 200
 #define MAX_SAVE_FILE 20
 
-#define MENU_TOP_X
-#define MENU_TOP_Y
-
 #define MAX_TEXT_BUFFER 10
 
 #define SKIP_SPACE(p) while ( *(p) == ' ' || *(p) == '\t' ) (p)++
@@ -100,7 +97,6 @@ public:
     int parseLine();
 
     bool readToken( char **src_buf, char *dst_buf, bool skip_space_flag = false );
-    //int readInt( char **src_buf, char *dst_buf );
     bool readStr( char **src_buf, char *dst_buf );
     void skipToken();
     void saveGlovalData();
@@ -260,7 +256,8 @@ protected:
             TRANS_STRING = 4,
             TRANS_DIRECT = 5,
             TRANS_PALLET = 6,
-            TRANS_TOPRIGHT = 7
+            TRANS_TOPRIGHT = 7,
+            TRANS_MASK = 8
             } TRANS_MODE;
     int trans_mode;
     
@@ -316,10 +313,7 @@ protected:
         bool display_bold;
         bool display_shadow;
         bool display_transparency;
-        //char window_color[8];
         uchar3  window_color;
-        //char *window_image;
-        //int window_rect[4]; // Top left and bottom right of the text window
     } sentence_font, system_font, menu_font;
 
     /* ---------------------------------------- */

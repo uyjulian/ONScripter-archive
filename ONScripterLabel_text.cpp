@@ -43,7 +43,7 @@ void ONScripterLabel::drawChar( char* text, struct FontInfo *info, bool flush_fl
     unsigned short index, unicode;
     int minx, maxx, miny, maxy, advanced;
 
-    //printf("draw %x-%x[%s]\n", text[0], text[1], text);
+    //printf("draw %x-%x[%s] %d, %d\n", text[0], text[1], text, system_menu_enter_flag, buffering_flag );
 
     //if ( !surface ) surface = text_surface;
     
@@ -52,9 +52,9 @@ void ONScripterLabel::drawChar( char* text, struct FontInfo *info, bool flush_fl
         info->ttf_font = NULL;
     }
     if ( info->ttf_font == NULL ){
-        info->ttf_font = TTF_OpenFont(FONT_NAME, info->font_size );
+        info->ttf_font = TTF_OpenFont( font_name, info->font_size );
         if ( !info->ttf_font ){
-            fprintf( stderr, "can't open font file %s\n", FONT_NAME );
+            fprintf( stderr, "can't open font file: %s\n", font_name );
             SDL_Quit();
             exit(-1);
         }
@@ -120,7 +120,7 @@ void ONScripterLabel::drawChar( char* text, struct FontInfo *info, bool flush_fl
     }
 }
 
-void ONScripterLabel::drawString( char *str, uchar3 color, FontInfo *info, bool flush_flag, SDL_Surface *surface, SDL_Rect *rect )
+void ONScripterLabel::drawString( char *str, uchar3 color, FontInfo *info, bool flush_flag, SDL_Surface *surface, SDL_Rect *rect, bool buffering_flag )
 {
     int i, current_text_xy[2];
     uchar3 org_color;
@@ -149,7 +149,7 @@ void ONScripterLabel::drawString( char *str, uchar3 color, FontInfo *info, bool 
             text[0] = *str++;
             text[1] = '\0';
         }
-        drawChar( text, info, flush_flag, surface, false );
+        drawChar( text, info, flush_flag, surface, buffering_flag );
     }
     for ( i=0 ; i<3 ; i++ ) info->color[i] = org_color[i];
 
@@ -169,12 +169,14 @@ void ONScripterLabel::drawString( char *str, uchar3 color, FontInfo *info, bool 
     }
 }
 
-void ONScripterLabel::restoreTextBuffer()
+void ONScripterLabel::restoreTextBuffer( SDL_Surface *surface )
 {
     int i, end;
     int xy[2];
-
     char out_text[3] = { '\0','\0','\0' };
+
+    if ( !surface ) surface = text_surface;
+
     xy[0] = sentence_font.xy[0];
     xy[1] = sentence_font.xy[1];
     sentence_font.xy[0] = 0;
@@ -184,7 +186,7 @@ void ONScripterLabel::restoreTextBuffer()
         if ( sentence_font.xy[1] * current_text_buffer->num_xy[0] + sentence_font.xy[0] >= end ) break;
         out_text[0] = current_text_buffer->buffer[ i * 2 ];
         out_text[1] = current_text_buffer->buffer[ i * 2 + 1];
-        drawChar( out_text, &sentence_font, false, text_surface );
+        drawChar( out_text, &sentence_font, false, surface );
     }
     sentence_font.xy[0] = xy[0];
     sentence_font.xy[1] = xy[1];

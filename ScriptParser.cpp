@@ -807,24 +807,18 @@ bool ScriptParser::readToken( char **src_buf, char *dst_buf, bool skip_space_fla
     bool quat_flag = false;
 
     end_with_comma_flag = false;
-
+#if 0
     /* If it reaces to the end of the buffer, just return. */
     if ( *src_buf >= string_buffer + strlen(string_buffer) ){
         dst_buf[0] = '\0';
         return end_with_comma_flag;
     }
-
+#endif
     /* ---------------------------------------- */
     /* Get a single word */
     SKIP_SPACE( *src_buf );
 
     //printf("token start %c:\n", **src_buf);
-#if 0    
-    if ( **src_buf == '(' ){
-        *dst_buf++ = *(*src_buf)++;
-        SKIP_SPACE( *src_buf );
-    }
-#endif    
     if ( **src_buf == '"' ){
         quat_flag = true;
         (*src_buf)++;
@@ -940,7 +934,7 @@ void ScriptParser::skipToken( void )
         }
         else if ( *buf == '"' ){
             quat_flag = !quat_flag;
-            SKIP_SPACE( buf );
+            //SKIP_SPACE( buf );
         }
         else if ( !quat_flag && (*buf == ' ' || *buf == '\t') ){
             SKIP_SPACE( buf );

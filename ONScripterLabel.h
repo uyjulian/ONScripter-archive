@@ -33,8 +33,6 @@
 
 #define ONS_VERSION "beta"
 
-#define FONT_NAME "default.ttf"
-
 #define DEFAULT_SURFACE_FLAG (SDL_SWSURFACE)
 //#define DEFAULT_SURFACE_FLAG (SDL_HWSURFACE)
 
@@ -46,7 +44,7 @@
 class ONScripterLabel : public ScriptParser
 {
 public:
-    ONScripterLabel( bool cdaudio_flag );
+    ONScripterLabel( bool cdaudio_flag, char *default_font );
     ~ONScripterLabel();
 
     bool skip_flag;
@@ -98,6 +96,7 @@ public:
     int gettimerCommand();
     int gameCommand();
     int exbtnCommand();
+    int erasetextwindowCommand();
     int endCommand();
     int dwavestopCommand();
     int dwaveCommand();
@@ -156,6 +155,7 @@ private:
         int loop_mode;
         
         char *file_name;
+        char *mask_file_name;
 
         TaggedInfo(){
             current_cell = 0;
@@ -164,6 +164,7 @@ private:
             duration_list = NULL;
             color_list = NULL;
             file_name = NULL;
+            mask_file_name = NULL;
         }
         void remove(){
             if ( duration_list ){
@@ -177,6 +178,10 @@ private:
             if ( file_name ){
                 delete[] file_name;
                 file_name = NULL;
+            }
+            if ( mask_file_name ){
+                delete[] mask_file_name;
+                mask_file_name = NULL;
             }
             num_of_cells = 0;
         }
@@ -251,41 +256,6 @@ private:
     void drawExbtn( SDL_Surface *surface, char *ctl_str );
     
     /* ---------------------------------------- */
-    /* Effect related variables */
-    struct DelayedInfo{
-        struct DelayedInfo *next;
-        char *command;
-    } *start_delayed_effect_info;
-    int effect_counter; // counter in each effect
-    int effect_timer_resolution;
-    int effect_start_time;
-    int effect_start_time_old;
-    bool first_mouse_over_flag;
-    
-    int readEffect( char **buf, struct EffectLink *effect );
-    void makeEffectStr( char **buf, char *dst_buf );
-    int  setEffect( int immediate_flag, char *buf );
-    int doEffect( int effect_no, struct TaggedInfo *tag, int effect_image );
-
-    /* ---------------------------------------- */
-    /* Select related variables */
-    struct SelectLink{
-        struct SelectLink *next;
-        char *text;
-        char *label;
-    } root_select_link, *last_select_link;
-    struct LinkLabelInfo select_label_info;
-    int shortcut_mouse_line;
-
-    void deleteSelectLink();
-    struct ONScripterLabel::ButtonLink *getSelectableSentence( char *buffer, struct FontInfo *info, bool flush_flag = true, bool nofile_flag = false );
-    
-    /* ---------------------------------------- */
-    /* Lookback related variables */
-    struct TaggedInfo lookback_image_tag[4];
-    SDL_Surface *lookback_image_surface[4];
-    
-    /* ---------------------------------------- */
     /* Animation related variables */
     struct AnimationInfo{
         bool valid;
@@ -296,12 +266,14 @@ private:
         char *image_name;
         SDL_Surface *image_surface;
         SDL_Surface *preserve_surface;
+        SDL_Surface *mask_surface;
 
         AnimationInfo(){
             valid = false;
             image_name = NULL;
             image_surface = NULL;
             preserve_surface = NULL;
+            mask_surface = NULL;
             trans = 255;
         }
         void deleteImageName(){
@@ -318,6 +290,11 @@ private:
             image_surface = NULL;
         }
     };
+
+    /* ---------------------------------------- */
+    /* Background related variables */
+    AnimationInfo bg_info;
+    EFFECT_IMAGE bg_effect_image;
 
     /* ---------------------------------------- */
     /* Tachi-e related variables */
@@ -342,15 +319,51 @@ private:
     void endCursor( int click );
     
     /* ---------------------------------------- */
+    /* Lookback related variables */
+    AnimationInfo lookback_info[4];
+    
+    /* ---------------------------------------- */
     /* Text related variables */
     AnimationInfo sentence_font_info;
+    char *font_name;
+    bool erase_text_window_flag;
 
     void drawChar( char* text, struct FontInfo *info, bool flush_flag = true, SDL_Surface *surface = NULL, bool buffering_flag = true );
-    void drawString( char *str, uchar3 color, FontInfo *info, bool flush_flag, SDL_Surface *surface, SDL_Rect *rect = NULL );
-    void restoreTextBuffer();
+    void drawString( char *str, uchar3 color, FontInfo *info, bool flush_flag, SDL_Surface *surface, SDL_Rect *rect = NULL, bool buffering_flag = false );
+    void restoreTextBuffer( SDL_Surface *surface = NULL );
     int clickWait( char *out_text );
     int clickNewPage( char *out_text );
     int textCommand( char *text );
+    
+    /* ---------------------------------------- */
+    /* Effect related variables */
+    struct DelayedInfo{
+        struct DelayedInfo *next;
+        char *command;
+    } *start_delayed_effect_info;
+    int effect_counter; // counter in each effect
+    int effect_timer_resolution;
+    int effect_start_time;
+    int effect_start_time_old;
+    bool first_mouse_over_flag;
+    
+    int readEffect( char **buf, struct EffectLink *effect );
+    void makeEffectStr( char **buf, char *dst_buf );
+    int  setEffect( int immediate_flag, char *buf );
+    int doEffect( int effect_no, AnimationInfo *anim, int effect_image );
+
+    /* ---------------------------------------- */
+    /* Select related variables */
+    struct SelectLink{
+        struct SelectLink *next;
+        char *text;
+        char *label;
+    } root_select_link, *last_select_link;
+    struct LinkLabelInfo select_label_info;
+    int shortcut_mouse_line;
+
+    void deleteSelectLink();
+    struct ONScripterLabel::ButtonLink *getSelectableSentence( char *buffer, struct FontInfo *info, bool flush_flag = true, bool nofile_flag = false );
     
     /* ---------------------------------------- */
     /* Sound related variables */
@@ -382,7 +395,7 @@ private:
     int text_speed_no;
     int default_text_speed[3];
 
-    void shadowTextDisplay();
+    void shadowTextDisplay( SDL_Surface *dst_surface=NULL, SDL_Surface *src_surface=NULL );
     void clearCurrentTextBuffer();
     void enterNewPage();
     
@@ -410,10 +423,8 @@ private:
     bool system_menu_enter_flag;
     int  system_menu_mode;
 
-    struct TaggedInfo bg_image_tag;
-    EFFECT_IMAGE bg_effect_image;
     int shelter_event_mode;
-    uchar3 shelter_sentence_color;
+    //uchar3 shelter_sentence_color;
     struct TextBuffer *shelter_text_buffer;
     
     void searchSaveFiles();

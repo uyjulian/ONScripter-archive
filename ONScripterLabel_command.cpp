@@ -26,6 +26,9 @@
 #define DEFAULT_WAVE_CHANNEL 1
 #define ONSCRIPTER_VERSION 196
 
+#define DEFAULT_CURSOR_WAIT    ":l/3,160,2;cursor0.bmp"
+#define DEFAULT_CURSOR_NEWPAGE ":l/3,160,2;cursor1.bmp"
+
 #define CONTINUOUS_PLAY
 
 int ONScripterLabel::waveCommand()
@@ -168,12 +171,9 @@ int ONScripterLabel::spstrCommand()
 int ONScripterLabel::spbtnCommand()
 {
     char *p_string_buffer = string_buffer + string_buffer_offset + 5; // strlen("spbtn") = 5
-    printf("spbtnCommand %s\n",string_buffer + string_buffer_offset);
 
     int sprite_no = readInt( &p_string_buffer );
     int no        = readInt( &p_string_buffer );
-
-    //if ( !sprite_info[ sprite_no ].valid ) return RET_CONTINUE;
 
     last_button_link->next = new ButtonLink();
     last_button_link = last_button_link->next;
@@ -218,8 +218,8 @@ int ONScripterLabel::setwindowCommand()
     sentence_font.display_shadow = readInt( &p_string_buffer )?true:false;
 
     if ( sentence_font.ttf_font ) TTF_CloseFont( (TTF_Font*)sentence_font.ttf_font );
-    sentence_font.ttf_font = (void*)TTF_OpenFont( FONT_NAME, sentence_font.font_size );
-#if 0    
+    sentence_font.ttf_font = (void*)TTF_OpenFont( font_name, sentence_font.font_size );
+#if 0
     printf("ONScripterLabel::setwindowCommand (%d,%d) (%d,%d) font=%d (%d,%d) wait=%d bold=%d, shadow=%d\n",
            sentence_font.top_xy[0], sentence_font.top_xy[1], sentence_font.num_xy[0], sentence_font.num_xy[1],
            sentence_font.font_size, sentence_font.pitch_xy[0], sentence_font.pitch_xy[1], sentence_font.wait_time,
@@ -257,7 +257,7 @@ int ONScripterLabel::setwindowCommand()
 
     lookbackflushCommand();
     clearCurrentTextBuffer();
-    SDL_BlitSurface( accumulation_surface, NULL, select_surface, NULL );
+    //SDL_BlitSurface( accumulation_surface, NULL, select_surface, NULL );
     display_mode = NORMAL_DISPLAY_MODE;
     
     return RET_CONTINUE;
@@ -546,7 +546,7 @@ int ONScripterLabel::puttextCommand()
     
     readStr( &p_string_buffer, tmp_string_buffer );
 
-    drawString( tmp_string_buffer, sentence_font.color, &sentence_font, false, text_surface );
+    drawString( tmp_string_buffer, sentence_font.color, &sentence_font, false, text_surface, NULL, true );
     flush();
 
     return RET_CONTINUE;
@@ -851,10 +851,16 @@ int ONScripterLabel::gameCommand()
     current_mode = NORMAL_MODE;
 
     /* ---------------------------------------- */
+    /* Load default cursor */
+    loadCursor( CURSOR_WAIT_NO, DEFAULT_CURSOR_WAIT, 0, 0 );
+    loadCursor( CURSOR_NEWPAGE_NO, DEFAULT_CURSOR_NEWPAGE, 0, 0 );
+    
+    /* ---------------------------------------- */
     /* Lookback related variables */
     for ( int i=0 ; i<4 ; i++ ){
-        parseTaggedString( lookback_image_name[i], &lookback_image_tag[i] );
-        lookback_image_surface[i] = loadPixmap( &lookback_image_tag[i] );
+        setStr( &lookback_info[i].image_name, lookback_image_name[i] );
+        parseTaggedString( lookback_info[i].image_name, &lookback_info[i].tag );
+        setupAnimationInfo( &lookback_info[i] );
     }
     
     return RET_JUMP;
@@ -893,6 +899,16 @@ int ONScripterLabel::exbtnCommand()
     if ( sprite_no >= 0 && sprite_info[ sprite_no ].image_surface )
         button->image_rect = button->select_rect = sprite_info[ button->sprite_no ].pos;
 
+    return RET_CONTINUE;
+}
+
+int ONScripterLabel::erasetextwindowCommand()
+{
+    char *p_string_buffer = string_buffer + string_buffer_offset + 15; // strlen("erasetextwindow") = 15
+
+    erase_text_window_flag = (readInt( &p_string_buffer )==1)?true:false;
+    printf("erase text window %s\n",erase_text_window_flag?"true":"false");
+    
     return RET_CONTINUE;
 }
 
@@ -1177,7 +1193,7 @@ int ONScripterLabel::btnwaitCommand()
                 //SDL_BlitSurface( select_surface, &current_button_link.image_rect, text_surface, &current_button_link.image_rect );
             }
             else if ( current_button_link.button_type == SPRITE_BUTTON ){
-                refreshAccumulationSurface( select_surface );
+                //refreshAccumulationSurface( select_surface );
                 //SDL_BlitSurface( select_surface, &current_button_link.image_rect, text_surface, &current_button_link.image_rect );
             }
             SDL_BlitSurface( select_surface, &current_button_link.image_rect, text_surface, &current_button_link.image_rect );
@@ -1191,9 +1207,23 @@ int ONScripterLabel::btnwaitCommand()
     else{
         skip_flag = false;
         event_mode = WAIT_BUTTON_MODE;
+
+        ButtonLink *p_button_link = root_button_link.next;
+        while( p_button_link ){
+            if ( current_button_link.button_type == SPRITE_BUTTON || current_button_link.button_type == EX_SPRITE_BUTTON )
+                sprite_info[ current_button_link.sprite_no ].tag.current_cell = 0;
+            p_button_link = p_button_link->next;
+        }
         refreshAccumulationSurface( accumulation_surface );
         SDL_BlitSurface( accumulation_surface, NULL, text_surface, NULL );
+        if ( !erase_text_window_flag ){
+            shadowTextDisplay( NULL, text_surface );
+            restoreTextBuffer();
+        }
+        SDL_BlitSurface( text_surface, NULL, select_surface, NULL );
+
         flush();
+
         refreshMouseOverButton();
 
         return RET_WAIT;
@@ -1239,30 +1269,31 @@ int ONScripterLabel::bgCommand()
     readStr( &p_string_buffer, tmp_string_buffer );
 
     if ( event_mode & EFFECT_EVENT_MODE ){
-        bg_effect_image = COLOR_EFFECT_IMAGE;
-        
-        if ( !strcmp( (const char*)tmp_string_buffer, "white" ) ){
-            bg_image_tag.color[0] = bg_image_tag.color[1] = bg_image_tag.color[2] = 0xff;
-        }
-        else if ( !strcmp( (const char*)tmp_string_buffer, "black" ) ){
-            bg_image_tag.color[0] = bg_image_tag.color[1] = bg_image_tag.color[2] = 0x00;
-        }
-        else if ( tmp_string_buffer[0] == '#' ){
-            readColor( &bg_image_tag.color, tmp_string_buffer + 1 );
-        }
-        else{
-            parseTaggedString( tmp_string_buffer, &bg_image_tag );
-            bg_effect_image = BG_EFFECT_IMAGE;
-        }
-        
         int num = readEffect( &p_string_buffer, &tmp_effect );
-        if ( num > 1 ) return doEffect( TMP_EFFECT, &bg_image_tag, bg_effect_image );
-        else           return doEffect( tmp_effect.effect, &bg_image_tag, bg_effect_image );
+        if ( num > 1 ) return doEffect( TMP_EFFECT, &bg_info, bg_effect_image );
+        else           return doEffect( tmp_effect.effect, &bg_info, bg_effect_image );
     }
     else{
         for ( int i=0 ; i<3 ; i++ ){
             tachi_info[i].deleteImageName();
             tachi_info[i].deleteImageSurface();
+        }
+
+        bg_effect_image = COLOR_EFFECT_IMAGE;
+
+        if ( !strcmp( (const char*)tmp_string_buffer, "white" ) ){
+            bg_info.tag.color[0] = bg_info.tag.color[1] = bg_info.tag.color[2] = 0xff;
+        }
+        else if ( !strcmp( (const char*)tmp_string_buffer, "black" ) ){
+            bg_info.tag.color[0] = bg_info.tag.color[1] = bg_info.tag.color[2] = 0x00;
+        }
+        else if ( tmp_string_buffer[0] == '#' ){
+            readColor( &bg_info.tag.color, tmp_string_buffer + 1 );
+        }
+        else{
+            parseTaggedString( tmp_string_buffer, &bg_info.tag );
+            setupAnimationInfo( &bg_info );
+            bg_effect_image = BG_EFFECT_IMAGE;
         }
 
         char *buf = new char[ 512 ];

@@ -55,6 +55,9 @@ int ONScripterLabel::doEffect( int effect_no, AnimationInfo *anim, int effect_im
 
     struct EffectLink effect = getEffect( effect_no );
 
+    effect_no = effect.effect;
+    if ( effect_cut_flag && skip_flag ) effect_no = 1;
+    
     if ( effect_counter == 0 ){
         if ( effect_image != DIRECT_EFFECT_IMAGE )
             SDL_BlitSurface( text_surface, NULL, effect_src_surface, NULL );
@@ -74,7 +77,7 @@ int ONScripterLabel::doEffect( int effect_no, AnimationInfo *anim, int effect_im
         }
 
         /* Load mask image */
-        if ( effect.effect == 15 || effect.effect == 18 ){
+        if ( effect_no == 15 || effect_no == 18 ){
             if ( effect.image ){
                 if ( effect_mask_surface ) SDL_FreeSurface( effect_mask_surface );
                 effect_mask_surface = loadImage( effect.image );
@@ -84,8 +87,8 @@ int ONScripterLabel::doEffect( int effect_no, AnimationInfo *anim, int effect_im
     
     /* ---------------------------------------- */
     /* Execute effect */
-    //printf("Effect number %d %d\n", effect.effect, effect.duration );
-    switch ( effect.effect ){
+    //printf("Effect number %d %d\n", effect_no, effect.duration );
+    switch ( effect_no ){
       case 0: // Instant display
       case 1: // Instant display
         SDL_BlitSurface( effect_dst_surface, NULL, text_surface, NULL );
@@ -193,7 +196,7 @@ int ONScripterLabel::doEffect( int effect_no, AnimationInfo *anim, int effect_im
         break;
 
       default:
-        printf("effect.effect %d is not implemented. Crossfade is substituted for that.\n",effect.effect);
+        printf("effect No. %d is not implemented. Crossfade is substituted for that.\n",effect_no);
         
       case 10: // Cross fade
         height = 256 * effect_counter / effect.duration;
@@ -322,8 +325,8 @@ int ONScripterLabel::doEffect( int effect_no, AnimationInfo *anim, int effect_im
         
     effect_counter += effect_timer_resolution;
     if ( effect_counter < effect.duration ){
-        if ( effect.effect != 0 ){
-            if ( erase_text_window_mode == 0 && text_on_flag && effect.effect < CUSTOM_EFFECT_NO ){
+        if ( effect_no != 0 ){
+            if ( erase_text_window_mode == 0 && text_on_flag && effect_no < CUSTOM_EFFECT_NO ){
                 restoreTextBuffer();
             }
             flush();
@@ -348,8 +351,8 @@ int ONScripterLabel::doEffect( int effect_no, AnimationInfo *anim, int effect_im
         if ( effect_mask_surface ) SDL_FreeSurface( effect_mask_surface );
         effect_mask_surface = NULL;
 
-        if ( effect.effect != 0 ) flush();
-        if ( effect.effect == 1 ) effect_counter = 0;
+        if ( effect_no != 0 ) flush();
+        if ( effect_no == 1 ) effect_counter = 0;
         event_mode = IDLE_EVENT_MODE;
         return RET_CONTINUE;
     }

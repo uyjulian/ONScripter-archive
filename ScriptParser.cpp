@@ -50,6 +50,7 @@ static struct FuncLUT{
     {"windowback", &ScriptParser::windowbackCommand},
     {"versionstr", &ScriptParser::versionstrCommand},
     {"usewheel", &ScriptParser::usewheelCommand},
+    {"useescspc", &ScriptParser::useescspcCommand},
     {"underline", &ScriptParser::underlineCommand},
     {"transmode", &ScriptParser::transmodeCommand},
     {"time", &ScriptParser::timeCommand},
@@ -106,6 +107,7 @@ static struct FuncLUT{
     //{"game",    &ScriptParser::gameCommand},
     {"for",   &ScriptParser::forCommand},
     {"filelog",   &ScriptParser::filelogCommand},
+    {"effectcut",   &ScriptParser::effectcutCommand},
     {"effectblank",   &ScriptParser::effectblankCommand},
     {"effect",   &ScriptParser::effectCommand},
     {"div",   &ScriptParser::divCommand},
@@ -125,10 +127,10 @@ static struct FuncLUT{
     {"add",      &ScriptParser::addCommand},
     {"", NULL}
 };
-    
+
 ScriptParser::ScriptParser( char *path )
 {
-    unsigned int i;
+    int i;
     
     debug_level = 0;
 
@@ -142,6 +144,7 @@ ScriptParser::ScriptParser( char *path )
     rmode_flag = true;
     windowback_flag = false;
     usewheel_flag = false;
+    useescspc_flag = false;
     mode_saya_flag = false;
     
     string_buffer_offset = 0;
@@ -269,6 +272,7 @@ ScriptParser::ScriptParser( char *path )
     textgosub_label = NULL;
 
     effect_blank = MINIMUM_TIMER_RESOLUTION;
+    effect_cut_flag = false;
 
     /* ---------------------------------------- */
     /* Effect related variables */
@@ -352,7 +356,7 @@ void ScriptParser::getSJISFromInteger( char *buffer, int no, bool add_space_flag
 
 unsigned char ScriptParser::convHexToDec( char ch )
 {
-    if ( '0' <= ch && ch <= '9' ) return ch - '0';
+    if      ( '0' <= ch && ch <= '9' ) return ch - '0';
     else if ( 'a' <= ch && ch <= 'f' ) return ch - 'a' + 10;
     else if ( 'A' <= ch && ch <= 'F' ) return ch - 'A' + 10;
     else return 0;
@@ -432,7 +436,6 @@ int ScriptParser::getSystemCallNo( const char *buffer )
 void ScriptParser::saveGlovalData()
 {
     if ( !globalon_flag ) return;
-    printf(" saveGlobalData\n" );
 
     FILE *fp;
 
@@ -472,7 +475,6 @@ void ScriptParser::loadFileLog()
 void ScriptParser::saveFileLog()
 {
     if ( !filelog_flag ) return;
-    printf(" saveFileLog\n" );
 
     FILE *fp;
     int  i,j;

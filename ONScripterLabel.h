@@ -36,8 +36,6 @@
 #include <smpeg.h>
 #endif
 
-#define ONS_VERSION "beta"
-
 #define DEFAULT_SURFACE_FLAG (SDL_SWSURFACE)
 //#define DEFAULT_SURFACE_FLAG (SDL_HWSURFACE)
 
@@ -58,7 +56,7 @@
 class ONScripterLabel : public ScriptParser
 {
 public:
-    ONScripterLabel( bool cdaudio_flag, char *default_font, char *default_registry, char *default_archive_path, bool edit_flag );
+    ONScripterLabel( bool cdaudio_flag, char *default_font, char *default_registry, char *default_archive_path, bool force_button_shortcut_flag, bool edit_flag );
     ~ONScripterLabel();
 
     bool skip_flag;
@@ -135,6 +133,7 @@ public:
     int getregCommand();
     int getmouseposCommand();
     int getfunctionCommand();
+    int getenterCommand();
     int getcursorposCommand();
     int getcursorCommand();
     int getcselnumCommand();
@@ -172,14 +171,14 @@ public:
 protected:
     /* ---------------------------------------- */
     /* Event related variables */
-    typedef enum{ NOT_EDIT_MODE=0,
-                      EDIT_SELECT_MODE=1,
-                      EDIT_VARIABLE_INDEX_MODE=2,
-                      EDIT_VARIABLE_NUM_MODE=3,
-                      EDIT_MP3_VOLUME_MODE=4,
-                      EDIT_VOICE_VOLUME_MODE=5,
-                      EDIT_SE_VOLUME_MODE=6
-                      } VARIABLE_EDIT_MODE;
+    enum { NOT_EDIT_MODE            = 0,
+           EDIT_SELECT_MODE         = 1,
+           EDIT_VARIABLE_INDEX_MODE = 2,
+           EDIT_VARIABLE_NUM_MODE   = 3,
+           EDIT_MP3_VOLUME_MODE     = 4,
+           EDIT_VOICE_VOLUME_MODE   = 5,
+           EDIT_SE_VOLUME_MODE      = 6
+    };
     
     int variable_edit_mode;
     int variable_edit_index;
@@ -194,24 +193,23 @@ protected:
     void startTimer( int count );
     void advancePhase( int count=MINIMUM_TIMER_RESOLUTION );
     void trapHandler();
-    int SetVideoMode();
+    void initSDL( bool cdaudio_flag );
     
 private:
-    typedef enum{ NORMAL_DISPLAY_MODE=0, TEXT_DISPLAY_MODE=1 } DISPLAY_MODE;
-    typedef enum{ IDLE_EVENT_MODE = 0,
-                      EFFECT_EVENT_MODE = 1,
-                      WAIT_BUTTON_MODE  = 2, // For select and btnwait.
-                      WAIT_INPUT_MODE   = (4|8),  // For select and text wait. It allows the right click menu.
-                      WAIT_SLEEP_MODE   = 16,
-                      WAIT_ANIMATION_MODE  = 32,
-                      WAIT_TEXTBTN_MODE = 64
-                      } EVENT_MODE;
-    typedef enum{
-        COLOR_EFFECT_IMAGE            = 0,
-            DIRECT_EFFECT_IMAGE       = 1,
-            BG_EFFECT_IMAGE           = 2,
-            TACHI_EFFECT_IMAGE        = 3
-            } EFFECT_IMAGE;
+    enum { NORMAL_DISPLAY_MODE = 0, TEXT_DISPLAY_MODE = 1 };
+    enum { IDLE_EVENT_MODE      = 0,
+           EFFECT_EVENT_MODE    = 1,
+           WAIT_BUTTON_MODE     = 2, // For select and btnwait.
+           WAIT_INPUT_MODE      = (4|8),  // For select and text wait. It allows the right click menu.
+           WAIT_SLEEP_MODE      = 16,
+           WAIT_ANIMATION_MODE  = 32,
+           WAIT_TEXTBTN_MODE    = 64
+    };
+    typedef enum { COLOR_EFFECT_IMAGE  = 0,
+                   DIRECT_EFFECT_IMAGE = 1,
+                   BG_EFFECT_IMAGE     = 2,
+                   TACHI_EFFECT_IMAGE  = 3
+    } EFFECT_IMAGE;
 
     /* ---------------------------------------- */
     /* Global definitions */
@@ -249,11 +247,11 @@ private:
 
     /* ---------------------------------------- */
     /* Script related variables */
-    typedef enum{ REFRESH_NORMAL_MODE = 0,
-                      REFRESH_SAYA_MODE = 1,
-                      REFRESH_SHADOW_MODE = 2,
-                      REFRESH_CURSOR_MODE = 4
-                      } REFRESH_MODE;
+    enum { REFRESH_NORMAL_MODE = 0,
+           REFRESH_SAYA_MODE   = 1,
+           REFRESH_SHADOW_MODE = 2,
+           REFRESH_CURSOR_MODE = 4
+    };
     
     int display_mode;
     int event_mode;
@@ -274,11 +272,11 @@ private:
         bool down_flag;
     } current_button_state, volatile_button_state, last_mouse_state, shelter_mouse_state;
 
-    typedef enum{ NORMAL_BUTTON = 0,
-                      SPRITE_BUTTON = 1,
-                      EX_SPRITE_BUTTON = 2,
-                      CUSTOM_SELECT_BUTTON = 3
-                      } BUTTON_TYPE;
+    typedef enum { NORMAL_BUTTON        = 0,
+                   SPRITE_BUTTON        = 1,
+                   EX_SPRITE_BUTTON     = 2,
+                   CUSTOM_SELECT_BUTTON = 3
+    } BUTTON_TYPE;
 
     struct ButtonLink{
         struct ButtonLink *next;
@@ -300,7 +298,7 @@ private:
         ~ButtonLink(){
             if ( selected_surface )    SDL_FreeSurface( selected_surface );
             if ( no_selected_surface ) SDL_FreeSurface( no_selected_surface );
-            if ( exbtn_ctl ) delete[] exbtn_ctl;
+            if ( exbtn_ctl )           delete[] exbtn_ctl;
         };
     } root_button_link, *last_button_link, *current_button_link, *shelter_button_link, exbtn_d_button_link;
 
@@ -308,6 +306,7 @@ private:
 
     bool gettab_flag;
     bool getfunction_flag;
+    bool getenter_flag;
     bool getcursor_flag;
 
     void resetSentenceFont();
@@ -338,9 +337,9 @@ private:
 
     /* ---------------------------------------- */
     /* Cursor related variables */
-    typedef enum{ CURSOR_WAIT_NO = 0,
-                      CURSOR_NEWPAGE_NO = 1
-                      } CURSOR_NO;
+    enum { CURSOR_WAIT_NO    = 0,
+           CURSOR_NEWPAGE_NO = 1
+    };
     AnimationInfo cursor_info[2];
 
     int proceedAnimation();
@@ -348,6 +347,7 @@ private:
     void resetRemainingTime( int t );
     void stopAnimation( int click );
     void loadCursor( int no, const char *str, int x, int y, bool abs_flag = false );
+    void saveAll();
     
     /* ---------------------------------------- */
     /* Lookback related variables */
@@ -385,7 +385,7 @@ private:
 
     /* ---------------------------------------- */
     /* Select related variables */
-    typedef enum{ SELECT_GOTO_MODE=0, SELECT_GOSUB_MODE=1, SELECT_NUM_MODE=2, SELECT_CSEL_MODE=3 } SELECT_MODE;
+    enum { SELECT_GOTO_MODE=0, SELECT_GOSUB_MODE=1, SELECT_NUM_MODE=2, SELECT_CSEL_MODE=3 };
     struct SelectLink{
         struct SelectLink *next;
         char *text;
@@ -464,7 +464,7 @@ private:
     void refreshSurfaceParameters();
     void refreshSurface( SDL_Surface *surface, SDL_Rect *clip=NULL, int refresh_mode = REFRESH_NORMAL_MODE );
     void mouseOverCheck( int x, int y );
-    void moveCursorOnButton( int diff );
+    void shiftCursorOnButton( int diff );
     
     /* ---------------------------------------- */
     /* System call related method */

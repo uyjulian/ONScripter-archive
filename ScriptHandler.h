@@ -32,8 +32,6 @@
 #define VARIABLE_RANGE 4096
 #define ARRAY_VARIABLE_RANGE 200
 
-#define SKIP_SPACE(p) while ( *(p) == ' ' || *(p) == '\t' ) (p)++
-
 class ScriptHandler
 {
 public:
@@ -76,10 +74,10 @@ public:
     bool rereadToken();
     bool readToken();
     char *getStringBuffer();
-    char *getSavedStringBuffer();
 
     const char *readStr( char *dst_buf=NULL, bool reread_flag=false );
     int readInt( bool reread_flag=false );
+
     int parseInt( char **buf );
     void setInt( char *buf, int val, int offset = 0 );
     void setNumVariable( int no, int val );
@@ -108,7 +106,7 @@ public:
 
     /* ---------------------------------------- */
     /* Variable */
-    typedef enum{ VAR_INT, VAR_STR, VAR_ARRAY };
+    enum{ VAR_INT, VAR_STR, VAR_ARRAY };
     int num_variables[ VARIABLE_RANGE ];
     int num_limit_upper[ VARIABLE_RANGE ];
     int num_limit_lower[ VARIABLE_RANGE ];

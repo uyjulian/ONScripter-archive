@@ -413,6 +413,7 @@ int ONScripterLabel::saveSaveFile( int no )
     char file_name[256];
 
     if ( no >= 0 ){
+        saveAll();
         sprintf( file_name, "save%d.dat", no );
 
         if ( ( fp = fopen( file_name, "wb" ) ) == NULL ){

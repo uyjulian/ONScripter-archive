@@ -23,6 +23,8 @@
 
 #include "ScriptHandler.h"
 
+#define SKIP_SPACE(p) while ( *(p) == ' ' || *(p) == '\t' ) (p)++
+
 ScriptHandler::ScriptHandler()
 {
     int i;
@@ -86,6 +88,7 @@ char *ScriptHandler::getCurrent()
 
 void ScriptHandler::setCurrent( char *pos, bool reread_flag )
 {
+    text_flag = true;
     text_line_flag = next_text_line_flag = false;
     current_script = pos;
     if ( reread_flag ) 
@@ -396,11 +399,6 @@ char *ScriptHandler::getStringBuffer()
     return string_buffer;
 }
 
-char *ScriptHandler::getSavedStringBuffer()
-{
-    return saved_string_buffer;
-}
-
 const char *ScriptHandler::readStr( char *dst_buf, bool reread_flag )
 {
     if ( !dst_buf ) dst_buf = str_string_buffer;
@@ -423,9 +421,9 @@ const char *ScriptHandler::readStr( char *dst_buf, bool reread_flag )
         if ( cBR->getAccessFlag( dst_buf ) ){
             readStr( dst_buf );
             char *buf = new char[ strlen( dst_buf ) + 1 ];
-            memcpy( buf, dst_buf, strlen( dst_buf ) + 1 );
+            strcpy( buf, dst_buf );
             readStr( dst_buf );
-            memcpy( dst_buf, buf, strlen( buf ) + 1 );
+            strcpy( dst_buf, buf );
             delete[] buf;
         }
         else{
@@ -437,7 +435,7 @@ const char *ScriptHandler::readStr( char *dst_buf, bool reread_flag )
     if ( string_buffer[0] == '$' ){
         char *p_dst_buf = string_buffer+1;
         int no = parseInt( &p_dst_buf );
-        sprintf( dst_buf, "%s", str_variables[ no ] );
+        strcpy( dst_buf, str_variables[ no ] );
     }
     else{
         /* ---------------------------------------- */
@@ -446,7 +444,7 @@ const char *ScriptHandler::readStr( char *dst_buf, bool reread_flag )
 
         while( p_str_alias ){
             if ( !strcmp( p_str_alias->alias, (const char*)dst_buf ) ){
-                memcpy( dst_buf, p_str_alias->str, strlen( p_str_alias->str ) + 1 );
+                strcpy( dst_buf, p_str_alias->str );
                 break;
             }
             p_str_alias = p_str_alias->next;
@@ -784,8 +782,6 @@ bool ScriptHandler::getLabelAccessFlag( const char *label )
 
 void ScriptHandler::saveLabelLog()
 {
-    printf(" saveLabelLog\n" );
-
     FILE *fp;
     int  i;
     char buf[10];

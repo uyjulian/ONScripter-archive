@@ -52,7 +52,19 @@ int ScriptParser::versionstrCommand()
 
 int ScriptParser::usewheelCommand()
 {
+    if ( current_mode != DEFINE_MODE ) errorAndExit( script_h.getStringBuffer(), "not in the define section" );
+
     usewheel_flag = true;
+
+    return RET_CONTINUE;
+}
+
+int ScriptParser::useescspcCommand()
+{
+    if ( current_mode != DEFINE_MODE ) errorAndExit( script_h.getStringBuffer(), "not in the define section" );
+
+    if ( !force_button_shortcut_flag )
+        useescspc_flag = true;
 
     return RET_CONTINUE;
 }
@@ -539,8 +551,6 @@ int ScriptParser::lenCommand()
 
 int ScriptParser::labellogCommand()
 {
-    printf(" labellogCommand\n" );
-
     script_h.loadLabelLog();
 
     labellog_flag = true;
@@ -630,7 +640,6 @@ int ScriptParser::ifCommand()
             tmp_buffer = new char[ strlen( buf ) + 1 ];
             memcpy( tmp_buffer, buf, strlen( buf ) + 1 );
             
-            //SKIP_SPACE( p_string_buffer );
             script_h.readToken();
             const char *save_buf = script_h.saveStringBuffer();
 
@@ -669,34 +678,20 @@ int ScriptParser::ifCommand()
             else if ( !strcmp( save_buf, "=" ) )  f = (left_value == right_value);
         }
         condition_flag &= (if_flag)?(f):(!f);
-        //SKIP_SPACE( p_string_buffer );
 
-        char *current = script_h.getCurrent();
         script_h.readToken();
         if ( script_h.getStringBuffer()[0] == '&' ){
-            //printf("& " );
-            //while ( *p_string_buffer == '&' ) p_string_buffer++;
-            //char *current = script_h.getCurrent();
             script_h.readToken();
             continue;
         }
-        script_h.setCurrent( current );
         break;
     };
 
     /* Execute command */
-    if ( condition_flag ){
-        //printf(" = true (%d, %d)\n", if_flag, condition_flag );
-        //string_buffer_offset = p_string_buffer - string_buffer;
-        return RET_CONTINUE;
-    }
-    else{
-        //printf(" = false\n");
-        //script_h.skipLine();
-        //while ( *p_string_buffer != '\0' ) p_string_buffer++;
-        //string_buffer_offset = p_string_buffer - string_buffer;
+    if ( condition_flag )
+        return RET_CONTINUE_NOREAD;
+    else
         return RET_SKIP_LINE;
-    }
 }
 
 int ScriptParser::humanzCommand()
@@ -804,6 +799,15 @@ int ScriptParser::filelogCommand()
     if ( current_mode != DEFINE_MODE ) errorAndExit( script_h.getStringBuffer() );
 
     filelog_flag = true;
+    return RET_CONTINUE;
+}
+
+int ScriptParser::effectcutCommand()
+{
+    if ( current_mode != DEFINE_MODE ) errorAndExit( script_h.getStringBuffer() );
+    
+    effect_cut_flag = true;
+
     return RET_CONTINUE;
 }
 

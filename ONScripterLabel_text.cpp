@@ -405,7 +405,7 @@ int ONScripterLabel::textCommand()
         /* ---------------------------------------- */
         /* Kinsoku process */
         if ( sentence_font.xy[0] + 1 == sentence_font.num_xy[0] &&
-             IS_KINSOKU( script_h.getStringBuffer() + string_buffer_offset + 2  ) ){
+             IS_KINSOKU( script_h.getStringBuffer() + string_buffer_offset + 2 ) ){
             sentence_font.xy[0] = 0;
             sentence_font.xy[1]++;
         }
@@ -530,7 +530,7 @@ int ONScripterLabel::textCommand()
         return RET_CONTINUE;
     }
     else if ( ch == '#' ){
-        readColor( &sentence_font.color, &script_h.getStringBuffer()[ string_buffer_offset + 1] );
+        readColor( &sentence_font.color, script_h.getStringBuffer() + string_buffer_offset + 1 );
         string_buffer_offset += 7;
         return RET_CONTINUE_NOREAD;
     }

@@ -293,6 +293,7 @@ int ONScripterLabel::setwindow2Command()
 
 int ONScripterLabel::setwindowCommand()
 {
+    sentence_font.closeFont();
     sentence_font.top_xy[0] = script_h.readInt();
     sentence_font.top_xy[1] = script_h.readInt();
     sentence_font.num_xy[0] = script_h.readInt();
@@ -1241,6 +1242,14 @@ int ONScripterLabel::getfunctionCommand()
     return RET_CONTINUE;
 }
 
+int ONScripterLabel::getenterCommand()
+{
+    if ( !force_button_shortcut_flag )
+        getenter_flag = true;
+    
+    return RET_CONTINUE;
+}
+
 int ONScripterLabel::getcursorposCommand()
 {
     script_h.readToken();
@@ -1328,16 +1337,17 @@ int ONScripterLabel::exbtnCommand()
         sprite_no = script_h.readInt();
         no = script_h.readInt();
 
-        if ( sprite_info[ sprite_no ].num_of_cells == 0 ) return RET_CONTINUE;
+        if ( sprite_info[ sprite_no ].num_of_cells == 0 ){
+            script_h.readStr();
+            return RET_CONTINUE;
+        }
         
         button = new ButtonLink();
         last_button_link->next = button;
         last_button_link = last_button_link->next;
     }
-    //printf("exbtnCommand %s\n",string_buffer + string_buffer_offset);
-    const char *buf = script_h.readStr();
 
-    //if ( !sprite_info[ sprite_no ].valid ) return RET_CONTINUE;
+    const char *buf = script_h.readStr();
 
     button->button_type = EX_SPRITE_BUTTON;
     button->sprite_no   = sprite_no;
@@ -1363,10 +1373,7 @@ int ONScripterLabel::erasetextwindowCommand()
 
 int ONScripterLabel::endCommand()
 {
-    saveGlovalData();
-    saveFileLog();
-    if ( labellog_flag ) script_h.saveLabelLog();
-    if ( kidokuskip_flag ) script_h.saveKidokuData();
+    saveAll();
     if ( cdrom_info ){
         SDL_CDStop( cdrom_info );
         SDL_CDClose( cdrom_info );
@@ -1636,6 +1643,11 @@ int ONScripterLabel::btnwaitCommand()
         event_mode = IDLE_EVENT_MODE;
         btndown_flag = false;
 
+        gettab_flag = false;
+        getfunction_flag = false;
+        getenter_flag = false;
+        getcursor_flag = false;
+
         return RET_CONTINUE;
     }
     else{
@@ -1758,6 +1770,8 @@ int ONScripterLabel::btndefCommand()
 
     gettab_flag = false;
     getfunction_flag = false;
+    getenter_flag = false;
+    getcursor_flag = false;
     
     return RET_CONTINUE;
 }

@@ -30,6 +30,7 @@ void optionHelp()
     printf( "      --font file\tuse file as a default font\n");
     printf( "      --registry file\tuse file as a default registry file\n");
     printf( "      --root path\tuse path as a root path for archives\n");
+    printf( "      --force-button-shortcut\tignore useescspc and getenter command\n");
     printf( "      --edit\t\tedit volumes and variables when 'z' is pressed\n");
     printf( "  -h, --help\t\tdisplay this help and exit\n");
     printf( "  -v, --version\t\toutput version information and exit\n");
@@ -38,7 +39,7 @@ void optionHelp()
 
 void optionVersion()
 {
-    printf("ONScripter version %s\n", ONS_VERSION );
+    printf("ONScripter version beta\n");
     printf("Written by Ogapee <ogapee@aqua.dti2.ne.jp>\n\n");
     printf("Copyright (c) 2001-2002 Ogapee.\n");
     printf("This is free software; see the source for copying conditions.\n");
@@ -54,6 +55,7 @@ int main( int argc, char **argv )
     char *default_font = NULL;
     char *default_registry = NULL;
     char *default_archive_path = NULL;
+    bool force_button_shortcut_flag = false;
     bool edit_flag = false;
     
     /* ---------------------------------------- */
@@ -91,11 +93,14 @@ int main( int argc, char **argv )
                 default_archive_path = new char[ strlen( argv[0] ) + 1 ];
                 memcpy( default_archive_path, argv[0], strlen( argv[0] ) + 1 );
             }
+            else if ( !strcmp( argv[0]+1, "-force-button-shortcut" ) ){
+                force_button_shortcut_flag = true;
+            }
             else if ( !strcmp( argv[0]+1, "-edit" ) ){
                 edit_flag = true;
             }
             else{
-                //optionHelp();
+                printf(" unknown option %s\n", argv[0] );
             }
         }
         else{
@@ -107,7 +112,7 @@ int main( int argc, char **argv )
     
     /* ---------------------------------------- */
     /* Run ONScripter */
-    ONScripterLabel *ons = new ONScripterLabel( cdaudio_flag, default_font, default_registry, default_archive_path, edit_flag );
+    ONScripterLabel *ons = new ONScripterLabel( cdaudio_flag, default_font, default_registry, default_archive_path, force_button_shortcut_flag, edit_flag );
     ons->eventLoop();
     
     exit(0);

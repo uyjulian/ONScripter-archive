@@ -41,55 +41,14 @@
 #endif
 
 #define MINIMUM_TIMER_RESOLUTION 1
-
 #define MAX_SAVE_FILE 20
-
 #define MAX_TEXT_BUFFER 10
-
-#define SKIP_SPACE(p) while ( *(p) == ' ' || *(p) == '\t' ) (p)++
 
 typedef unsigned char uchar3[3];
 
 class ScriptParser
 {
 public:
-    struct LinkLabelInfo{
-        struct LinkLabelInfo *previous, *next;
-        ScriptHandler::LabelInfo label_info;
-        int current_line; // line number in the current label
-        bool textgosub_flag; // Set if the current token is in text line, used when encountered an atmark while textgosub
-        int string_buffer_offset;
-        char *current_script;
-    };
-
-    typedef enum{ SYSTEM_NULL = 0,
-                      SYSTEM_SKIP = 1,
-                      SYSTEM_RESET = 2,
-                      SYSTEM_SAVE = 3,
-                      SYSTEM_LOAD = 4,
-                      SYSTEM_LOOKBACK = 5,
-                      SYSTEM_WINDOWERASE = 6,
-                      SYSTEM_MENU = 7,
-                      SYSTEM_YESNO = 8
-                      } SYSTEM_CALLS;
-
-    typedef enum{ RET_COMMENT = 0,
-                      RET_NOMATCH = 1,
-                      RET_CONTINUE = 2,
-                      RET_CONTINUE_NOREAD = 3,
-                      RET_SKIP_LINE = 4,
-                      RET_WAIT = 5,
-                      RET_WAIT_NEXT = 6,
-                      RET_WAIT_NOREAD = 7,
-                      RET_JUMP = 8
-                      } COMMAND_RETURN;
-
-    typedef enum{ CLICK_NONE = 0,
-                      CLICK_WAIT = 1,
-                      CLICK_NEWPAGE = 2,
-                      CLICK_IGNORE = 3
-                      } CLICKSTR_STATE;
-
     ScriptParser( char *path );
     ~ScriptParser();
 
@@ -107,6 +66,7 @@ public:
     int windowbackCommand();
     int versionstrCommand();
     int usewheelCommand();
+    int useescspcCommand();
     int underlineCommand();
     int transmodeCommand();
     int timeCommand();
@@ -151,6 +111,7 @@ public:
     //int gameCommand();
     int forCommand();
     int filelogCommand();
+    int effectcutCommand();
     int effectblankCommand();
     int effectCommand();
     int divCommand();
@@ -170,9 +131,43 @@ public:
     int addCommand();
     
 protected:
-    typedef enum{ NORMAL_MODE, DEFINE_MODE } MODE;
-    MODE current_mode;
-    int  debug_level;
+    struct LinkLabelInfo{
+        struct LinkLabelInfo *previous, *next;
+        ScriptHandler::LabelInfo label_info;
+        int current_line; // line number in the current label
+        bool textgosub_flag; // Set if the current token is in text line, used when encountered an atmark while textgosub
+        int string_buffer_offset;
+        char *current_script;
+    } last_tilde;
+
+    enum { SYSTEM_NULL        = 0,
+           SYSTEM_SKIP        = 1,
+           SYSTEM_RESET       = 2,
+           SYSTEM_SAVE        = 3,
+           SYSTEM_LOAD        = 4,
+           SYSTEM_LOOKBACK    = 5,
+           SYSTEM_WINDOWERASE = 6,
+           SYSTEM_MENU        = 7,
+           SYSTEM_YESNO       = 8
+    };
+    enum { RET_COMMENT         = 0,
+           RET_NOMATCH         = 1,
+           RET_CONTINUE        = 2,
+           RET_CONTINUE_NOREAD = 3,
+           RET_SKIP_LINE       = 4,
+           RET_WAIT            = 5,
+           RET_WAIT_NEXT       = 6,
+           RET_WAIT_NOREAD     = 7,
+           RET_JUMP            = 8
+    };
+    enum { CLICK_NONE    = 0,
+           CLICK_WAIT    = 1,
+           CLICK_NEWPAGE = 2,
+           CLICK_IGNORE  = 3
+    };
+    enum{ NORMAL_MODE, DEFINE_MODE };
+    int current_mode;
+    int debug_level;
 
     char *archive_path;
     char *nsa_path;
@@ -184,12 +179,13 @@ protected:
     int label_stack_depth;
 
     bool jumpf_flag;
-    LinkLabelInfo last_tilde;
     int z_order;
     bool rmode_flag;
     bool windowback_flag;
     bool usewheel_flag;
+    bool useescspc_flag;
     bool mode_saya_flag;
+    bool force_button_shortcut_flag;
     
     int string_buffer_offset;
 
@@ -208,7 +204,7 @@ protected:
 
     /* ---------------------------------------- */
     /* Effect related variables */
-    typedef enum{ WINDOW_EFFECT = -1, TMP_EFFECT = -2 } EFFECT_MODE;
+    enum{ WINDOW_EFFECT = -1, TMP_EFFECT = -2 };
     struct EffectLink{
         struct EffectLink *next;
         int num;
@@ -227,6 +223,7 @@ protected:
     EffectLink root_effect_link, *last_effect_link, window_effect, tmp_effect;
     
     int effect_blank;
+    bool effect_cut_flag;
 
     EffectLink getEffect( int effect_no );
     int readEffect( EffectLink *effect );
@@ -307,27 +304,27 @@ protected:
     int voice_volume;
     int se_volume;
 
-    enum { CLICKVOICE_NORMAL = 0,
+    enum { CLICKVOICE_NORMAL  = 0,
            CLICKVOICE_NEWPAGE = 1,
-           CLICKVOICE_NUM = 2
+           CLICKVOICE_NUM     = 2
     };
     char *clickvoice_file_name[CLICKVOICE_NUM];
 
-    enum { SELECTVOICE_OPEN = 0,
-           SELECTVOICE_OVER = 1,
+    enum { SELECTVOICE_OPEN   = 0,
+           SELECTVOICE_OVER   = 1,
            SELECTVOICE_SELECT = 2,
-           SELECTVOICE_NUM = 3
+           SELECTVOICE_NUM    = 3
     };
     char *selectvoice_file_name[SELECTVOICE_NUM];
 
-    enum { MENUSELECTVOICE_OPEN = 0,
+    enum { MENUSELECTVOICE_OPEN   = 0,
            MENUSELECTVOICE_CANCEL = 1,
-           MENUSELECTVOICE_OVER = 2,
-           MENUSELECTVOICE_CLICK = 3,
-           MENUSELECTVOICE_WARN = 4,
-           MENUSELECTVOICE_YES = 5,
-           MENUSELECTVOICE_NO = 6,
-           MENUSELECTVOICE_NUM = 7
+           MENUSELECTVOICE_OVER   = 2,
+           MENUSELECTVOICE_CLICK  = 3,
+           MENUSELECTVOICE_WARN   = 4,
+           MENUSELECTVOICE_YES    = 5,
+           MENUSELECTVOICE_NO     = 6,
+           MENUSELECTVOICE_NUM    = 7
     };
     char *menuselectvoice_file_name[MENUSELECTVOICE_NUM];
      
@@ -348,9 +345,6 @@ protected:
         };
     } root_menu_link;
     unsigned int  menu_link_num, menu_link_width;
-    uchar3 menu_select_on_color;
-    uchar3 menu_select_off_color;
-    uchar3 menu_select_nofile_color;
 
     int getSystemCallNo( const char *buffer );
     void getSJISFromInteger( char *buffer, int no, bool add_space_flag=true );

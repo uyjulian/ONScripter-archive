@@ -319,7 +319,7 @@ void ONScripterLabel::variableEditMode( SDL_KeyboardEvent *event )
     SDL_WM_SetCaption( wm_edit_string, wm_icon_string );
 }
 
-void ONScripterLabel::moveCursorOnButton( int diff )
+void ONScripterLabel::shiftCursorOnButton( int diff )
 {
     int i;
     
@@ -349,8 +349,6 @@ void ONScripterLabel::moveCursorOnButton( int diff )
 
 void ONScripterLabel::keyPressEvent( SDL_KeyboardEvent *event )
 {
-    int i;
-
     current_button_state.button = 0;
     
     if ( event->type == SDL_KEYUP ){
@@ -368,7 +366,8 @@ void ONScripterLabel::keyPressEvent( SDL_KeyboardEvent *event )
         }
 
         if ( skip_flag &&
-             ( event->keysym.sym == SDLK_LEFT || event->keysym.sym == SDLK_s ) )
+             ( ( !getcursor_flag && event->keysym.sym == SDLK_LEFT ) ||
+               event->keysym.sym == SDLK_s ) )
             skip_flag = false;
     }
 
@@ -381,17 +380,20 @@ void ONScripterLabel::keyPressEvent( SDL_KeyboardEvent *event )
     if ( event_mode & WAIT_BUTTON_MODE &&
          ( event->type == SDL_KEYUP ||
            ( btndown_flag && event->keysym.sym == SDLK_RETURN) ) ){
-        if ( event->keysym.sym == SDLK_UP || event->keysym.sym == SDLK_p ){
+        if ( ( !getcursor_flag && event->keysym.sym == SDLK_UP ) ||
+             event->keysym.sym == SDLK_p ){
 
-            moveCursorOnButton( -1 );
+            shiftCursorOnButton( -1 );
             return;
         }
-        else if ( event->keysym.sym == SDLK_DOWN || event->keysym.sym == SDLK_n ){
+        else if ( ( !getcursor_flag && event->keysym.sym == SDLK_DOWN ) ||
+                  event->keysym.sym == SDLK_n ){
 
-            moveCursorOnButton( 1 );
+            shiftCursorOnButton( 1 );
             return;
         }
-        else if ( event->keysym.sym == SDLK_RETURN || event->keysym.sym == SDLK_SPACE ){
+        else if ( ( !getenter_flag  && event->keysym.sym == SDLK_RETURN ) ||
+                  ( !useescspc_flag && event->keysym.sym == SDLK_SPACE  ) ){
             if ( event->keysym.sym == SDLK_RETURN ){
                 current_button_state.button = current_over_button;
                 volatile_button_state.button = current_over_button;
@@ -415,15 +417,36 @@ void ONScripterLabel::keyPressEvent( SDL_KeyboardEvent *event )
     
     if ( ( event_mode & (WAIT_INPUT_MODE | WAIT_BUTTON_MODE) ) &&
          ( autoclick_timer == 0 || (event_mode & WAIT_BUTTON_MODE)) ){
-        if ( event->keysym.sym == SDLK_ESCAPE && rmode_flag ){
+        if ( !useescspc_flag && event->keysym.sym == SDLK_ESCAPE && rmode_flag ){
             current_button_state.button  = -1;
             if ( event_mode & WAIT_INPUT_MODE &&
                  root_menu_link.next ){
                 system_menu_mode = SYSTEM_MENU;
             }
         }
+        else if ( useescspc_flag && event->keysym.sym == SDLK_ESCAPE ){
+            current_button_state.button  = -10;
+        }
+        else if ( useescspc_flag && event->keysym.sym == SDLK_SPACE ){
+            current_button_state.button  = -11;
+        }
+        else if ( getenter_flag && event->keysym.sym == SDLK_RETURN ){
+            current_button_state.button  = -19;
+        }
         else if ( gettab_flag && event->keysym.sym == SDLK_TAB ){
             current_button_state.button  = -20;
+        }
+        else if ( getcursor_flag && event->keysym.sym == SDLK_UP ){
+            current_button_state.button  = -40;
+        }
+        else if ( getcursor_flag && event->keysym.sym == SDLK_RIGHT ){
+            current_button_state.button  = -41;
+        }
+        else if ( getcursor_flag && event->keysym.sym == SDLK_DOWN ){
+            current_button_state.button  = -42;
+        }
+        else if ( getcursor_flag && event->keysym.sym == SDLK_LEFT ){
+            current_button_state.button  = -43;
         }
         else if ( getfunction_flag ){
             if      ( event->keysym.sym == SDLK_F1 )
@@ -652,10 +675,7 @@ int ONScripterLabel::eventLoop()
             break;
 
           case SDL_QUIT:
-            saveGlovalData();
-            saveFileLog();
-            if ( labellog_flag ) script_h.saveLabelLog();
-            if ( kidokuskip_flag ) script_h.saveKidokuData();
+            saveAll();
             if ( cdrom_info ){
                 SDL_CDStop( cdrom_info );
                 SDL_CDClose( cdrom_info );

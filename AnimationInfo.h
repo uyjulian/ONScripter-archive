@@ -31,18 +31,17 @@ typedef unsigned char uchar3[3];
 
 class AnimationInfo{
 public:
-    typedef enum{
-            TRANS_ALPHA = 1,
-            TRANS_TOPLEFT = 2,
-            TRANS_COPY = 3,
-            TRANS_STRING = 4,
-            TRANS_DIRECT = 5,
-            TRANS_PALLET = 6,
-            TRANS_TOPRIGHT = 7,
-            TRANS_MASK = 8,
-            TRANS_FADE_MASK = 9,
-            TRANS_CROSSFADE_MASK = 10
-            } TRANS_MODE;
+    enum { TRANS_ALPHA          = 1,
+           TRANS_TOPLEFT        = 2,
+           TRANS_COPY           = 3,
+           TRANS_STRING         = 4,
+           TRANS_DIRECT         = 5,
+           TRANS_PALLET         = 6,
+           TRANS_TOPRIGHT       = 7,
+           TRANS_MASK           = 8,
+           TRANS_FADE_MASK      = 9,
+           TRANS_CROSSFADE_MASK = 10
+    };
 
     /* Variables from TaggedInfo */
     int trans_mode;

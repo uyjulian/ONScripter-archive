@@ -113,8 +113,9 @@ static struct FuncLUT{
     {"getreg", &ONScripterLabel::getregCommand},
     {"getmousepos", &ONScripterLabel::getmouseposCommand},
     {"getfunction", &ONScripterLabel::getfunctionCommand},
+    {"getenter", &ONScripterLabel::getenterCommand},
     {"getcursorpos", &ONScripterLabel::getcursorposCommand},
-    //{"getcursor", &ONScripterLabel::getcursorCommand},
+    {"getcursor", &ONScripterLabel::getcursorCommand},
     {"getcselnum", &ONScripterLabel::getcselnumCommand},
     {"getbtntimer", &ONScripterLabel::gettimerCommand},
     {"game", &ONScripterLabel::gameCommand},
@@ -154,8 +155,22 @@ static struct FuncLUT{
     {"", NULL}
 };
 
-int ONScripterLabel::SetVideoMode()
+void ONScripterLabel::initSDL( bool cdaudio_flag )
 {
+    /* ---------------------------------------- */
+    /* Initialize SDL */
+
+    if ( SDL_Init( SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_AUDIO ) < 0 ){
+        fprintf( stderr, "Couldn't initialize SDL: %s\n", SDL_GetError() );
+        exit(-1);
+    }
+    atexit(SDL_Quit);
+
+    if( cdaudio_flag && SDL_InitSubSystem( SDL_INIT_CDROM ) < 0 ){
+        fprintf( stderr, "Couldn't initialize CD-ROM: %s\n", SDL_GetError() );
+        exit(-1);
+    }
+
     /* ---------------------------------------- */
     /* Initialize SDL */
     if ( TTF_Init() < 0 ){
@@ -169,11 +184,11 @@ int ONScripterLabel::SetVideoMode()
     int bpp = 32;
 #endif
     screen_surface = SDL_SetVideoMode( screen_width, screen_height, bpp, DEFAULT_SURFACE_FLAG );
-	if ( screen_surface == NULL ) {
-		fprintf(stderr, "Couldn't set %dx%dx%d video mode: %s\n",
-					screen_width, screen_height, bpp, SDL_GetError());
-		return(-1);
-	}
+    if ( screen_surface == NULL ) {
+        fprintf( stderr, "Couldn't set %dx%dx%d video mode: %s\n",
+                 screen_width, screen_height, bpp, SDL_GetError() );
+        exit(-1);
+    }
 
     initSJIS2UTF16();
     
@@ -183,31 +198,6 @@ int ONScripterLabel::SetVideoMode()
     memcpy( wm_icon_string, DEFAULT_WM_TITLE, strlen(DEFAULT_WM_ICON) + 1 );
     SDL_WM_SetCaption( wm_title_string, wm_icon_string );
     
-	return(0);
-}
-
-ONScripterLabel::ONScripterLabel( bool cdaudio_flag, char *default_font, char *default_registry, char *default_archive_path, bool edit_flag )
-        :ScriptParser( default_archive_path )
-{
-    int i;
-
-    printf("ONScripter\n");
-
-	if ( SDL_Init( SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_AUDIO ) < 0 ){
-		fprintf(stderr,
-			"Couldn't initialize SDL: %s\n", SDL_GetError());
-		exit(1);
-	}
-	atexit(SDL_Quit);
-
-    if( cdaudio_flag && SDL_InitSubSystem( SDL_INIT_CDROM ) < 0 ){
-        fprintf(stderr,
-                "Couldn't initialize CD-ROM: %s\n", SDL_GetError());
-        exit(1);
-    }
-
-    SetVideoMode();
-
     if ( Mix_OpenAudio( 44100, MIX_DEFAULT_FORMAT, MIX_DEFAULT_CHANNELS, DEFAULT_AUDIOBUF ) < 0 ){
         fprintf(stderr, "Couldn't open audio device!\n"
                 "  reason: [%s].\n", SDL_GetError());
@@ -228,6 +218,16 @@ ONScripterLabel::ONScripterLabel( bool cdaudio_flag, char *default_font, char *d
 
         audio_open_flag = true;
     }
+}
+
+ONScripterLabel::ONScripterLabel( bool cdaudio_flag, char *default_font, char *default_registry, char *default_archive_path, bool force_button_shortcut_flag, bool edit_flag )
+        :ScriptParser( default_archive_path )
+{
+    int i;
+
+    printf("ONScripter\n");
+
+    initSDL( cdaudio_flag );
     
 #if SDL_BYTEORDER == SDL_BIG_ENDIAN
     rmask = 0xff000000;
@@ -260,6 +260,12 @@ ONScripterLabel::ONScripterLabel( bool cdaudio_flag, char *default_font, char *d
     btntime_value = 0;
     btnwait_time = 0;
     btndown_flag = false;
+
+    this->force_button_shortcut_flag = force_button_shortcut_flag;
+    gettab_flag = false;
+    getfunction_flag = false;
+    getenter_flag = false;
+    getcursor_flag = false;
     
     tmp_save_fp = NULL;
     saveon_flag = true;
@@ -1421,3 +1427,12 @@ void ONScripterLabel::loadCursor( int no, const char *str, int x, int y, bool ab
         cursor_info[ no ].valid = true;
     cursor_info[ no ].abs_flag = abs_flag;
 }
+
+void ONScripterLabel::saveAll()
+{
+    saveGlovalData();
+    saveFileLog();
+    if ( labellog_flag ) script_h.saveLabelLog();
+    if ( kidokuskip_flag ) script_h.saveKidokuData();
+}
+

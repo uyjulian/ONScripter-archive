@@ -237,6 +237,8 @@ int ONScripterLabel::loadSaveFile( int no )
         else{
             current_link_label_info->end_of_line_flag = false;
         }
+        current_link_label_info->new_line_flag = false;
+        
         loadInt( fp, &address );
         current_link_label_info->current_script =
             current_link_label_info->label_info.start_address + address;

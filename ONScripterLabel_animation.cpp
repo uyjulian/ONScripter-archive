@@ -43,7 +43,7 @@ void ONScripterLabel::showAnimation( AnimationInfo *anim )
             alphaBlend( text_surface, dst_rect.x, dst_rect.y,
                         anim->preserve_surface, 0, 0, anim->pos.w, anim->pos.h,
                         anim->image_surface, src_rect.x, src_rect.y,
-                        anim->alpha_offset, 0, -anim->trans_mode );
+                        anim->alpha_offset, anim->trans_mode, anim->trans );
             flush( dst_rect.x, dst_rect.y, src_rect.w, src_rect.h );
         }
 
@@ -212,7 +212,7 @@ void ONScripterLabel::drawTaggedSurface( SDL_Surface *dst_surface, AnimationInfo
         f_info.top_xy[0] = anim->pos.x;
         f_info.top_xy[1] = anim->pos.y;
 
-        drawString( anim->file_name, anim->color_list[ anim->current_cell ], &f_info, false, dst_surface, NULL );
+        drawString( anim->file_name, anim->color_list[ anim->current_cell ], &f_info, false, dst_surface, NULL, false, clip );
         sentence_font.font_valid_flag = f_info.font_valid_flag;
         sentence_font.ttf_font = f_info.ttf_font;
         return;
@@ -220,23 +220,9 @@ void ONScripterLabel::drawTaggedSurface( SDL_Surface *dst_surface, AnimationInfo
     else if ( !anim->image_surface ) return;
 
     int offset = (anim->pos.w + anim->alpha_offset) * anim->current_cell;
-
-    if ( anim->trans_mode == AnimationInfo::TRANS_ALPHA ||
-         anim->trans_mode == AnimationInfo::TRANS_TOPLEFT ||
-         anim->trans_mode == AnimationInfo::TRANS_TOPRIGHT ){
-
-        alphaBlend( dst_surface, anim->pos.x, anim->pos.y,
-                    dst_surface, anim->pos.x, anim->pos.y, anim->pos.w, anim->pos.h,
-                    anim->image_surface, offset, 0,
-                    offset + anim->alpha_offset, 0, -anim->trans_mode, 0, clip );
-    }
-    else if ( anim->trans_mode == AnimationInfo::TRANS_COPY ){
-        SDL_Rect src_rect;
-        
-        src_rect.x = offset;
-        src_rect.y = 0;
-        src_rect.w = anim->pos.w;
-        src_rect.h = anim->pos.h;
-        SDL_BlitSurface( anim->image_surface, &src_rect, dst_surface, &anim->pos );
-    }
+    
+    alphaBlend( dst_surface, anim->pos.x, anim->pos.y,
+                dst_surface, anim->pos.x, anim->pos.y, anim->pos.w, anim->pos.h,
+                anim->image_surface, offset, 0,
+                offset + anim->alpha_offset, anim->trans_mode, anim->trans, 0, clip );
 }

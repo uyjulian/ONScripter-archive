@@ -841,15 +841,13 @@ int ONScripterLabel::lspCommand()
     sprite_info[ no ].pos.x = readInt( &p_string_buffer );
     sprite_info[ no ].pos.y = readInt( &p_string_buffer );
 
+    if ( end_with_comma_flag )
+        sprite_info[ no ].trans = readInt( &p_string_buffer );
+    else
+        sprite_info[ no ].trans = 255;
+
     parseTaggedString( &sprite_info[ no ] );
     setupAnimationInfo( &sprite_info[ no ] );
-
-    if ( *p_string_buffer != '\0' ){
-        sprite_info[ no ].trans = readInt( &p_string_buffer );
-    }
-    else{
-        sprite_info[ no ].trans = 255;
-    }
 
     return RET_CONTINUE;
 }

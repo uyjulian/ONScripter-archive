@@ -518,9 +518,9 @@ int ScriptParser::readLine( char **buf, bool raw_flag )
         }
 
         /* Parser */
-        if ( ch == ';' && head_flag ){
+        if ( !quat_flag && ch == ';' ){
+            if ( head_flag ) addStringBuffer( ch, string_counter++ );
             comment_flag = true;
-            addStringBuffer( ch, string_counter++ );
         }
         else if ( (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') ){
             if ( head_flag ) text_flag = false;

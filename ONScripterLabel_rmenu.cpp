@@ -98,7 +98,6 @@ void ONScripterLabel::searchSaveFiles()
 
 int ONScripterLabel::loadSaveFile( int no )
 {
-    printf("loadSaveFile() %d\n", no);
     FILE *fp;
     char file_name[256], *str = NULL;
     int  i, j, address;
@@ -326,7 +325,6 @@ int ONScripterLabel::loadSaveFile( int no )
 
 int ONScripterLabel::saveSaveFile( int no )
 {
-    printf("saveSaveFile %d\n", no);
     FILE *fp;
     int i, j;
     char file_name[256];
@@ -817,7 +815,7 @@ void ONScripterLabel::setupLookbackButton()
                         text_surface, last_button_link->image_rect.x, last_button_link->image_rect.y,
                         lookback_info[0].pos.w, lookback_info[0].pos.h,
                         lookback_info[0].image_surface, 0, 0,
-                        lookback_info[0].alpha_offset, 0, -lookback_info[1].trans_mode );
+                        lookback_info[0].alpha_offset, lookback_info[1].trans_mode );
         }
 
         if ( lookback_info[1].image_surface )
@@ -825,7 +823,7 @@ void ONScripterLabel::setupLookbackButton()
                         text_surface, last_button_link->image_rect.x, last_button_link->image_rect.y,
                         lookback_info[1].pos.w, lookback_info[1].pos.h,
                         lookback_info[1].image_surface, 0, 0,
-                        lookback_info[1].alpha_offset, 0, -lookback_info[1].trans_mode );
+                        lookback_info[1].alpha_offset, lookback_info[1].trans_mode );
     }
 
     /* ---------------------------------------- */
@@ -856,7 +854,7 @@ void ONScripterLabel::setupLookbackButton()
                         text_surface, last_button_link->image_rect.x, last_button_link->image_rect.y,
                         lookback_info[2].pos.w, lookback_info[2].pos.h,
                         lookback_info[2].image_surface, 0, 0,
-                        lookback_info[2].alpha_offset, 0, -lookback_info[2].trans_mode );
+                        lookback_info[2].alpha_offset, lookback_info[2].trans_mode );
         }
 
         if ( lookback_info[3].image_surface )
@@ -864,7 +862,7 @@ void ONScripterLabel::setupLookbackButton()
                         text_surface, last_button_link->image_rect.x, last_button_link->image_rect.y,
                         lookback_info[3].pos.w, lookback_info[3].pos.h,
                         lookback_info[3].image_surface, 0, 0,
-                        lookback_info[3].alpha_offset, 0, -lookback_info[3].trans_mode );
+                        lookback_info[3].alpha_offset, lookback_info[3].trans_mode );
     }
 }
 

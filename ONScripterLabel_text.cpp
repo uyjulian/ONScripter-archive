@@ -34,10 +34,10 @@ extern unsigned short convSJIS2UTF16( unsigned short in );
           ( *(x) == (char)0x81 && *((x)+1) == (char)0x76 ) || \
           ( *(x) == (char)0x81 && *((x)+1) == (char)0x5b ) )
 
-void ONScripterLabel::drawChar( char* text, struct FontInfo *info, bool flush_flag, SDL_Surface *surface, bool buffering_flag )
+void ONScripterLabel::drawChar( char* text, struct FontInfo *info, bool flush_flag, SDL_Surface *surface, bool buffering_flag, SDL_Rect *clip )
 {
     int xy[2];
-    SDL_Rect rect;
+    SDL_Rect src_rect, dst_rect;
     SDL_Surface *tmp_surface = NULL;
     SDL_Color color;
     unsigned short index, unicode;
@@ -89,17 +89,46 @@ void ONScripterLabel::drawChar( char* text, struct FontInfo *info, bool flush_fl
     xy[0] = info->xy[0] * info->pitch_xy[0] + info->top_xy[0];
     xy[1] = info->xy[1] * info->pitch_xy[1] + info->top_xy[1];
     
-    rect.x = xy[0] + 1 + minx;
-    if ( !(text[0] & 0x80) && text[1] ) rect.x += info->pitch_xy[0] / 2;
-    rect.y = xy[1] + TTF_FontAscent( (TTF_Font*)info->ttf_font ) - maxy;
+    dst_rect.x = xy[0] + 1 + minx;
+    if ( !(text[0] & 0x80) && text[1] ) dst_rect.x += info->pitch_xy[0] / 2;
+    dst_rect.y = xy[1] + TTF_FontAscent( (TTF_Font*)info->ttf_font ) - maxy;
     if ( info->display_shadow ){
         color.r = color.g = color.b = 0;
         tmp_surface = TTF_RenderGlyph_Blended( (TTF_Font*)info->ttf_font, unicode, color );
-        rect.w = tmp_surface->w;
-        rect.h = tmp_surface->h;
+        src_rect.x = src_rect.y = 0;
+        src_rect.w = tmp_surface->w;
+        src_rect.h = tmp_surface->h;
 
         if ( tmp_surface ){
-            if ( surface ) SDL_BlitSurface( tmp_surface, NULL, surface, &rect );
+            if ( surface ){
+                bool out_of_region = false;
+                if ( clip ){
+                    if ( dst_rect.x >= clip->x + clip->w || dst_rect.x + src_rect.w <= clip->x ||
+                         dst_rect.y >= clip->y + clip->h || dst_rect.y + src_rect.h <= clip->y ){
+                        out_of_region = true;
+                    }
+                    else{
+                        if ( dst_rect.x < clip->x ){
+                            src_rect.w -= clip->x - dst_rect.x;
+                            src_rect.x += clip->x - dst_rect.x;
+                            dst_rect.x = clip->x;
+                        }
+                        if ( clip->x + clip->w < dst_rect.x + src_rect.w ){
+                            src_rect.w = clip->x + clip->w - dst_rect.x;
+                        }
+                        if ( dst_rect.y < clip->y ){
+                            src_rect.h -= clip->y - dst_rect.y;
+                            src_rect.y += clip->y - dst_rect.y;
+                            dst_rect.y = clip->y;
+                        }
+                        if ( clip->y + clip->h < dst_rect.y + src_rect.h ){
+                            src_rect.h = clip->y + clip->h - dst_rect.y;
+                        }
+                    }
+                }
+                if ( !out_of_region )
+                    SDL_BlitSurface( tmp_surface, &src_rect, surface, &dst_rect );
+            }
             SDL_FreeSurface( tmp_surface );
         }
     }
@@ -109,14 +138,45 @@ void ONScripterLabel::drawChar( char* text, struct FontInfo *info, bool flush_fl
     color.b = info->color[2];
 
     tmp_surface = TTF_RenderGlyph_Blended( (TTF_Font*)info->ttf_font, unicode, color );
-    rect.x--;
-    rect.w = tmp_surface->w;
-    rect.h = tmp_surface->h;
+    dst_rect.x = xy[0] + minx;
+    if ( !(text[0] & 0x80) && text[1] ) dst_rect.x += info->pitch_xy[0] / 2;
+    dst_rect.y = xy[1] + TTF_FontAscent( (TTF_Font*)info->ttf_font ) - maxy;
+    src_rect.x = src_rect.y = 0;
+    src_rect.w = tmp_surface->w;
+    src_rect.h = tmp_surface->h;
     if ( tmp_surface ){
-        if ( surface ) SDL_BlitSurface( tmp_surface, NULL, surface, &rect );
+        if ( surface ){
+            bool out_of_region = false;
+            if ( clip ){
+                if ( dst_rect.x >= clip->x + clip->w || dst_rect.x + src_rect.w <= clip->x ||
+                     dst_rect.y >= clip->y + clip->h || dst_rect.y + src_rect.h <= clip->y ){
+                    out_of_region = true;
+                }
+                else{
+                    if ( dst_rect.x < clip->x ){
+                        src_rect.w -= clip->x - dst_rect.x;
+                        src_rect.x += clip->x - dst_rect.x;
+                        dst_rect.x = clip->x;
+                    }
+                    if ( clip->x + clip->w < dst_rect.x + src_rect.w ){
+                        src_rect.w = clip->x + clip->w - dst_rect.x;
+                    }
+                    if ( dst_rect.y < clip->y ){
+                        src_rect.h -= clip->y - dst_rect.y;
+                        src_rect.y += clip->y - dst_rect.y;
+                        dst_rect.y = clip->y;
+                    }
+                    if ( clip->y + clip->h < dst_rect.y + src_rect.h ){
+                        src_rect.h = clip->y + clip->h - dst_rect.y;
+                    }
+                }
+            }
+            if ( !out_of_region )
+                SDL_BlitSurface( tmp_surface, &src_rect, surface, &dst_rect );
+        }
         SDL_FreeSurface( tmp_surface );
     }
-    if ( flush_flag ) flush( rect.x, rect.y, rect.w + 1, rect.h );
+    if ( flush_flag ) flush( dst_rect.x, dst_rect.y, src_rect.w + 1, src_rect.h );
 
     /* ---------------------------------------- */
     /* Update text buffer */
@@ -131,7 +191,7 @@ void ONScripterLabel::drawChar( char* text, struct FontInfo *info, bool flush_fl
     }
 }
 
-void ONScripterLabel::drawString( char *str, uchar3 color, FontInfo *info, bool flush_flag, SDL_Surface *surface, SDL_Rect *rect, bool buffering_flag )
+void ONScripterLabel::drawString( char *str, uchar3 color, FontInfo *info, bool flush_flag, SDL_Surface *surface, SDL_Rect *rect, bool buffering_flag, SDL_Rect *clip )
 {
     int i, current_text_xy[2];
     uchar3 org_color;
@@ -159,16 +219,16 @@ void ONScripterLabel::drawString( char *str, uchar3 color, FontInfo *info, bool 
             }
             text[0] = *str++;
             text[1] = *str++;
-            drawChar( text, info, flush_flag, surface, buffering_flag );
+            drawChar( text, info, flush_flag, surface, buffering_flag, clip );
         }
         else{
             text[0] = *str++;
             text[1] = '\0';
-            drawChar( text, info, flush_flag, surface, buffering_flag );
+            drawChar( text, info, flush_flag, surface, buffering_flag, clip );
             info->xy[0]--;
             if ( *str ){
                 text[1] = *str++;
-                drawChar( text, info, flush_flag, surface, buffering_flag );
+                drawChar( text, info, flush_flag, surface, buffering_flag, clip );
             }
         }
     }

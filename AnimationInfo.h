@@ -31,7 +31,6 @@ typedef unsigned char uchar3[3];
 class AnimationInfo{
 public:
     typedef enum{
-        TRANS_CLEAR = 0,
             TRANS_ALPHA = 1,
             TRANS_TOPLEFT = 2,
             TRANS_COPY = 3,

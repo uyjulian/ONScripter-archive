@@ -45,9 +45,9 @@ void ONScripterLabel::searchSaveFiles()
     char file_name[256];
     
     for ( i=0 ; i<num_save_file ; i++ ){
-        sprintf( file_name, "save%d.dat", i+1 );
 
 #if defined(LINUX) || defined(MACOSX)
+        sprintf( file_name, "%ssave%d.dat", archive_path, i+1 );
         struct stat buf;
         struct tm *tm;
         if ( stat( file_name, &buf ) != 0 ){
@@ -61,6 +61,7 @@ void ONScripterLabel::searchSaveFiles()
         save_file_info[i].hour   = tm->tm_hour;
         save_file_info[i].minute = tm->tm_min;
 #elif defined(WIN32)
+        sprintf( file_name, "%ssave%d.dat", archive_path, i+1 );
         HANDLE  handle;
         FILETIME    tm, ltm;
         SYSTEMTIME  stm;
@@ -82,6 +83,7 @@ void ONScripterLabel::searchSaveFiles()
         save_file_info[i].hour   = stm.wHour;
         save_file_info[i].minute = stm.wMinute;
 #else
+        sprintf( file_name, "save%d.dat" );
         FILE *fp;
         if ( (fp = fopen( file_name, "rb" )) == NULL ){
             save_file_info[i].valid = false;

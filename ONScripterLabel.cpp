@@ -616,7 +616,9 @@ int ONScripterLabel::parseLine( )
     else
         ret = RET_CONTINUE;
 
-    if ( script_h.getStringBuffer()[string_buffer_offset] == 0x0a ){
+    if ( script_h.getStringBuffer()[string_buffer_offset] == 0x0a ||
+         ( script_h.getStringBuffer()[string_buffer_offset] == '\0' && // for puttext
+           script_h.isQuat() ) ){
         if ( !new_line_skip_flag && script_h.text_line_flag ){
             sentence_font.xy[0] = 0;
             sentence_font.xy[1]++;

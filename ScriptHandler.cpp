@@ -35,7 +35,6 @@ ScriptHandler::ScriptHandler()
     kidoku_buffer = NULL;
 
     text_flag = true;
-    head_flag = true;
 
     string_buffer_length = 512;
     string_buffer = new char[ string_buffer_length ];
@@ -95,6 +94,11 @@ void ScriptHandler::setCurrent( char *pos, bool reread_flag )
         next_script = pos;
 }
 
+char *ScriptHandler::getNext()
+{
+    return next_script;
+}
+
 void ScriptHandler::pushCurrent( char *pos, bool reread_flag )
 {
     StackInfo *info = new StackInfo( current_script );
@@ -147,6 +151,11 @@ bool ScriptHandler::isQuat()
     return quat_flag;
 }
 
+bool ScriptHandler::isEndWithComma()
+{
+    return end_with_comma_flag;
+}
+
 void ScriptHandler::skipLine( int no )
 {
     for ( int i=0 ; i<no ; i++ ){
@@ -158,7 +167,6 @@ void ScriptHandler::skipLine( int no )
         current_script++;
     }
     text_flag = true;
-    head_flag = true;
     rereadToken();
 }
 
@@ -196,14 +204,8 @@ bool ScriptHandler::readToken()
 
     char ch = *buf++;
     //printf("read %x %x %c(%x)\n", buf-1, script_buffer, ch, ch );
-#if 0    
-    while ( head_flag && (ch == ' ' || ch == '\t' || ch == ':' ) ){
-        if ( ch == ':' ) head_flag = true; // ??
-        ch = *buf++;
-    }
-#endif        
     while ( ch == ' ' || ch == '\t' || ch == ':' ){
-        if ( ch == ':' ) head_flag = true; // ??
+        if ( ch == ':' ) next_text_line_flag = false;
         ch = *buf++;
     }
 
@@ -212,7 +214,6 @@ bool ScriptHandler::readToken()
     if ( ch == 0x0a || ch == '\0' )
     {
         text_flag = true;
-        head_flag = true;
         //text_line_flag = text_flag;
         next_text_line_flag = false;
         
@@ -330,7 +331,6 @@ bool ScriptHandler::readToken()
             // should be processed in caller ??
             if ( textgosub_label )
             {
-                head_flag = true;
                 text_flag = true;
             }
 #endif            
@@ -341,7 +341,6 @@ bool ScriptHandler::readToken()
             ch = *buf++;
             addStringBuffer( ch, string_counter++ );
             text_flag = true;
-            head_flag = false;
             text_line_flag = true;
             next_text_line_flag = true;
         }
@@ -357,12 +356,6 @@ bool ScriptHandler::readToken()
                  ch == ':' ||
                  ch == ';' ||
                  ch == ')' ) break;
-#if 0            
-            else if ( !head_flag &&
-                      ( ch == '#' ||
-                        ch == '-' ||
-                        ch == '*' ) ) break;
-#endif            
             addStringBuffer( ch, string_counter++ );
         }
         else{
@@ -381,9 +374,6 @@ bool ScriptHandler::readToken()
         SKIP_SPACE( buf );
     }
 
-    head_flag = false;
-    //text_line_flag = text_flag;
-    
     addStringBuffer( '\0', string_counter++ );
     next_script = buf;
 
@@ -738,7 +728,6 @@ int ScriptHandler::labelScript()
             buf++;
         }
         text_flag = true;
-        head_flag = true;
     }
     return 0;
 }

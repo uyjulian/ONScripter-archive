@@ -261,7 +261,7 @@ int ONScripterLabel::clickWait( char *out_text )
         }
         // ... below is ugly work-around ...
         if ( script_h.getStringBuffer()[string_buffer_offset] == '\0' ){
-            if ( script_h.next_script[0] == 0x0a ){
+            if ( script_h.getNext()[0] == 0x0a ){
                 script_h.next_text_line_flag = true;
             }
             else{
@@ -460,7 +460,10 @@ int ONScripterLabel::textCommand()
     else if ( ch == '/' ){ // skip new line
         new_line_skip_flag = true;
         string_buffer_offset++;
-        return RET_CONTINUE_NOREAD;
+        if ( script_h.isQuat() ) // for puttext
+            return RET_CONTINUE;
+        else
+            return RET_CONTINUE_NOREAD;
     }
     else if ( ch == '\\' ){ // new page
         return clickNewPage( NULL );
@@ -542,7 +545,7 @@ int ONScripterLabel::textCommand()
         else{
             event_mode = WAIT_SLEEP_MODE;
             startTimer( sentence_font.wait_time );
-            return RET_WAIT;
+            return RET_WAIT_NOREAD;
         }
     }
 

@@ -609,10 +609,10 @@ int ScriptParser::readEffect( EffectLink *effect )
     int num = 1;
     
     effect->effect = script_h.readInt();
-    if ( script_h.end_with_comma_flag ){
+    if ( script_h.isEndWithComma() ){
         num++;
         effect->duration = script_h.readInt();
-        if ( script_h.end_with_comma_flag ){
+        if ( script_h.isEndWithComma() ){
             num++;
             const char *buf = script_h.readStr();
             setStr( &effect->image, buf );

@@ -231,7 +231,7 @@ void ONScripterLabel::parseTaggedString( AnimationInfo *anim )
             script_h.pushCurrent( buffer );
             const char *buf = script_h.readStr( NULL, true );
             setStr( &anim->mask_file_name, buf );
-            buffer = script_h.next_script;
+            buffer = script_h.getNext();
             script_h.popCurrent();
         }
         else if ( buffer[0] == '#' ){

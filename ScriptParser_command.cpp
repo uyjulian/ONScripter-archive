@@ -231,7 +231,7 @@ int ScriptParser::rmenuCommand()
     menu_link_width = 0;
 
     bool first_flag = true;
-    while ( script_h.end_with_comma_flag || first_flag ){
+    while ( script_h.isEndWithComma() || first_flag ){
         MenuLink *menu = new MenuLink();
 
         const char *buf = script_h.readStr();
@@ -380,11 +380,11 @@ int ScriptParser::movCommand()
     
     if ( script_h.getStringBuffer()[0] == '%' || script_h.getStringBuffer()[0] == '?' ){
         char *save_buf = script_h.saveStringBuffer();
-        bool loop_flag = script_h.end_with_comma_flag;
+        bool loop_flag = script_h.isEndWithComma();
         int i=0;
         while ( i<count && loop_flag ){
             no = script_h.readInt();
-            loop_flag = script_h.end_with_comma_flag;
+            loop_flag = script_h.isEndWithComma();
             script_h.setInt( save_buf, no, i++ );
         }
     }
@@ -743,7 +743,7 @@ int ScriptParser::gosubCommand()
 {
     const char *buf = script_h.readStr();
     string_buffer_offset = 0;
-    gosubReal( buf+1, false, script_h.next_script );
+    gosubReal( buf+1, false, script_h.getNext() );
 
     return RET_JUMP;
 }

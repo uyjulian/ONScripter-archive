@@ -191,7 +191,7 @@ int ONScripterLabel::tablegotoCommand()
     int count = 0;
     int no = script_h.readInt();
 
-    while( script_h.end_with_comma_flag ){
+    while( script_h.isEndWithComma() ){
         const char *buf = script_h.readStr();
         if ( count++ == no ){
             current_link_label_info->label_info = script_h.lookupLabel( buf+1 );
@@ -446,7 +446,7 @@ int ONScripterLabel::selectCommand()
         while(1){
             //printf("sel [%s] comma %d\n", buf, comma_flag  );
             if ( buf[0] != 0x0a ){
-                comma_flag = script_h.end_with_comma_flag;
+                comma_flag = script_h.isEndWithComma();
                 count++;
                 if ( select_mode == SELECT_NUM_MODE || count % 2 ){
                     if ( select_mode != SELECT_NUM_MODE && !comma_flag ) errorAndExit( "select: comma is needed here." );
@@ -981,7 +981,7 @@ int ONScripterLabel::lspCommand()
     sprite_info[ no ].pos.x = script_h.readInt() * screen_ratio1 / screen_ratio2;
     sprite_info[ no ].pos.y = script_h.readInt() * screen_ratio1 / screen_ratio2;
 
-    if ( script_h.end_with_comma_flag )
+    if ( script_h.isEndWithComma() )
         sprite_info[ no ].trans = script_h.readInt();
     else
         sprite_info[ no ].trans = 255;
@@ -1902,7 +1902,7 @@ int ONScripterLabel::amspCommand()
     sprite_info[ no ].pos.x = script_h.readInt() * screen_ratio1 / screen_ratio2;
     sprite_info[ no ].pos.y = script_h.readInt() * screen_ratio1 / screen_ratio2;
 
-    if ( script_h.end_with_comma_flag )
+    if ( script_h.isEndWithComma() )
         sprite_info[ no ].trans = script_h.readInt();
 
     if ( sprite_info[ no ].trans > 255 ) sprite_info[ no ].trans = 255;

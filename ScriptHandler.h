@@ -60,6 +60,7 @@ public:
     char *saveStringBuffer();
     char *getCurrent();
     void setCurrent( char *pos, bool reread_flag=true );
+    char *getNext();
     void pushCurrent( char *pos, bool reread_flag=true );
     void popCurrent();
 
@@ -67,6 +68,7 @@ public:
     bool isText();
     void setText( bool val );
     bool isQuat();
+    bool isEndWithComma();
     void skipLine( int no=1 );
 
     bool isKidoku();
@@ -115,11 +117,9 @@ public:
     ArrayVariable array_variables[ ARRAY_VARIABLE_RANGE ], tmp_array_variable;
     
     bool svga_flag;
-    bool end_with_comma_flag;
 
     BaseReader *cBR;
     
-    char *next_script;
     bool text_line_flag;
     bool next_text_line_flag;
 
@@ -197,12 +197,13 @@ private:
 
     char *kidoku_buffer;
 
-    bool head_flag;
     bool text_flag;
     bool quat_flag;
+    bool end_with_comma_flag;
 
     StackInfo root_stack_info, *last_stack_info;
     char *current_script;
+    char *next_script;
     char *stack_script;
 };
 

@@ -881,7 +881,7 @@ int ONScripterLabel::getregCommand()
     while( fgets( buf, 256, fp) && !found_flag ){
         if ( buf[0] == '[' ){
             unsigned int c=0;
-            while ( buf[c] != ']' ) c++;
+            while ( buf[c] != ']' && buf[c] != '\0' ) c++;
             if ( !strncmp( buf + 1, path, (c-1>strlen(path))?(c-1):strlen(path) ) ){
                 while( fgets( buf, 256, fp) ){
                     p_buf = buf+1;

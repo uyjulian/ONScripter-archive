@@ -298,9 +298,8 @@ int ONScripterLabel::loadSaveFile( int no )
     /* ---------------------------------------- */
     /* Load current playing CD track */
     stopBGM( false );
-    current_cd_track = fgetc( fp );
+    current_cd_track = (Sint8)fgetc( fp );
     mp3_play_once_flag = (fgetc( fp )==1)?true:false;
-    if ( current_cd_track == 255 ) current_cd_track = -1;
     loadStr( fp, &mp3_file_name );
 
     if ( current_cd_track >= 0 || mp3_file_name ){
@@ -429,8 +428,7 @@ int ONScripterLabel::saveSaveFile( int no )
 
     /* ---------------------------------------- */
     /* Save current playing CD track */
-    if ( mp3_sample ) fputc( current_cd_track, fp );
-    else              fputc( -1, fp );
+    fputc( (Sint8)current_cd_track, fp );
     mp3_play_once_flag?fputc(1,fp):fputc(0,fp);
     saveStr( fp, mp3_file_name );
     

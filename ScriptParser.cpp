@@ -450,84 +450,6 @@ void ScriptParser::readColor( uchar3 *color, char *buf ){
     (*color)[2] = convHexToDec( buf[4] ) << 4 | convHexToDec( buf[5] );
 }
 
-int ScriptParser::parseNumAlias( char **buf )
-{
-    char ch;
-    char *end_point = script_buffer + script_buffer_length;
-    int num_stack = 0;
-    bool first_flag = true;
-    bool num_alias_flag = true;
-    char alias_buf[128];
-    int  alias_buf_len = 0;
-    int  alias_no = 0;
-
-    while( 1 ){
-        if ( *buf == end_point ) return -1;
-        ch = **buf;
-        if ( ch == '%' ){
-            num_stack++;
-            (*buf)++;
-            continue;
-        }
-        if ( first_flag && ch == ' ' ){
-            (*buf)++;
-            continue;
-        }
-        if ( (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || ch == '_' ){
-            if (ch >= 'A' && ch <= 'Z') ch += 'a' - 'A';
-            alias_buf[ alias_buf_len++ ] = ch;
-        }
-        else if ( ch >= '0' && ch <= '9' ){
-            if ( first_flag ) num_alias_flag = false;
-            if ( num_alias_flag ) alias_buf[ alias_buf_len++ ] = ch;
-            else alias_no = alias_no * 10 + ch - '0';
-        }
-        else{
-            break;
-        }
-
-        first_flag = false;
-        (*buf)++;
-    }
-
-    while ( **buf == ' ' ) (*buf)++;
-
-    /* ---------------------------------------- */
-    /* Solve num aliases */
-    if ( num_alias_flag ){
-        alias_buf[ alias_buf_len ] = '\0';
-        //printf(" alias_buf %d %s\n",alias_buf_len,alias_buf);
-        //int len1, len2;
-        //len1 = (int)strlen(alias_buf);
-        struct NameAlias *p_name_alias = root_name_alias.next;
-
-        while( p_name_alias ){
-            //len2 = strlen( p_name_alias->alias );
-            /* In case of constant */
-            if ( !strcmp( p_name_alias->alias,
-                          (const char*)alias_buf ) ){ //,
-                //( len1 > len2 )? len1 : len2 ) ){
-                alias_no = p_name_alias->num;
-                break;
-            }
-            p_name_alias = p_name_alias->next;
-        }
-        if ( !p_name_alias ){
-            printf("can't find name alias\n");
-            exit(-1);
-        }
-    }
-
-    /* ---------------------------------------- */
-    /* Solve num aliases recursively */
-    while ( num_stack-- ){
-        //printf("alias_no = %d\n", alias_no );
-        alias_no = num_variables[ alias_no ];
-    }
-    //printf("alias_no = %d\n", alias_no );
-    return alias_no;
-}
-
 int ScriptParser::readLine( char **buf, bool raw_flag )
 {
     char ch;
@@ -610,7 +532,8 @@ int ScriptParser::readLine( char **buf, bool raw_flag )
             addStringBuffer( ch, string_counter++ );
             ch = *(*buf)++;
             addStringBuffer( ch, string_counter++ );
-            text_line_flag = true;
+            if ( !quat_flag )
+                text_line_flag = true;
         }
         else{
             addStringBuffer( ch, string_counter++ );
@@ -627,11 +550,6 @@ int ScriptParser::readLine( char **buf, bool raw_flag )
         string_counter++;
 
     return 0;
-}
-
-const char* ScriptParser::getVersion()
-{
-    return (const char*)version_str;
 }
 
 int ScriptParser::findLabel( const char *label )
@@ -652,11 +570,6 @@ int ScriptParser::findLabel( const char *label )
 
     delete[] capital_label;
     return -1;
-}
-
-int ScriptParser::getNumLabelAccessed()
-{
-    return num_of_label_accessed;
 }
 
 bool ScriptParser::getLabelAccessFlag( const char *label )
@@ -727,34 +640,27 @@ int ScriptParser::labelScript()
         if ( string_buffer[0] == '*' ){
             p_string_buffer = string_buffer + 1;
             readToken( &p_string_buffer, tmp_string_buffer );
-            label_info[++label_counter].name = new char[ strlen(tmp_string_buffer) + 1 ];
+            label_info[ ++label_counter ].name = new char[ strlen(tmp_string_buffer) + 1 ];
             for ( unsigned int i=0 ; i<strlen(tmp_string_buffer) + 1 ; i++ ){
-                label_info[label_counter].name[i] = tmp_string_buffer[i];
-                if ( 'a' <= label_info[label_counter].name[i] && label_info[label_counter].name[i] <= 'z' )
-                    label_info[label_counter].name[i] += 'A' - 'a';
+                label_info[ label_counter ].name[i] = tmp_string_buffer[i];
+                if ( 'a' <= label_info[ label_counter ].name[i] && label_info[ label_counter ].name[i] <= 'z' )
+                    label_info[ label_counter ].name[i] += 'A' - 'a';
             }
-            label_info[label_counter].start_address = p_script_buffer;
-            label_info[label_counter].num_of_lines = 0;
-            label_info[label_counter].access_flag = false;
+            label_info[ label_counter ].start_address = p_script_buffer;
+            label_info[ label_counter ].num_of_lines  = 0;
+            label_info[ label_counter ].access_flag   = false;
         }
         else{
-            label_info[label_counter].num_of_lines++;
+            label_info[ label_counter ].num_of_lines++;
         }
     }
-#if 0
-    for ( int i=0 ; i<num_of_labels ; i++ ){
-        printf("name [%s] %p %d\n", label_info[i].name, label_info[i].start_address - script_buffer, label_info[i].num_of_lines );
-    }
-    printf("num_of_labels = %d %d\n", num_of_labels, script_buffer_length );
-#endif
 
     return 0;
 }
 
 int ScriptParser::parseLine()
 {
-    int ret = RET_NOMATCH, lut_counter = 0;
-    unsigned int command_len;
+    int ret, lut_counter = 0;
 
     while( string_buffer[ string_buffer_offset ] == ' ' ||
            string_buffer[ string_buffer_offset ] == '\t' ) string_buffer_offset++;
@@ -768,7 +674,6 @@ int ScriptParser::parseLine()
     char *p_string_buffer = string_buffer + string_buffer_offset;
     //printf("ScriptParser::Parseline %d %s\n",string_buffer_offset,p_string_buffer );
     readToken( &p_string_buffer, tmp_string_buffer );
-    command_len = strlen( tmp_string_buffer );
 
     while( func_lut[ lut_counter ].method ){
         if ( !strcmp( func_lut[ lut_counter ].command, tmp_string_buffer ) ){
@@ -781,10 +686,7 @@ int ScriptParser::parseLine()
         lut_counter++;
     }
 
-    if ( func_lut[ lut_counter ].method == 0 ){
-        //printf("[%s] is not recognized by ScriptParser\n",&string_buffer[string_buffer_offset]);
-        return RET_NOMATCH;
-    }
+    if ( func_lut[ lut_counter ].method == 0 ) return RET_NOMATCH;
 
     return ret;
 }
@@ -792,7 +694,6 @@ int ScriptParser::parseLine()
 
 bool ScriptParser::readToken( char **src_buf, char *dst_buf, bool skip_space_flag )
 {
-    //char *dst_buf_org = dst_buf;
     bool first_flag = true;
     bool quat_flag = false;
 
@@ -851,7 +752,6 @@ bool ScriptParser::readToken( char **src_buf, char *dst_buf, bool skip_space_fla
         SKIP_SPACE( *src_buf );
     }
     *dst_buf++ = '\0';
-    //printf("dst_buf %s\n",dst_buf_org);
     
     return end_with_comma_flag;
 }
@@ -894,7 +794,7 @@ bool ScriptParser::readStr( char **src_buf, char *dst_buf )
     else{
         /* ---------------------------------------- */
         /* Solve str aliases */
-        struct StringAlias *p_str_alias = root_str_alias.next;
+        StringAlias *p_str_alias = root_str_alias.next;
 
         while( p_str_alias ){
             if ( !strcmp( p_str_alias->alias, (const char*)dst_buf ) ){
@@ -927,7 +827,6 @@ void ScriptParser::skipToken()
         }
         else if ( *buf == '"' ){
             quat_flag = !quat_flag;
-            //SKIP_SPACE( buf );
         }
         else if ( !quat_flag && (*buf == ' ' || *buf == '\t') ){
             SKIP_SPACE( buf );
@@ -973,12 +872,12 @@ void ScriptParser::skipToken()
 
 struct ScriptParser::EffectLink ScriptParser::getEffect( int effect_no )
 {
-    if ( effect_no == WINDOW_EFFECT )     return window_effect;
-    else if (effect_no == PRINT_EFFECT )  return print_effect;
-    else if (effect_no == TMP_EFFECT )    return tmp_effect;
-    else if (effect_no == QUAKE_EFFECT )  return quake_effect;
-
-    struct EffectLink *p_effect_link = &root_effect_link;
+    if      ( effect_no == WINDOW_EFFECT ) return window_effect;
+    else if ( effect_no == PRINT_EFFECT )  return print_effect;
+    else if ( effect_no == TMP_EFFECT )    return tmp_effect;
+    else if ( effect_no == QUAKE_EFFECT )  return quake_effect;
+    
+    EffectLink *p_effect_link = &root_effect_link;
     while( p_effect_link ){
         if ( p_effect_link->num == effect_no ) return *p_effect_link;
         p_effect_link = p_effect_link->next;
@@ -990,7 +889,7 @@ struct ScriptParser::EffectLink ScriptParser::getEffect( int effect_no )
 
 int ScriptParser::getSystemCallNo( char *buffer )
 {
-    if ( !strcmp( buffer, "skip" ) )             return SYSTEM_SKIP;
+    if      ( !strcmp( buffer, "skip" ) )        return SYSTEM_SKIP;
     else if ( !strcmp( buffer, "reset" ) )       return SYSTEM_RESET;
     else if ( !strcmp( buffer, "save" ) )        return SYSTEM_SAVE;
     else if ( !strcmp( buffer, "load" ) )        return SYSTEM_LOAD;
@@ -1061,7 +960,7 @@ void ScriptParser::saveLabelLog()
         exit( -1 );
     }
 
-    sprintf( buf, "%d", getNumLabelAccessed() );
+    sprintf( buf, "%d", num_of_label_accessed );
     for ( i=0 ; i<(int)strlen( buf ) ; i++ ) fputc( buf[i], fp );
     fputc( 0x0a, fp );
     
@@ -1257,18 +1156,12 @@ int ScriptParser::readInt( char **buf )
         /* Solve num aliases */
         if ( num_alias_flag ){
             alias_buf[ alias_buf_len ] = '\0';
-            //printf(" alias_buf %d %s\n",alias_buf_len,alias_buf);
-            //int len1, len2;
-            //len1 = (int)strlen(alias_buf);
-            struct NameAlias *p_name_alias = root_name_alias.next;
+            NameAlias *p_name_alias = root_name_alias.next;
 
             while( p_name_alias ){
-                //len2 = strlen( p_name_alias->alias );
                 /* In case of constant */
                 if ( !strcmp( p_name_alias->alias,
-                              (const char*)alias_buf ) ){ //,
-                    //( len1 > len2 )? len1 : len2 ) ){
-                    //printf("readInt str %s %d\n",p_name_alias->alias, p_name_alias->num );
+                              (const char*)alias_buf ) ){
                     alias_no = p_name_alias->num;
                     break;
                 }
@@ -1281,6 +1174,7 @@ int ScriptParser::readInt( char **buf )
         }
         no = alias_no;
     }
+
     SKIP_SPACE( *buf );
     if ( **buf == ',' ){
         end_with_comma_flag = true;

@@ -88,7 +88,6 @@ public:
 
     int open();
     int readLine( char **buf, bool raw_flag = false );
-    int getNumLabelAccessed();
     bool getLabelAccessFlag( const char *label );
     struct LabelInfo lookupLabel( const char* label );
     struct LabelInfo lookupLabelNext( const char* label );
@@ -101,8 +100,6 @@ public:
     void saveFileLog();
     void saveLabelLog();
     
-    const char* getVersion();
-
     /* Command */
     int versionstrCommand();
     int underlineCommand();
@@ -369,8 +366,6 @@ private:
 
     struct NameAlias root_name_alias, *last_name_alias;
     struct StringAlias root_str_alias, *last_str_alias;
-
-    int parseNumAlias( char **buf );
 
     int readScript();
     int labelScript();

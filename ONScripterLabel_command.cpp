@@ -637,7 +637,8 @@ int ONScripterLabel::quakeCommand()
 
     quake_effect.num      = readInt( &p_string_buffer );
     quake_effect.duration = readInt( &p_string_buffer );
-
+    if ( quake_effect.duration < quake_effect.num * 4 ) quake_effect.duration = quake_effect.num * 4;
+    
     if ( event_mode & EFFECT_EVENT_MODE ){
         if ( effect_counter == 0 ){
             SDL_BlitSurface( text_surface, NULL, effect_src_surface, NULL );

@@ -33,7 +33,7 @@ int ScriptParser::windowbackCommand()
 
 int ScriptParser::versionstrCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 10; // strlen("versionstr") = 10
+    char *p_string_buffer = string_buffer + string_buffer_offset + 10;
     int  length[2];
     
     delete[] version_str;
@@ -66,9 +66,9 @@ int ScriptParser::usewheelCommand()
 int ScriptParser::underlineCommand()
 {
     if ( current_mode != DEFINE_MODE ) errorAndExit( string_buffer + string_buffer_offset, "not in the define section" );
-    char *p_string_buffer = string_buffer + string_buffer_offset + 9; // strlen("underline") = 9
+    char *p_string_buffer = string_buffer + string_buffer_offset + 9;
 
-    underline_value = readInt( &p_string_buffer );
+    underline_value = readInt( &p_string_buffer ) / screen_ratio;
 
     return RET_CONTINUE;
 }
@@ -76,7 +76,7 @@ int ScriptParser::underlineCommand()
 int ScriptParser::transmodeCommand()
 {
     if ( current_mode != DEFINE_MODE ) errorAndExit( string_buffer + string_buffer_offset, "not in the define section" );
-    char *p_string_buffer = string_buffer + string_buffer_offset + 9; // strlen("transmode") = 9
+    char *p_string_buffer = string_buffer + string_buffer_offset + 9;
 
     readStr( &p_string_buffer, tmp_string_buffer );
     if      ( !strcmp( tmp_string_buffer, "leftup" ) )   trans_mode = AnimationInfo::TRANS_TOPLEFT;
@@ -89,7 +89,7 @@ int ScriptParser::transmodeCommand()
 
 int ScriptParser::timeCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 4; // strlen("time") = 4
+    char *p_string_buffer = string_buffer + string_buffer_offset + 4;
     time_t t = time(NULL);
     struct tm *tm = localtime( &t );
 
@@ -107,7 +107,7 @@ int ScriptParser::timeCommand()
 
 int ScriptParser::textgosubCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 9; // strlen("textgosub") = 9
+    char *p_string_buffer = string_buffer + string_buffer_offset + 9;
     if ( current_mode != DEFINE_MODE ) errorAndExit( string_buffer + string_buffer_offset, "not in the define section" );
 
     readStr( &p_string_buffer, tmp_string_buffer );
@@ -118,7 +118,7 @@ int ScriptParser::textgosubCommand()
 
 int ScriptParser::subCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 3; // strlen("sub") = 3
+    char *p_string_buffer = string_buffer + string_buffer_offset + 3;
     char *p_buf = p_string_buffer;
 
     int val1 = readInt( &p_string_buffer );
@@ -130,7 +130,7 @@ int ScriptParser::subCommand()
 
 int ScriptParser::straliasCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 8; // strlen("stralias") = 8
+    char *p_string_buffer = string_buffer + string_buffer_offset + 8;
     if ( current_mode != DEFINE_MODE ) errorAndExit( string_buffer + string_buffer_offset, "not in the define section" );
 
     StringAlias *p_str_alias = new StringAlias();
@@ -149,7 +149,7 @@ int ScriptParser::straliasCommand()
 
 int ScriptParser::skipCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 4; // strlen("skip") = 4
+    char *p_string_buffer = string_buffer + string_buffer_offset + 4;
     int skip_num    = readInt( &p_string_buffer );
     int skip_offset = current_link_label_info->current_line + skip_num;
 
@@ -166,7 +166,7 @@ int ScriptParser::skipCommand()
 
 int ScriptParser::selectcolorCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 11; // strlen("selectcolor") = 11
+    char *p_string_buffer = string_buffer + string_buffer_offset + 11;
 
     readStr( &p_string_buffer, tmp_string_buffer );
     if ( tmp_string_buffer[0] != '#' ) errorAndExit( string_buffer + string_buffer_offset );
@@ -181,7 +181,7 @@ int ScriptParser::selectcolorCommand()
 
 int ScriptParser::savenumberCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 10; // strlen("savenumber") = 10
+    char *p_string_buffer = string_buffer + string_buffer_offset + 10;
 
     num_save_file = readInt( &p_string_buffer );
 
@@ -190,7 +190,7 @@ int ScriptParser::savenumberCommand()
 
 int ScriptParser::savenameCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 8; // strlen("savename") = 8
+    char *p_string_buffer = string_buffer + string_buffer_offset + 8;
 
     readStr( &p_string_buffer, tmp_string_buffer );
     setStr( &save_menu_name, tmp_string_buffer );
@@ -214,7 +214,7 @@ int ScriptParser::roffCommand()
 
 int ScriptParser::rmenuCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 5; // strlen("rmode") = 5
+    char *p_string_buffer = string_buffer + string_buffer_offset + 5;
     MenuLink *menu, *link;
     
     /* ---------------------------------------- */
@@ -266,7 +266,7 @@ int ScriptParser::returnCommand()
 int ScriptParser::numaliasCommand()
 {
     if ( current_mode != DEFINE_MODE ) errorAndExit( string_buffer + string_buffer_offset, "not in the define section" );
-    char *p_string_buffer = string_buffer + string_buffer_offset + 8; // strlen("numalias") = 8
+    char *p_string_buffer = string_buffer + string_buffer_offset + 8;
 
     NameAlias *p_name_alias = new NameAlias();
     
@@ -329,7 +329,7 @@ int ScriptParser::nextCommand()
 
 int ScriptParser::mulCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 3; // strlen("mul") = 3
+    char *p_string_buffer = string_buffer + string_buffer_offset + 3;
     char *p_buf = p_string_buffer;
 
     int val1 = readInt( &p_string_buffer );
@@ -396,7 +396,7 @@ int ScriptParser::mode_sayaCommand()
 
 int ScriptParser::modCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 3; // strlen("mod") = 3
+    char *p_string_buffer = string_buffer + string_buffer_offset + 3;
     char *p_buf = p_string_buffer;
 
     int val1 = readInt( &p_string_buffer );
@@ -408,7 +408,7 @@ int ScriptParser::modCommand()
 
 int ScriptParser::midCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 3; // strlen("mid") = 3
+    char *p_string_buffer = string_buffer + string_buffer_offset + 3;
     
     SKIP_SPACE( p_string_buffer );
 
@@ -431,7 +431,7 @@ int ScriptParser::midCommand()
 
 int ScriptParser::menusetwindowCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 13; // strlen("menusetwindow") = 13
+    char *p_string_buffer = string_buffer + string_buffer_offset + 13;
 
     menu_font.font_valid_flag = false;
     menu_font.font_size_xy[0] = readInt( &p_string_buffer );
@@ -453,7 +453,7 @@ int ScriptParser::menusetwindowCommand()
 int ScriptParser::menuselectcolorCommand()
 {
     int i;
-    char *p_string_buffer = string_buffer + string_buffer_offset + 15; // strlen("menuselectcolor") = 15
+    char *p_string_buffer = string_buffer + string_buffer_offset + 15;
 
     readStr( &p_string_buffer, tmp_string_buffer );
     if ( tmp_string_buffer[0] != '#' ) errorAndExit( string_buffer + string_buffer_offset );
@@ -473,9 +473,19 @@ int ScriptParser::menuselectcolorCommand()
     return RET_CONTINUE;
 }
 
+int ScriptParser::lookbackspCommand()
+{
+    char *p_string_buffer = string_buffer + string_buffer_offset + 10;
+
+    for ( int i=0 ; i<2 ; i++ )
+        lookback_sp[i] = readInt( &p_string_buffer );
+
+    return RET_CONTINUE;
+}
+
 int ScriptParser::lookbackcolorCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 13; // strlen("lookbackcolor") = 13
+    char *p_string_buffer = string_buffer + string_buffer_offset + 13;
 
     readStr( &p_string_buffer, tmp_string_buffer );
     if ( tmp_string_buffer[0] != '#' ) errorAndExit( string_buffer + string_buffer_offset );
@@ -486,7 +496,7 @@ int ScriptParser::lookbackcolorCommand()
 
 int ScriptParser::lookbackbuttonCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 14; // strlen("lookbackbutton") = 14
+    char *p_string_buffer = string_buffer + string_buffer_offset + 14;
 
     for ( int i=0 ; i<4 ; i++ ){
         readStr( &p_string_buffer, tmp_string_buffer );
@@ -497,7 +507,7 @@ int ScriptParser::lookbackbuttonCommand()
 
 int ScriptParser::lenCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 3; // strlen("len") = 3
+    char *p_string_buffer = string_buffer + string_buffer_offset + 3;
     char *p_buf = p_string_buffer;
     
     readInt( &p_string_buffer );
@@ -541,17 +551,14 @@ int ScriptParser::ifCommand()
     bool if_flag, condition_flag = true, f;
     char eval_str[3], *token_start;
 
-    if ( string_buffer[0] == 'n' ){
+    if ( string_buffer[0] == 'n' ){ // notif command
         if_flag = false;
-        p_string_buffer = string_buffer + string_buffer_offset + 5; // strlen("notif") = 5
-        //printf("notifCommand %s\n", p_string_buffer );
+        p_string_buffer = string_buffer + string_buffer_offset + 5;
     }
     else{
         if_flag = true;
-        p_string_buffer = string_buffer + string_buffer_offset + 2; // strlen("if") = 2
-        //printf("ifCommand %s\n", p_string_buffer );
+        p_string_buffer = string_buffer + string_buffer_offset + 2;
     }
-    //readStr( &p_string_buffer, tmp_string_buffer, false );
 
     while(1){
         SKIP_SPACE( p_string_buffer );
@@ -622,7 +629,7 @@ int ScriptParser::ifCommand()
 int ScriptParser::itoaCommand()
 {
     char val_str[20];
-    char *p_string_buffer = string_buffer + string_buffer_offset + 4; // strlen("itoa") = 4
+    char *p_string_buffer = string_buffer + string_buffer_offset + 4;
     
     SKIP_SPACE( p_string_buffer );
     if ( p_string_buffer[0] != '$' ) errorAndExit( string_buffer + string_buffer_offset );
@@ -639,7 +646,7 @@ int ScriptParser::itoaCommand()
 
 int ScriptParser::intlimitCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 8; // strlen("intlimit") = 8
+    char *p_string_buffer = string_buffer + string_buffer_offset + 8;
     int no = readInt( &p_string_buffer );
 
     num_limit_flag[ no ]  = true;
@@ -651,7 +658,7 @@ int ScriptParser::intlimitCommand()
 
 int ScriptParser::incCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 3; // strlen("inc") = 3
+    char *p_string_buffer = string_buffer + string_buffer_offset + 3;
     char *p_buf = p_string_buffer;
 
     int val = readInt( &p_string_buffer );
@@ -662,7 +669,7 @@ int ScriptParser::incCommand()
 
 int ScriptParser::humanzCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 6; // strlen("humanz") = 6
+    char *p_string_buffer = string_buffer + string_buffer_offset + 6;
     z_order = readInt( &p_string_buffer );
     
     return RET_CONTINUE;
@@ -670,7 +677,7 @@ int ScriptParser::humanzCommand()
 
 int ScriptParser::gotoCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 4; // strlen("goto") = 4
+    char *p_string_buffer = string_buffer + string_buffer_offset + 4;
     readStr( &p_string_buffer, tmp_string_buffer );
 
     current_link_label_info->label_info = lookupLabel( tmp_string_buffer + 1 );
@@ -708,7 +715,7 @@ void ScriptParser::gosubReal( char *label, bool textgosub_flag )
 
 int ScriptParser::gosubCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 5; // strlen("gosub") = 5
+    char *p_string_buffer = string_buffer + string_buffer_offset + 5;
     readStr( &p_string_buffer, tmp_string_buffer );
     skipToken();
     gosubReal( tmp_string_buffer + 1 );
@@ -733,7 +740,7 @@ int ScriptParser::globalonCommand()
 int ScriptParser::forCommand()
 {
     for_stack_depth++;
-    char *p_string_buffer = string_buffer + string_buffer_offset + 3; // strlen("for") = 3
+    char *p_string_buffer = string_buffer + string_buffer_offset + 3;
     ForInfo *info = new ForInfo();
 
     setStr( &info->p_int, p_string_buffer );
@@ -812,7 +819,7 @@ int ScriptParser::filelogCommand()
 int ScriptParser::effectblankCommand()
 {
     if ( current_mode != DEFINE_MODE ) errorAndExit( string_buffer + string_buffer_offset );
-    char *p_string_buffer = string_buffer + string_buffer_offset + 11; // strlen("effectblank") = 11
+    char *p_string_buffer = string_buffer + string_buffer_offset + 11;
     
     effect_blank = readInt( &p_string_buffer );
 
@@ -828,7 +835,7 @@ int ScriptParser::effectCommand()
     if ( !strncmp( string_buffer + string_buffer_offset, "windoweffect", 12 ) ) window_effect_flag = true;
     
     if ( window_effect_flag ){
-        p_string_buffer = string_buffer + string_buffer_offset + 12; // strlen("windoweffect") = 12
+        p_string_buffer = string_buffer + string_buffer_offset + 12;
         elink = &window_effect;
     }
     else{
@@ -836,7 +843,7 @@ int ScriptParser::effectCommand()
 
         last_effect_link->next = new EffectLink();
         last_effect_link = last_effect_link->next;
-        p_string_buffer = string_buffer + string_buffer_offset + 6; // strlen("effect") = 6
+        p_string_buffer = string_buffer + string_buffer_offset + 6;
         elink = last_effect_link;
     }
     
@@ -848,7 +855,7 @@ int ScriptParser::effectCommand()
 
 int ScriptParser::divCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 3; // strlen("div") = 3
+    char *p_string_buffer = string_buffer + string_buffer_offset + 3;
     char *p_buf = p_string_buffer;
 
     int val1 = readInt( &p_string_buffer );
@@ -861,7 +868,7 @@ int ScriptParser::divCommand()
 int ScriptParser::dimCommand()
 {
     if ( current_mode != DEFINE_MODE ) errorAndExit( string_buffer + string_buffer_offset, "not in the define section" );
-    char *p_string_buffer = string_buffer + string_buffer_offset + 3; // strlen("dim") = 3
+    char *p_string_buffer = string_buffer + string_buffer_offset + 3;
 
     struct ArrayVariable array;
     int dim = 1;
@@ -884,7 +891,7 @@ int ScriptParser::dimCommand()
 
 int ScriptParser::defvoicevolCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 11; // strlen("defvoicevol") = 11
+    char *p_string_buffer = string_buffer + string_buffer_offset + 11;
     voice_volume = readInt( &p_string_buffer );
 
     return RET_CONTINUE;
@@ -892,7 +899,7 @@ int ScriptParser::defvoicevolCommand()
 
 int ScriptParser::defsevolCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 8; // strlen("defsevol") = 8
+    char *p_string_buffer = string_buffer + string_buffer_offset + 8;
     se_volume = readInt( &p_string_buffer );
 
     return RET_CONTINUE;
@@ -900,7 +907,7 @@ int ScriptParser::defsevolCommand()
 
 int ScriptParser::defmp3volCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 9; // strlen("defmp3vol") = 9
+    char *p_string_buffer = string_buffer + string_buffer_offset + 9;
     mp3_volume = readInt( &p_string_buffer );
 
     return RET_CONTINUE;
@@ -909,7 +916,7 @@ int ScriptParser::defmp3volCommand()
 int ScriptParser::defaultspeedCommand()
 {
     if ( current_mode != DEFINE_MODE ) errorAndExit( string_buffer + string_buffer_offset, "not in the define section" );
-    char *p_string_buffer = string_buffer + string_buffer_offset + 12; // strlen("defaultspeed") = 12
+    char *p_string_buffer = string_buffer + string_buffer_offset + 12;
 
     for ( int i=0 ; i<3 ; i++ ) default_text_speed[i] = readInt( &p_string_buffer );
 
@@ -918,7 +925,7 @@ int ScriptParser::defaultspeedCommand()
 
 int ScriptParser::decCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 3; // strlen("dec") = 3
+    char *p_string_buffer = string_buffer + string_buffer_offset + 3;
     char *p_buf = p_string_buffer;
 
     int val = readInt( &p_string_buffer );
@@ -929,7 +936,7 @@ int ScriptParser::decCommand()
 
 int ScriptParser::dateCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 4; // strlen("date") = 4
+    char *p_string_buffer = string_buffer + string_buffer_offset + 4;
     time_t t = time(NULL);
     struct tm *tm = localtime( &t );
 
@@ -947,7 +954,7 @@ int ScriptParser::dateCommand()
 
 int ScriptParser::cmpCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 3; // strlen("cmp") = 3
+    char *p_string_buffer = string_buffer + string_buffer_offset + 3;
     char *p_buf = p_string_buffer, *tmp_buffer;
 
     readInt( &p_string_buffer );
@@ -969,7 +976,7 @@ int ScriptParser::cmpCommand()
 
 int ScriptParser::clickstrCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 8; // strlen("clickstr") = 8
+    char *p_string_buffer = string_buffer + string_buffer_offset + 8;
 
     readStr( &p_string_buffer, tmp_string_buffer );
 
@@ -985,7 +992,7 @@ int ScriptParser::clickstrCommand()
 int ScriptParser::breakCommand()
 {
     printf("breakCommand\n");
-    char *p_string_buffer = string_buffer + string_buffer_offset + 5; // strlen("break") = 5
+    char *p_string_buffer = string_buffer + string_buffer_offset + 5;
 
     readStr( &p_string_buffer, tmp_string_buffer );
     if ( tmp_string_buffer[0] == '*' ){
@@ -1003,7 +1010,7 @@ int ScriptParser::breakCommand()
 
 int ScriptParser::atoiCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 4; // strlen("atoi") = 4
+    char *p_string_buffer = string_buffer + string_buffer_offset + 4;
     char *p_buf = p_string_buffer;
     
     readInt( &p_string_buffer );
@@ -1016,7 +1023,7 @@ int ScriptParser::atoiCommand()
 
 int ScriptParser::arcCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 3; // strlen("arc") = 3
+    char *p_string_buffer = string_buffer + string_buffer_offset + 3;
     readStr( &p_string_buffer, tmp_string_buffer );
 
     int i = 0;
@@ -1036,7 +1043,7 @@ int ScriptParser::arcCommand()
 
 int ScriptParser::addCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 3; // strlen("add") = 3
+    char *p_string_buffer = string_buffer + string_buffer_offset + 3;
     char *tmp_buffer;
     int no;
     

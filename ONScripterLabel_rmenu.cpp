@@ -186,10 +186,10 @@ int ONScripterLabel::loadSaveFile( int no )
     }
     loadStr( fp, &sentence_font_info.image_name );
 
-    loadInt( fp, &j ); sentence_font_info.pos.x = j; 
-    loadInt( fp, &j ); sentence_font_info.pos.y = j;
-    loadInt( fp, &j ); sentence_font_info.pos.w = j - sentence_font_info.pos.x + 1;
-    loadInt( fp, &j ); sentence_font_info.pos.h = j - sentence_font_info.pos.y + 1;
+    loadInt( fp, &j ); sentence_font_info.pos.x = j / screen_ratio; 
+    loadInt( fp, &j ); sentence_font_info.pos.y = j / screen_ratio;
+    loadInt( fp, &j ); sentence_font_info.pos.w = j / screen_ratio;
+    loadInt( fp, &j ); sentence_font_info.pos.h = j / screen_ratio;
 
     if ( !sentence_font.display_transparency ){
         parseTaggedString( &sentence_font_info );
@@ -199,7 +199,7 @@ int ONScripterLabel::loadSaveFile( int no )
     if ( sentence_font.ttf_font ) TTF_CloseFont( (TTF_Font*)sentence_font.ttf_font );
     int font_size = (sentence_font.font_size_xy[0] < sentence_font.font_size_xy[1])?
         sentence_font.font_size_xy[0]:sentence_font.font_size_xy[1];
-    sentence_font.ttf_font = (void*)TTF_OpenFont( font_file, font_size );
+    sentence_font.ttf_font = (void*)TTF_OpenFont( font_file, font_size / screen_ratio );
 
     loadInt( fp, &clickstr_state );
     loadInt( fp, &j );
@@ -297,8 +297,8 @@ int ONScripterLabel::loadSaveFile( int no )
     for ( i=0 ; i<MAX_SPRITE_NUM ; i++ ){
         loadInt( fp, &j );
         sprite_info[i].valid = (j==1)?true:false;
-        loadInt( fp, &j ); sprite_info[i].pos.x = j;
-        loadInt( fp, &j ); sprite_info[i].pos.y = j;
+        loadInt( fp, &j ); sprite_info[i].pos.x = j / screen_ratio;
+        loadInt( fp, &j ); sprite_info[i].pos.y = j / screen_ratio;
         loadInt( fp, &sprite_info[i].trans );
         loadStr( fp, &sprite_info[i].image_name );
         if ( sprite_info[i].image_name ){
@@ -339,7 +339,7 @@ int ONScripterLabel::loadSaveFile( int no )
 
     fclose( fp );
 
-    refreshAccumulationSurface( accumulation_surface, NULL, REFRESH_SHADOW_MODE );
+    refreshSurface( accumulation_surface, NULL, REFRESH_SHADOW_MODE );
     SDL_BlitSurface( accumulation_surface, NULL, text_surface, NULL );
     restoreTextBuffer();
     flush();
@@ -440,10 +440,10 @@ int ONScripterLabel::saveSaveFile( int no )
     for ( i=0 ; i<3 ; i++ )
         saveInt( fp, sentence_font.window_color[i] );
     saveStr( fp, sentence_font_info.image_name );
-    saveInt( fp, sentence_font_info.pos.x );
-    saveInt( fp, sentence_font_info.pos.y );
-    saveInt( fp, sentence_font_info.pos.w - sentence_font_info.pos.x + 1);
-    saveInt( fp, sentence_font_info.pos.h - sentence_font_info.pos.y + 1);
+    saveInt( fp, sentence_font_info.pos.x * screen_ratio );
+    saveInt( fp, sentence_font_info.pos.y * screen_ratio );
+    saveInt( fp, sentence_font_info.pos.w * screen_ratio );
+    saveInt( fp, sentence_font_info.pos.h * screen_ratio );
 
     saveInt( fp, clickstr_state );
     saveInt( fp, new_line_skip_flag?1:0 );
@@ -490,8 +490,8 @@ int ONScripterLabel::saveSaveFile( int no )
     /* Save current sprites */
     for ( i=0 ; i<MAX_SPRITE_NUM ; i++ ){
         saveInt( fp, sprite_info[i].valid?1:0 );
-        saveInt( fp, sprite_info[i].pos.x );
-        saveInt( fp, sprite_info[i].pos.y );
+        saveInt( fp, sprite_info[i].pos.x * screen_ratio );
+        saveInt( fp, sprite_info[i].pos.y * screen_ratio );
         saveInt( fp, sprite_info[i].trans );
         saveStr( fp, sprite_info[i].image_name );
     }
@@ -542,7 +542,13 @@ void ONScripterLabel::leaveSystemCall( bool restore_flag )
         root_button_link.next = shelter_button_link;
         root_select_link.next = shelter_select_link;
         event_mode = shelter_event_mode;
-        if ( event_mode & WAIT_BUTTON_MODE ) SDL_WarpMouse( shelter_mouse_state.x, shelter_mouse_state.y );
+        if ( event_mode & WAIT_BUTTON_MODE ){
+#ifndef SCREEN_ROTATION
+            SDL_WarpMouse( shelter_mouse_state.x, shelter_mouse_state.y );
+#else            
+            SDL_WarpMouse( screen_height - shelter_mouse_state.y - 1, shelter_mouse_state.x );
+#endif
+        }
         current_text_buffer = shelter_text_buffer;
     }
 
@@ -558,8 +564,8 @@ void ONScripterLabel::leaveSystemCall( bool restore_flag )
         startTimer( MINIMUM_TIMER_RESOLUTION );
     }
     else{
-        startCursor( clickstr_state );
-        if ( event_mode & WAIT_ANIMATION_MODE ) startTimer( MINIMUM_TIMER_RESOLUTION );
+        event_mode |= WAIT_ANIMATION_MODE;
+        startTimer( MINIMUM_TIMER_RESOLUTION );
     }
 }
 
@@ -627,13 +633,13 @@ void ONScripterLabel::executeSystemMenu()
         startTimer( MINIMUM_TIMER_RESOLUTION );
     }
     else{
-        refreshAccumulationSurface( text_surface, NULL );
+        refreshSurface( text_surface, NULL );
         shadowTextDisplay( text_surface, text_surface, NULL, &menu_font );
 
         menu_font.num_xy[0] = menu_link_width;
         menu_font.num_xy[1] = menu_link_num;
-        menu_font.top_xy[0] = (screen_width - menu_font.num_xy[0] * menu_font.pitch_xy[0]) / 2;
-        menu_font.top_xy[1] = (screen_height - menu_font.num_xy[1] * menu_font.pitch_xy[1]) / 2;
+        menu_font.top_xy[0] = (screen_width * screen_ratio - menu_font.num_xy[0] * menu_font.pitch_xy[0]) / 2;
+        menu_font.top_xy[1] = (screen_height * screen_ratio  - menu_font.num_xy[1] * menu_font.pitch_xy[1]) / 2;
 
         menu_font.xy[0] = (menu_font.num_xy[0] - menu_link_width) / 2;
         menu_font.xy[1] = (menu_font.num_xy[1] - menu_link_num) / 2;
@@ -679,7 +685,7 @@ void ONScripterLabel::executeWindowErase()
         leaveSystemCall();
     }
     else{
-        refreshAccumulationSurface( text_surface, NULL, mode_saya_flag ? REFRESH_SAYA_MODE : REFRESH_NORMAL_MODE );
+        refreshSurface( text_surface, NULL, mode_saya_flag ? REFRESH_SAYA_MODE : REFRESH_NORMAL_MODE );
         flush();
 
         event_mode = WAIT_INPUT_MODE;
@@ -715,7 +721,7 @@ void ONScripterLabel::executeSystemLoad()
     else{
         searchSaveFiles();
     
-        refreshAccumulationSurface( text_surface, NULL );
+        refreshSurface( text_surface, NULL );
         shadowTextDisplay( text_surface, text_surface, NULL, &menu_font );
 
         system_font.xy[0] = (system_font.num_xy[0] - strlen( load_menu_name ) / 2) / 2;
@@ -776,7 +782,7 @@ void ONScripterLabel::executeSystemSave()
     else{
         searchSaveFiles();
 
-        refreshAccumulationSurface( text_surface, NULL );
+        refreshSurface( text_surface, NULL );
         shadowTextDisplay( text_surface, text_surface, NULL, &menu_font );
 
         system_font.xy[0] = (system_font.num_xy[0] - strlen( save_menu_name ) / 2 ) / 2;
@@ -823,6 +829,10 @@ void ONScripterLabel::executeSystemSave()
 
 void ONScripterLabel::setupLookbackButton()
 {
+    AnimationInfo *info[2];
+    SDL_Rect rect;
+    int offset;
+
     deleteButtonLink();
     
     /* ---------------------------------------- */
@@ -839,32 +849,55 @@ void ONScripterLabel::setupLookbackButton()
         last_button_link->select_rect.w = sentence_font_info.pos.w;
         last_button_link->select_rect.h = sentence_font_info.pos.h/3;
 
-        if ( lookback_info[0].image_surface ){
-            last_button_link->image_rect.x = sentence_font_info.pos.x + sentence_font_info.pos.w - lookback_info[0].pos.w;
+        if ( lookback_sp[0] >= 0 ){
+            info[0] = &sprite_info[ lookback_sp[0] ];
+            info[0]->current_cell = 0;
+            info[1] = &sprite_info[ lookback_sp[0] ];
+            last_button_link->image_rect.x = sprite_info[ lookback_sp[0] ].pos.x;
+            last_button_link->image_rect.y = sprite_info[ lookback_sp[0] ].pos.y;
+        }
+        else{
+            info[0] = &lookback_info[0];
+            info[1] = &lookback_info[1];
+            last_button_link->image_rect.x = sentence_font_info.pos.x + sentence_font_info.pos.w - info[0]->pos.w;
             last_button_link->image_rect.y = sentence_font_info.pos.y;
-            last_button_link->image_rect.w = lookback_info[0].pos.w;
-            last_button_link->image_rect.h = lookback_info[0].pos.h;
+        }
+            
+        if ( info[0]->image_surface ){
+            last_button_link->image_rect.w = info[0]->pos.w;
+            last_button_link->image_rect.h = info[0]->pos.h;
             
             last_button_link->image_surface =
                 SDL_CreateRGBSurface( DEFAULT_SURFACE_FLAG,
-                                      lookback_info[0].pos.w, lookback_info[0].pos.h,
+                                      info[0]->pos.w, info[0]->pos.h,
                                       32, rmask, gmask, bmask, amask );
             SDL_SetAlpha( last_button_link->image_surface, DEFAULT_BLIT_FLAG, SDL_ALPHA_OPAQUE );
-            alphaBlend( last_button_link->image_surface, 0, 0,
+
+            offset = (info[0]->pos.w + info[0]->alpha_offset) * info[0]->current_cell;
+            rect.x = rect.y = 0;
+            rect.w = info[0]->pos.w;
+            rect.h = info[0]->pos.h;
+            alphaBlend( last_button_link->image_surface, rect,
                         text_surface, last_button_link->image_rect.x, last_button_link->image_rect.y,
-                        lookback_info[0].pos.w, lookback_info[0].pos.h,
-                        lookback_info[0].image_surface, 0, 0,
-                        lookback_info[0].mask_surface, lookback_info[0].alpha_offset,
-                        lookback_info[1].trans_mode );
+                        info[0]->image_surface, offset, 0,
+                        info[0]->mask_surface, info[0]->alpha_offset,
+                        info[0]->trans_mode );
         }
 
-        if ( lookback_info[1].image_surface )
-            alphaBlend( text_surface, last_button_link->image_rect.x, last_button_link->image_rect.y,
+        if ( lookback_sp[0] >= 0 ) info[1]->current_cell = 1;
+
+        if ( info[1]->image_surface ){
+            offset = (info[1]->pos.w + info[1]->alpha_offset) * info[1]->current_cell;
+            rect.x = last_button_link->image_rect.x;
+            rect.y = last_button_link->image_rect.y;
+            rect.w = info[1]->pos.w;
+            rect.h = info[1]->pos.h;
+            alphaBlend( text_surface, rect,
                         text_surface, last_button_link->image_rect.x, last_button_link->image_rect.y,
-                        lookback_info[1].pos.w, lookback_info[1].pos.h,
-                        lookback_info[1].image_surface, 0, 0,
-                        lookback_info[1].mask_surface, lookback_info[1].alpha_offset,
-                        lookback_info[1].trans_mode );
+                        info[1]->image_surface, offset, 0,
+                        info[1]->mask_surface, info[1]->alpha_offset,
+                        info[1]->trans_mode );
+        }
     }
 
     /* ---------------------------------------- */
@@ -880,32 +913,55 @@ void ONScripterLabel::setupLookbackButton()
         last_button_link->select_rect.w = sentence_font_info.pos.w;
         last_button_link->select_rect.h = sentence_font_info.pos.h/3;
 
-        if ( lookback_info[2].image_surface ){
-            last_button_link->image_rect.x = sentence_font_info.pos.x + sentence_font_info.pos.w - lookback_info[2].pos.w;
-            last_button_link->image_rect.y = sentence_font_info.pos.y + sentence_font_info.pos.h - lookback_info[2].pos.h;
-            last_button_link->image_rect.w = lookback_info[2].pos.w;
-            last_button_link->image_rect.h = lookback_info[2].pos.h;
+        if ( lookback_sp[1] >= 0 ){
+            info[0] = &sprite_info[ lookback_sp[1] ];
+            info[0]->current_cell = 0;
+            info[1] = &sprite_info[ lookback_sp[1] ];
+            last_button_link->image_rect.x = sprite_info[ lookback_sp[1] ].pos.x;
+            last_button_link->image_rect.y = sprite_info[ lookback_sp[1] ].pos.y;
+        }
+        else{
+            info[0] = &lookback_info[2];
+            info[1] = &lookback_info[3];
+            last_button_link->image_rect.x = sentence_font_info.pos.x + sentence_font_info.pos.w - info[0]->pos.w;
+            last_button_link->image_rect.y = sentence_font_info.pos.y + sentence_font_info.pos.h - info[0]->pos.h;
+        }
+            
+        if ( info[0]->image_surface ){
+            last_button_link->image_rect.w = info[0]->pos.w;
+            last_button_link->image_rect.h = info[0]->pos.h;
             
             last_button_link->image_surface =
                 SDL_CreateRGBSurface( DEFAULT_SURFACE_FLAG,
-                                      lookback_info[2].pos.w, lookback_info[2].pos.h,
+                                      info[0]->pos.w, info[0]->pos.h,
                                       32, rmask, gmask, bmask, amask );
             SDL_SetAlpha( last_button_link->image_surface, DEFAULT_BLIT_FLAG, SDL_ALPHA_OPAQUE );
-            alphaBlend( last_button_link->image_surface, 0, 0,
+
+            offset = (info[0]->pos.w + info[0]->alpha_offset) * info[0]->current_cell;
+            rect.x = rect.y = 0;
+            rect.w = info[0]->pos.w;
+            rect.h = info[0]->pos.h;
+            alphaBlend( last_button_link->image_surface, rect,
                         text_surface, last_button_link->image_rect.x, last_button_link->image_rect.y,
-                        lookback_info[2].pos.w, lookback_info[2].pos.h,
-                        lookback_info[2].image_surface, 0, 0,
-                        lookback_info[2].mask_surface, lookback_info[2].alpha_offset,
-                        lookback_info[2].trans_mode );
+                        info[0]->image_surface, offset, 0,
+                        info[0]->mask_surface, info[0]->alpha_offset,
+                        info[0]->trans_mode );
         }
 
-        if ( lookback_info[3].image_surface )
-            alphaBlend( text_surface, last_button_link->image_rect.x, last_button_link->image_rect.y,
+        if ( lookback_sp[1] >= 0 ) info[1]->current_cell = 1;
+
+        if ( info[1]->image_surface ){
+            offset = (info[1]->pos.w + info[1]->alpha_offset) * info[1]->current_cell;
+            rect.x = last_button_link->image_rect.x;
+            rect.y = last_button_link->image_rect.y;
+            rect.w = info[1]->pos.w;
+            rect.h = info[1]->pos.h;
+            alphaBlend( text_surface, rect,
                         text_surface, last_button_link->image_rect.x, last_button_link->image_rect.y,
-                        lookback_info[3].pos.w, lookback_info[3].pos.h,
-                        lookback_info[3].image_surface, 0, 0,
-                        lookback_info[3].mask_surface, lookback_info[3].alpha_offset,
-                        lookback_info[3].trans_mode );
+                        info[1]->image_surface, offset, 0,
+                        info[1]->mask_surface, info[1]->alpha_offset,
+                        info[1]->trans_mode );
+        }
     }
 }
 

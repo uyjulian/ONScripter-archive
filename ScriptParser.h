@@ -48,6 +48,15 @@
 
 #define SKIP_SPACE(p) while ( *(p) == ' ' || *(p) == '\t' ) (p)++
 
+//#define PDA
+
+#if defined(PDA)
+#define SCREEN_ROTATION
+#define SCREEN_RATIO 2
+#else
+#define SCREEN_RATIO 1
+#endif
+
 typedef unsigned char uchar3[3];
 
 class ScriptParser
@@ -89,10 +98,30 @@ public:
         };
     };
 
-    typedef enum{ SYSTEM_NULL = 0, SYSTEM_SKIP = 1, SYSTEM_RESET = 2, SYSTEM_SAVE = 3, SYSTEM_LOAD = 4, SYSTEM_LOOKBACK = 5, SYSTEM_WINDOWERASE = 6, SYSTEM_MENU = 7  } SYSTEM_CALLS;
+    typedef enum{ SYSTEM_NULL = 0,
+                      SYSTEM_SKIP = 1,
+                      SYSTEM_RESET = 2,
+                      SYSTEM_SAVE = 3,
+                      SYSTEM_LOAD = 4,
+                      SYSTEM_LOOKBACK = 5,
+                      SYSTEM_WINDOWERASE = 6,
+                      SYSTEM_MENU = 7
+                      } SYSTEM_CALLS;
 
-    typedef enum{ RET_COMMENT = 0, RET_NOMATCH = 1, RET_CONTINUE = 2, RET_CONTINUE_NONEXT = 3, RET_WAIT = 4, RET_WAIT_NEXT = 5, RET_JUMP = 6 } COMMAND_RETURN;
-    typedef enum{ CLICK_NONE = 0, CLICK_WAIT = 1, CLICK_NEWPAGE = 2, CLICK_IGNORE = 3 } CLICKSTR_STATE;
+    typedef enum{ RET_COMMENT = 0,
+                      RET_NOMATCH = 1,
+                      RET_CONTINUE = 2,
+                      RET_CONTINUE_NONEXT = 3,
+                      RET_WAIT = 4,
+                      RET_WAIT_NEXT = 5,
+                      RET_JUMP = 6
+                      } COMMAND_RETURN;
+
+    typedef enum{ CLICK_NONE = 0,
+                      CLICK_WAIT = 1,
+                      CLICK_NEWPAGE = 2,
+                      CLICK_IGNORE = 3
+                      } CLICKSTR_STATE;
 
     ScriptParser();
     ~ScriptParser();
@@ -139,6 +168,7 @@ public:
     int midCommand();
     int menusetwindowCommand();
     int menuselectcolorCommand();
+    int lookbackspCommand();
     int lookbackcolorCommand();
     int lookbackbuttonCommand();
     int lenCommand();
@@ -200,6 +230,7 @@ protected:
 
     /* ---------------------------------------- */
     /* Global definitions */
+    int screen_ratio;
     int screen_width, screen_height;
     char *version_str;
     int underline_value;
@@ -259,6 +290,7 @@ protected:
     /* ---------------------------------------- */
     /* Lookback related variables */
     char *lookback_image_name[4];
+    int lookback_sp[2];
     uchar3 lookback_color;
     
     /* ---------------------------------------- */

@@ -23,31 +23,108 @@
 
 #include "ONScripterLabel.h"
 
-void ONScripterLabel::showAnimation( AnimationInfo *anim )
+bool ONScripterLabel::proceedAnimation()
 {
-    if ( anim->duration_list ){
-        if ( anim->image_surface ){
-            SDL_Rect src_rect, dst_rect;
-            src_rect.x = anim->image_surface->w * anim->current_cell / anim->num_of_cells;
-            src_rect.y = 0;
-            src_rect.w = anim->pos.w;
-            src_rect.h = anim->pos.h;
-            if ( anim->abs_flag ) {
-                dst_rect.x = anim->pos.x;
-                dst_rect.y = anim->pos.y;
-            }
-            else{
-                dst_rect.x = sentence_font.xy[0] * sentence_font.pitch_xy[0] + sentence_font.top_xy[0] + anim->pos.x;
-                dst_rect.y = sentence_font.xy[1] * sentence_font.pitch_xy[1] + sentence_font.top_xy[1] + anim->pos.y;
-            }
-            alphaBlend( text_surface, dst_rect.x, dst_rect.y,
-                        anim->preserve_surface, 0, 0, anim->pos.w, anim->pos.h,
-                        anim->image_surface, src_rect.x, src_rect.y,
-                        anim->mask_surface, anim->alpha_offset, anim->trans_mode, anim->trans );
-            flush( dst_rect.x, dst_rect.y, src_rect.w, src_rect.h );
-        }
+    int duration = proceedAnimationSub();
+    if ( duration == 0 ) return false;
+    
+    resetRemainingTime( duration );
+    startTimer( duration );
 
+    return true;
+}
+
+int ONScripterLabel::proceedAnimationSub()
+{
+    int i, minimum_duration = 0;
+    AnimationInfo *anim;
+    
+    for ( i=0 ; i<3 ; i++ ){
+        anim = &tachi_info[i];
+        if ( anim->valid && anim->is_animatable ){
+            minimum_duration = estimateNextDuration( anim, &anim->pos, minimum_duration );
+        }
+    }
+
+    for ( i=MAX_SPRITE_NUM-1 ; i>=0 ; i-- ){
+        anim = &sprite_info[i];
+        if ( anim->valid && anim->is_animatable ){
+            minimum_duration = estimateNextDuration( anim, &anim->pos, minimum_duration );
+        }
+    }
+
+    if ( !textgosub_label &&
+         ( clickstr_state == CLICK_WAIT ||
+           clickstr_state == CLICK_NEWPAGE ) ){
+        if ( clickstr_state == CLICK_WAIT )
+            anim = &cursor_info[CURSOR_WAIT_NO];
+        else if ( clickstr_state == CLICK_NEWPAGE )
+            anim = &cursor_info[CURSOR_NEWPAGE_NO];
+
+        if ( anim->valid &&
+             anim->is_animatable ){
+            SDL_Rect dst_rect = anim->pos;
+            if ( !anim->abs_flag ){
+                dst_rect.x += (sentence_font.xy[0] * sentence_font.pitch_xy[0] + sentence_font.top_xy[0]) / screen_ratio;
+                dst_rect.y += (sentence_font.xy[1] * sentence_font.pitch_xy[1] + sentence_font.top_xy[1]) / screen_ratio;
+            }
+
+            minimum_duration = estimateNextDuration( anim, &dst_rect, minimum_duration );
+        }
+    }
+
+    return minimum_duration;
+}
+
+int ONScripterLabel::estimateNextDuration( AnimationInfo *anim, SDL_Rect *rect, int minimum )
+{
+    if ( anim->remaining_time == 0 ){
+        refreshSurface( text_surface, rect, REFRESH_SHADOW_MODE | REFRESH_CURSOR_MODE );
+        flush( rect );
+        if ( minimum == 0 ||
+             minimum > anim->duration_list[ anim->current_cell ] )
+            minimum = anim->duration_list[ anim->current_cell ];
         anim->proceedAnimation();
+    }
+    else{
+        if ( minimum == 0 ||
+             minimum > anim->remaining_time )
+            minimum = anim->remaining_time;
+    }
+
+    return minimum;
+}
+
+void ONScripterLabel::resetRemainingTime( int t )
+{
+    int i;
+    AnimationInfo *anim;
+    
+    for ( i=0 ; i<3 ; i++ ){
+        anim = &tachi_info[i];
+        if ( anim->valid && anim->is_animatable){
+            anim->remaining_time -= t;
+        }
+    }
+        
+    for ( i=MAX_SPRITE_NUM-1 ; i>=0 ; i-- ){
+        anim = &sprite_info[i];
+        if ( anim->valid && anim->is_animatable ){
+            anim->remaining_time -= t;
+        }
+    }
+
+    if ( !textgosub_label &&
+         ( clickstr_state == CLICK_WAIT ||
+           clickstr_state == CLICK_NEWPAGE ) ){
+        if ( clickstr_state == CLICK_WAIT )
+            anim = &cursor_info[CURSOR_WAIT_NO];
+        else if ( clickstr_state == CLICK_NEWPAGE )
+            anim = &cursor_info[CURSOR_NEWPAGE_NO];
+        
+        if ( anim->valid && anim->is_animatable ){
+            anim->remaining_time -= t;
+        }
     }
 }
 
@@ -60,8 +137,8 @@ void ONScripterLabel::setupAnimationInfo( AnimationInfo *anim )
 
         FontInfo f_info = sentence_font;
         f_info.xy[0] = f_info.xy[1] = 0;
-        f_info.top_xy[0] = anim->pos.x;
-        f_info.top_xy[1] = anim->pos.y;
+        f_info.top_xy[0] = anim->pos.x * screen_ratio;
+        f_info.top_xy[1] = anim->pos.y * screen_ratio;
 
         if ( anim->font_size_xy[0] >= 0 ){
             f_info.font_size_xy[0] = f_info.pitch_xy[0] = anim->font_size_xy[0];
@@ -95,10 +172,6 @@ void ONScripterLabel::setupAnimationInfo( AnimationInfo *anim )
                 anim->alpha_offset = 0;
             }
 
-            if ( anim->preserve_surface ) SDL_FreeSurface( anim->preserve_surface );
-            anim->preserve_surface = SDL_CreateRGBSurface( DEFAULT_SURFACE_FLAG, anim->pos.w, anim->pos.h, 32, rmask, gmask, bmask, amask );
-            SDL_SetAlpha( anim->preserve_surface, DEFAULT_BLIT_FLAG, SDL_ALPHA_OPAQUE );
-
             if ( anim->trans_mode == AnimationInfo::TRANS_MASK )
                 anim->mask_surface = loadImage( anim->mask_file_name );
         }
@@ -116,23 +189,23 @@ void ONScripterLabel::parseTaggedString( AnimationInfo *anim )
 
     if ( buffer[0] == ':' ){
         buffer++;
-        if ( buffer[0] == 'a' ){ // alpha blend
+        if ( buffer[0] == 'a' ){
             anim->trans_mode = AnimationInfo::TRANS_ALPHA;
             buffer++;
         }
-        else if ( buffer[0] == 'l' ){ // top left
+        else if ( buffer[0] == 'l' ){
             anim->trans_mode = AnimationInfo::TRANS_TOPLEFT;
             buffer++;
         }
-        else if ( buffer[0] == 'r' ){ // top right
+        else if ( buffer[0] == 'r' ){
             anim->trans_mode = AnimationInfo::TRANS_TOPRIGHT;
             buffer++;
         }
-        else if ( buffer[0] == 'c' ){ // copy
+        else if ( buffer[0] == 'c' ){
             anim->trans_mode = AnimationInfo::TRANS_COPY;
             buffer++;
         }
-        else if ( buffer[0] == 's' ){ // string
+        else if ( buffer[0] == 's' ){
             anim->trans_mode = AnimationInfo::TRANS_STRING;
             buffer++;
             i=0;
@@ -147,19 +220,19 @@ void ONScripterLabel::parseTaggedString( AnimationInfo *anim )
                 buffer += 7;
             }
         }
-        else if ( buffer[0] == 'm' ){ // mask
+        else if ( buffer[0] == 'm' ){
             anim->trans_mode = AnimationInfo::TRANS_MASK;
             buffer++;
             readStr( &buffer, tmp_string_buffer );
             setStr( &anim->mask_file_name, tmp_string_buffer );
         }
-        else if ( buffer[0] == '#' ){ // direct color
+        else if ( buffer[0] == '#' ){
             anim->trans_mode = AnimationInfo::TRANS_DIRECT;
             memcpy( anim->direct_color, buffer, 7 );
             anim->direct_color[7] = '\0';
             buffer += 7;
         }
-        else if ( buffer[0] == '!' ){ // pallet number
+        else if ( buffer[0] == '!' ){
             anim->trans_mode = AnimationInfo::TRANS_PALLET;
             buffer++;
             anim->pallet_number = 0;
@@ -201,6 +274,7 @@ void ONScripterLabel::parseTaggedString( AnimationInfo *anim )
         }
         
         anim->loop_mode = *buffer++ - '0'; // 3...no animation
+        if ( anim->loop_mode != 3 ) anim->is_animatable = true;
     }
 
     if ( buffer[0] == ';' ) buffer++;
@@ -227,8 +301,8 @@ void ONScripterLabel::drawTaggedSurface( SDL_Surface *dst_surface, AnimationInfo
         }
         FontInfo f_info = sentence_font;
         f_info.xy[0] = f_info.xy[1] = 0;
-        f_info.top_xy[0] = anim->pos.x;
-        f_info.top_xy[1] = anim->pos.y;
+        f_info.top_xy[0] = anim->pos.x * screen_ratio;
+        f_info.top_xy[1] = anim->pos.y * screen_ratio;
 
         if ( anim->font_size_xy[0] >= 0 ){
             f_info.font_size_xy[0] = f_info.pitch_xy[0] = anim->font_size_xy[0];
@@ -252,10 +326,41 @@ void ONScripterLabel::drawTaggedSurface( SDL_Surface *dst_surface, AnimationInfo
     else if ( !anim->image_surface ) return;
 
     int offset = (anim->pos.w + anim->alpha_offset) * anim->current_cell;
-    
-    alphaBlend( dst_surface, anim->pos.x, anim->pos.y,
-                dst_surface, anim->pos.x, anim->pos.y, anim->pos.w, anim->pos.h,
+
+    SDL_Rect dst_rect = anim->pos;
+    if ( !anim->abs_flag ){
+        dst_rect.x += (sentence_font.xy[0] * sentence_font.pitch_xy[0] + sentence_font.top_xy[0]) / screen_ratio;
+        dst_rect.y += (sentence_font.xy[1] * sentence_font.pitch_xy[1] + sentence_font.top_xy[1]) / screen_ratio;
+    }
+
+    alphaBlend( dst_surface, dst_rect,
+                dst_surface, dst_rect.x, dst_rect.y,
                 anim->image_surface, offset, 0,
                 anim->mask_surface, offset + anim->alpha_offset,
                 anim->trans_mode, anim->trans, 0, clip );
+}
+
+void ONScripterLabel::stopAnimation( int click )
+{
+    SDL_Rect dst_rect;
+    int no;
+
+    if ( !(event_mode & WAIT_ANIMATION_MODE) ) return;
+    
+    event_mode &= ~WAIT_ANIMATION_MODE;
+    if ( textgosub_label || autoclick_timer > 0 ) return;
+
+    if      ( click == CLICK_WAIT )    no = CURSOR_WAIT_NO;
+    else if ( click == CLICK_NEWPAGE ) no = CURSOR_NEWPAGE_NO;
+    else return;
+    
+    dst_rect = cursor_info[ no ].pos;
+
+    if ( !cursor_info[ no ].abs_flag ) {
+        dst_rect.x += (sentence_font.xy[0] * sentence_font.pitch_xy[0] + sentence_font.top_xy[0]) / screen_ratio;
+        dst_rect.y += (sentence_font.xy[1] * sentence_font.pitch_xy[1] + sentence_font.top_xy[1]) / screen_ratio;
+    }
+
+    refreshSurface( text_surface, &dst_rect, REFRESH_SHADOW_MODE );
+    flush( &dst_rect );
 }

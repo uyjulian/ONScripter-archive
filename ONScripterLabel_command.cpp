@@ -37,11 +37,11 @@ int ONScripterLabel::waveCommand()
 
     if ( !strncmp( string_buffer + string_buffer_offset, "waveloop", 8 ) ){
         wave_play_once_flag = true;
-        p_string_buffer = string_buffer + string_buffer_offset + 8; // strlen("waveloop") = 8
+        p_string_buffer = string_buffer + string_buffer_offset + 8;
     }
     else{
         wave_play_once_flag = false;
-        p_string_buffer = string_buffer + string_buffer_offset + 4; // strlen("wave") = 4
+        p_string_buffer = string_buffer + string_buffer_offset + 4;
     }
 
     wavestopCommand();
@@ -65,7 +65,7 @@ int ONScripterLabel::wavestopCommand()
 
 int ONScripterLabel::waittimerCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 9; // strlen("waittimer") = 9
+    char *p_string_buffer = string_buffer + string_buffer_offset + 9;
 
     int count = readInt( &p_string_buffer ) + internal_timer - SDL_GetTicks();
     startTimer( count );
@@ -75,7 +75,7 @@ int ONScripterLabel::waittimerCommand()
 
 int ONScripterLabel::waitCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 4; // strlen("wait") = 4
+    char *p_string_buffer = string_buffer + string_buffer_offset + 4;
 
     startTimer( readInt( &p_string_buffer ) );
 
@@ -84,7 +84,7 @@ int ONScripterLabel::waitCommand()
 
 int ONScripterLabel::vspCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 3; // strlen("vsp") = 3
+    char *p_string_buffer = string_buffer + string_buffer_offset + 3;
 
     int no = readInt( &p_string_buffer );
     int v  = readInt( &p_string_buffer );
@@ -95,7 +95,7 @@ int ONScripterLabel::vspCommand()
 
 int ONScripterLabel::voicevolCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 8; // strlen("voicevol") = 8
+    char *p_string_buffer = string_buffer + string_buffer_offset + 8;
     voice_volume = readInt( &p_string_buffer );
 
     if ( wave_sample[0] ) Mix_Volume( 0, se_volume * 128 / 100 );
@@ -105,7 +105,7 @@ int ONScripterLabel::voicevolCommand()
 
 int ONScripterLabel::trapCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 4; // strlen("trap") = 4
+    char *p_string_buffer = string_buffer + string_buffer_offset + 4;
     readStr( &p_string_buffer, tmp_string_buffer );
 
     if ( tmp_string_buffer[0] == '*' ){
@@ -126,7 +126,7 @@ int ONScripterLabel::trapCommand()
 
 int ONScripterLabel::textspeedCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 9; // strlen("textspeed") = 9
+    char *p_string_buffer = string_buffer + string_buffer_offset + 9;
 
     sentence_font.wait_time = readInt( &p_string_buffer );
 
@@ -180,7 +180,7 @@ int ONScripterLabel::texecCommand()
 
 int ONScripterLabel::tablegotoCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 9; // strlen("tablegoto") = 9
+    char *p_string_buffer = string_buffer + string_buffer_offset + 9;
     int count = 0;
     
     int no = readInt( &p_string_buffer );
@@ -201,7 +201,7 @@ int ONScripterLabel::tablegotoCommand()
 
 int ONScripterLabel::systemcallCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 10; // strlen("systemcall") = 10
+    char *p_string_buffer = string_buffer + string_buffer_offset + 10;
 
     readStr( &p_string_buffer, tmp_string_buffer );
     system_menu_mode = getSystemCallNo( tmp_string_buffer );
@@ -223,7 +223,7 @@ int ONScripterLabel::stopCommand()
 
 int ONScripterLabel::spstrCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 5; // strlen("spstr") = 5
+    char *p_string_buffer = string_buffer + string_buffer_offset + 5;
 
     readStr( &p_string_buffer, tmp_string_buffer );
     decodeExbtnControl( NULL, tmp_string_buffer, false, true );
@@ -233,7 +233,7 @@ int ONScripterLabel::spstrCommand()
 
 int ONScripterLabel::spbtnCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 5; // strlen("spbtn") = 5
+    char *p_string_buffer = string_buffer + string_buffer_offset + 5;
 
     int sprite_no = readInt( &p_string_buffer );
     int no        = readInt( &p_string_buffer );
@@ -264,7 +264,7 @@ int ONScripterLabel::skipoffCommand()
 
 int ONScripterLabel::sevolCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 5; // strlen("sevol") = 5
+    char *p_string_buffer = string_buffer + string_buffer_offset + 5;
     se_volume = readInt( &p_string_buffer );
 
     for ( int i=1 ; i<MIX_CHANNELS ; i++ )
@@ -275,7 +275,7 @@ int ONScripterLabel::sevolCommand()
 
 int ONScripterLabel::setwindowCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 9; // strlen("setwindow") = 9
+    char *p_string_buffer = string_buffer + string_buffer_offset + 9;
 
     sentence_font.font_valid_flag = false;
     sentence_font.top_xy[0] = readInt( &p_string_buffer );
@@ -293,41 +293,26 @@ int ONScripterLabel::setwindowCommand()
     if ( sentence_font.ttf_font ) TTF_CloseFont( (TTF_Font*)sentence_font.ttf_font );
     int font_size = (sentence_font.font_size_xy[0] < sentence_font.font_size_xy[1])?
         sentence_font.font_size_xy[0]:sentence_font.font_size_xy[1];
-    sentence_font.ttf_font = (void*)TTF_OpenFont( font_file, font_size );
-#if 0
-    printf("ONScripterLabel::setwindowCommand (%d,%d) (%d,%d) font=%d (%d,%d) wait=%d bold=%d, shadow=%d\n",
-           sentence_font.top_xy[0], sentence_font.top_xy[1], sentence_font.num_xy[0], sentence_font.num_xy[1],
-           sentence_font.font_size, sentence_font.pitch_xy[0], sentence_font.pitch_xy[1], sentence_font.wait_time,
-           sentence_font.display_bold, sentence_font.display_shadow );
-#endif
+    sentence_font.ttf_font = (void*)TTF_OpenFont( font_file, font_size / screen_ratio );
+
     readStr( &p_string_buffer, tmp_string_buffer );
     if ( tmp_string_buffer[0] == '#' ){
         sentence_font.display_transparency = true;
         if ( strlen( tmp_string_buffer ) != 7 ) errorAndExit( string_buffer + string_buffer_offset );
         readColor( &sentence_font.window_color, tmp_string_buffer + 1 );
 
-        sentence_font_info.pos.x = readInt( &p_string_buffer );
-        sentence_font_info.pos.y = readInt( &p_string_buffer );
-        sentence_font_info.pos.w = readInt( &p_string_buffer ) - sentence_font_info.pos.x + 1;
-        sentence_font_info.pos.h = readInt( &p_string_buffer ) - sentence_font_info.pos.y + 1;
-#if 0
-        printf("    trans %u %u %u rect %d %d %d %d\n",
-               sentence_font.window_color[0], sentence_font.window_color[1], sentence_font.window_color[2],
-               sentence_font_info.pos.x, sentence_font_info.pos.y, sentence_font_info.pos.w, sentence_font_info.pos.h );
-#endif        
+        sentence_font_info.pos.x = readInt( &p_string_buffer ) / screen_ratio;
+        sentence_font_info.pos.y = readInt( &p_string_buffer ) / screen_ratio;
+        sentence_font_info.pos.w = readInt( &p_string_buffer ) / screen_ratio - sentence_font_info.pos.x + 1;
+        sentence_font_info.pos.h = readInt( &p_string_buffer ) / screen_ratio - sentence_font_info.pos.y + 1;
     }
     else{
         sentence_font.display_transparency = false;
         sentence_font_info.setImageName( tmp_string_buffer );
         parseTaggedString( &sentence_font_info );
         setupAnimationInfo( &sentence_font_info );
-        sentence_font_info.pos.x = readInt( &p_string_buffer );
-        sentence_font_info.pos.y = readInt( &p_string_buffer );
-#if 0        
-        printf("    image %s rect %d %d \n",
-               sentence_font.window_image,
-               sentence_font.window_rect[0], sentence_font.window_rect[1] );
-#endif        
+        sentence_font_info.pos.x = readInt( &p_string_buffer ) / screen_ratio;
+        sentence_font_info.pos.y = readInt( &p_string_buffer ) / screen_ratio;
     }
 
     lookbackflushCommand();
@@ -344,11 +329,11 @@ int ONScripterLabel::setcursorCommand()
 
     if ( !strncmp( string_buffer + string_buffer_offset, "abssetcursor", 12 ) ) {
         abs_flag = true;
-        p_string_buffer = string_buffer + string_buffer_offset + 12; // strlen("abssetcursor") = 12
+        p_string_buffer = string_buffer + string_buffer_offset + 12;
     }
     else{
         abs_flag = false;
-        p_string_buffer = string_buffer + string_buffer_offset + 9; // strlen("setcursor") = 9
+        p_string_buffer = string_buffer + string_buffer_offset + 9;
     }
     
     int no = readInt( &p_string_buffer );
@@ -357,8 +342,8 @@ int ONScripterLabel::setcursorCommand()
     char *buf = new char[ strlen( tmp_string_buffer ) + 1 ];
     memcpy( buf, tmp_string_buffer, strlen( tmp_string_buffer ) + 1 );
 
-    int x = readInt( &p_string_buffer );
-    int y = readInt( &p_string_buffer );
+    int x = readInt( &p_string_buffer ) / screen_ratio;
+    int y = readInt( &p_string_buffer ) / screen_ratio;
 
     loadCursor( no, buf, x, y, abs_flag );
     delete[] buf;
@@ -380,21 +365,21 @@ int ONScripterLabel::selectCommand()
     char *p_string_buffer, *p_buf;
 
     if ( !strncmp( string_buffer + string_buffer_offset, "selnum", 6 ) ){
-        p_string_buffer = string_buffer + string_buffer_offset + 6; // strlen("selnum") = 6
+        p_string_buffer = string_buffer + string_buffer_offset + 6;
         select_mode = SELECT_NUM_MODE;
         p_buf = p_string_buffer;
         readInt( &p_string_buffer );
     }
     else if ( !strncmp( string_buffer + string_buffer_offset, "selgosub", 8 ) ){
-        p_string_buffer = string_buffer + string_buffer_offset + 8; // strlen("selgosub") = 8
+        p_string_buffer = string_buffer + string_buffer_offset + 8;
         select_mode = SELECT_GOSUB_MODE;
     }
     else if ( !strncmp( string_buffer + string_buffer_offset, "select", 6 ) ){
-        p_string_buffer = string_buffer + string_buffer_offset + 6; // strlen("select") = 6
+        p_string_buffer = string_buffer + string_buffer_offset + 6;
         select_mode = SELECT_GOTO_MODE;
     }
     else if ( !strncmp( string_buffer + string_buffer_offset, "csel", 4 ) ){
-        p_string_buffer = string_buffer + string_buffer_offset + 4; // strlen("csel") = 4
+        p_string_buffer = string_buffer + string_buffer_offset + 4;
         select_mode = SELECT_CSEL_MODE;
     }
 
@@ -535,7 +520,7 @@ int ONScripterLabel::selectCommand()
 
 int ONScripterLabel::savetimeCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 8; // strlen("savetime") = 8
+    char *p_string_buffer = string_buffer + string_buffer_offset + 8;
 
     int no = readInt( &p_string_buffer ) - 1;
     
@@ -578,7 +563,7 @@ int ONScripterLabel::saveoffCommand()
 
 int ONScripterLabel::savegameCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 8; // strlen("savegame") = 8
+    char *p_string_buffer = string_buffer + string_buffer_offset + 8;
 
     int no = readInt( &p_string_buffer );
     if ( no < 0 )
@@ -597,14 +582,14 @@ int ONScripterLabel::rndCommand()
     int  upper, lower;
     
     if ( !strncmp( string_buffer + string_buffer_offset, "rnd2", 4 ) ){
-        p_string_buffer = string_buffer + string_buffer_offset + 4; // strlen("rnd2") = 4
+        p_string_buffer = string_buffer + string_buffer_offset + 4;
         p_buf = p_string_buffer;
         readInt( &p_string_buffer );
         lower = readInt( &p_string_buffer );
         upper = readInt( &p_string_buffer );
     }
     else{
-        p_string_buffer = string_buffer + string_buffer_offset + 3; // strlen("rnd") = 3
+        p_string_buffer = string_buffer + string_buffer_offset + 3;
         p_buf = p_string_buffer;
         readInt( &p_string_buffer );
         lower = 0;
@@ -618,7 +603,7 @@ int ONScripterLabel::rndCommand()
 
 int ONScripterLabel::rmodeCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 5; // strlen("rmode") = 5
+    char *p_string_buffer = string_buffer + string_buffer_offset + 5;
 
     if ( readInt( &p_string_buffer ) == 1 ) rmode_flag = true;
     else                                    rmode_flag = false;
@@ -670,8 +655,11 @@ int ONScripterLabel::resetCommand()
 
 int ONScripterLabel::repaintCommand()
 {
+    refreshSurface( accumulation_surface, NULL, REFRESH_SHADOW_MODE );
+    SDL_BlitSurface( accumulation_surface, NULL, text_surface, NULL );
+    restoreTextBuffer();
     flush();
-
+    
     return RET_CONTINUE;
 }
 
@@ -682,15 +670,15 @@ int ONScripterLabel::quakeCommand()
 
     if ( !strncmp( string_buffer + string_buffer_offset, "quakey", 6 ) ){
         quake_type = 0;
-        p_string_buffer = string_buffer + string_buffer_offset + 6; // strlen("quakey") = 6
+        p_string_buffer = string_buffer + string_buffer_offset + 6;
     }
     else if ( !strncmp( string_buffer + string_buffer_offset, "quakex", 6 ) ){
         quake_type = 1;
-        p_string_buffer = string_buffer + string_buffer_offset + 6; // strlen("quakex") = 6
+        p_string_buffer = string_buffer + string_buffer_offset + 6;
     }
     else{
         quake_type = 2;
-        p_string_buffer = string_buffer + string_buffer_offset + 5; // strlen("quake") = 5
+        p_string_buffer = string_buffer + string_buffer_offset + 5;
     }
 
     quake_effect.num      = readInt( &p_string_buffer );
@@ -717,7 +705,7 @@ int ONScripterLabel::quakeCommand()
 
 int ONScripterLabel::puttextCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 8; // strlen("puttext") = 8
+    char *p_string_buffer = string_buffer + string_buffer_offset + 8;
     int ret = enterTextDisplayMode();
     if ( ret != RET_NOMATCH ) return ret;
     
@@ -742,7 +730,7 @@ int ONScripterLabel::prnumclearCommand()
 
 int ONScripterLabel::prnumCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 5; // strlen("prnum") = 5
+    char *p_string_buffer = string_buffer + string_buffer_offset + 5;
     char num_buf[12], buf[7];
     int ptr = 0;
 
@@ -793,7 +781,7 @@ int ONScripterLabel::prnumCommand()
 
 int ONScripterLabel::printCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 5; // strlen("print") = 5
+    char *p_string_buffer = string_buffer + string_buffer_offset + 5;
 
     if ( event_mode & EFFECT_EVENT_MODE ){
         int num = readEffect( &p_string_buffer, &print_effect );
@@ -820,11 +808,11 @@ int ONScripterLabel::playCommand()
 
     if ( !strncmp( string_buffer + string_buffer_offset, "playonce", 8 ) ){
         music_play_once_flag = true;
-        p_string_buffer = string_buffer + string_buffer_offset + 8; // strlen("playonce") = 8
+        p_string_buffer = string_buffer + string_buffer_offset + 8;
     }
     else{
         music_play_once_flag = false;
-        p_string_buffer = string_buffer + string_buffer_offset + 4; // strlen("play") = 4
+        p_string_buffer = string_buffer + string_buffer_offset + 4;
     }
 
     readStr( &p_string_buffer, tmp_string_buffer );
@@ -848,9 +836,7 @@ int ONScripterLabel::playCommand()
 #endif
     }
     else{ // play MIDI
-        //SDL_Delay( 300 );
         stopBGM( false );
-        //SDL_Delay( 100 );
         
         setStr( &music_file_name, tmp_string_buffer );
         playMIDIFile();
@@ -864,7 +850,7 @@ int ONScripterLabel::mspCommand()
     int no;
     char *p_string_buffer;
 
-    p_string_buffer = string_buffer + string_buffer_offset + 3; // strlen("msp") = 3;
+    p_string_buffer = string_buffer + string_buffer_offset + 3;
 
     no = readInt( &p_string_buffer );
     sprite_info[ no ].pos.x += readInt( &p_string_buffer );
@@ -878,7 +864,7 @@ int ONScripterLabel::mspCommand()
 
 int ONScripterLabel::mp3volCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 6; // strlen("mp3vol") = 6
+    char *p_string_buffer = string_buffer + string_buffer_offset + 6;
     mp3_volume = readInt( &p_string_buffer );
 
     if ( mp3_sample ) SMPEG_setvolume( mp3_sample, mp3_volume );
@@ -892,15 +878,15 @@ int ONScripterLabel::mp3Command()
     
     if ( !strncmp( string_buffer + string_buffer_offset, "mp3save", 7 ) ){
         music_play_once_flag = true;
-        p_string_buffer = string_buffer + string_buffer_offset + 7; // strlen("mp3save") = 7
+        p_string_buffer = string_buffer + string_buffer_offset + 7;
     }
     else if ( !strncmp( string_buffer + string_buffer_offset, "mp3loop", 7 ) ){
         music_play_once_flag = false;
-        p_string_buffer = string_buffer + string_buffer_offset + 7; // strlen("mp3loop") = 7
+        p_string_buffer = string_buffer + string_buffer_offset + 7;
     }
     else{
         music_play_once_flag = true;
-        p_string_buffer = string_buffer + string_buffer_offset + 3; // strlen("mp3") = 3
+        p_string_buffer = string_buffer + string_buffer_offset + 3;
     }
 
     stopBGM( false );
@@ -915,7 +901,7 @@ int ONScripterLabel::mp3Command()
 
 int ONScripterLabel::monocroCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 7; // strlen("monocro") = 7
+    char *p_string_buffer = string_buffer + string_buffer_offset + 7;
 
     readStr( &p_string_buffer, tmp_string_buffer );
 
@@ -962,11 +948,11 @@ int ONScripterLabel::lspCommand()
     char *p_string_buffer;
 
     if ( !strncmp( string_buffer + string_buffer_offset, "lsph", 4 ) ){
-        p_string_buffer = string_buffer + string_buffer_offset + 4; // strlen("lsph") = 4;
+        p_string_buffer = string_buffer + string_buffer_offset + 4;
         v = false;
     }
     else{
-        p_string_buffer = string_buffer + string_buffer_offset + 3; // strlen("lsp") = 3
+        p_string_buffer = string_buffer + string_buffer_offset + 3;
         v = true;
     }
 
@@ -976,8 +962,8 @@ int ONScripterLabel::lspCommand()
     readStr( &p_string_buffer, tmp_string_buffer );
     sprite_info[ no ].setImageName( tmp_string_buffer );
 
-    sprite_info[ no ].pos.x = readInt( &p_string_buffer );
-    sprite_info[ no ].pos.y = readInt( &p_string_buffer );
+    sprite_info[ no ].pos.x = readInt( &p_string_buffer ) / screen_ratio;
+    sprite_info[ no ].pos.y = readInt( &p_string_buffer ) / screen_ratio;
 
     if ( end_with_comma_flag )
         sprite_info[ no ].trans = readInt( &p_string_buffer );
@@ -1005,7 +991,7 @@ int ONScripterLabel::lookbackflushCommand()
 
 int ONScripterLabel::locateCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 6; // strlen("locate") = 6
+    char *p_string_buffer = string_buffer + string_buffer_offset + 6;
 
     sentence_font.xy[0] = readInt( &p_string_buffer );
     sentence_font.xy[1] = readInt( &p_string_buffer );
@@ -1015,7 +1001,7 @@ int ONScripterLabel::locateCommand()
 
 int ONScripterLabel::loadgameCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 8; // strlen("loadgame") = 8
+    char *p_string_buffer = string_buffer + string_buffer_offset + 8;
     
     int no = readInt( &p_string_buffer );
 
@@ -1037,7 +1023,7 @@ int ONScripterLabel::loadgameCommand()
 
 int ONScripterLabel::ldCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 2; // strlen("ld") = 2
+    char *p_string_buffer = string_buffer + string_buffer_offset + 2;
     
     readStr( &p_string_buffer, tmp_string_buffer );
     char loc = tmp_string_buffer[0];
@@ -1052,13 +1038,16 @@ int ONScripterLabel::ldCommand()
     else{
         int no;
 
-        if ( loc == 'l' )      no = 0;
+        if      ( loc == 'l' ) no = 0;
         else if ( loc == 'c' ) no = 1;
         else if ( loc == 'r' ) no = 2;
         
         tachi_info[ no ].setImageName( tmp_string_buffer );
         parseTaggedString( &tachi_info[ no ] );
         setupAnimationInfo( &tachi_info[ no ] );
+        if ( tachi_info[ no ].image_surface )
+            tachi_info[ no ].valid = true;
+        
         tachi_info[ no ].pos.x = screen_width * (no+1) / 4 - tachi_info[ no ].pos.w / 2;
         tachi_info[ no ].pos.y = underline_value - tachi_info[ no ].image_surface->h + 1;
 
@@ -1072,6 +1061,7 @@ int ONScripterLabel::ldCommand()
 int ONScripterLabel::jumpfCommand()
 {
     jumpf_flag = true;
+
     return RET_CONTINUE;
 }
 
@@ -1086,23 +1076,21 @@ int ONScripterLabel::jumpbCommand()
 
 int ONScripterLabel::ispageCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 6; // strlen("ispage") = 6
-    char *p_buf = p_string_buffer;
+    char *p_string_buffer = string_buffer + string_buffer_offset + 6;
 
     if ( clickstr_state == CLICK_NEWPAGE ){
-        setInt( p_buf, 1 );
+        setInt( p_string_buffer, 1 );
     }
     else{
-        setInt( p_buf, 0 );
+        setInt( p_string_buffer, 0 );
     }
     
     return RET_CONTINUE;
-    
 }
 
 int ONScripterLabel::getversionCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 10; // strlen("getversion") = 10
+    char *p_string_buffer = string_buffer + string_buffer_offset + 10;
     
     setInt( p_string_buffer, ONSCRIPTER_VERSION );
 
@@ -1114,11 +1102,11 @@ int ONScripterLabel::gettimerCommand()
     char *p_string_buffer; 
  
     if ( !strncmp( string_buffer + string_buffer_offset, "gettimer", 8 ) ){ 
-        p_string_buffer = string_buffer + string_buffer_offset + 8; // strlen("gettimer") = 8 
+        p_string_buffer = string_buffer + string_buffer_offset + 8;
         setInt( p_string_buffer, SDL_GetTicks() - internal_timer );
     }
     else if ( !strncmp( string_buffer + string_buffer_offset, "getbtntimer", 11 ) ){ 
-        p_string_buffer = string_buffer + string_buffer_offset + 11; // strlen("getbtntimer") = 11
+        p_string_buffer = string_buffer + string_buffer_offset + 11;
         setInt( p_string_buffer, btnwait_time );
     }
  
@@ -1127,7 +1115,7 @@ int ONScripterLabel::gettimerCommand()
 
 int ONScripterLabel::getregCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 6; // strlen("getreg") = 6
+    char *p_string_buffer = string_buffer + string_buffer_offset + 6;
     char buf[256], buf2[256], *p_buf;
     FILE *fp;
     bool found_flag = false;
@@ -1182,21 +1170,21 @@ int ONScripterLabel::getregCommand()
 
 int ONScripterLabel::getcursorposCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 12; // strlen("getcursorpos") = 12
+    char *p_string_buffer = string_buffer + string_buffer_offset + 12;
     char *p_buf = p_string_buffer;
 
     readInt( &p_string_buffer );
     setInt( p_buf, sentence_font.xy[0] * sentence_font.pitch_xy[0] + sentence_font.top_xy[0] );
-
+    
     p_buf = p_string_buffer;
     setInt( p_buf, sentence_font.xy[1] * sentence_font.pitch_xy[1] + sentence_font.top_xy[1] );
-
+    
     return RET_CONTINUE;
 }
 
 int ONScripterLabel::getcselnumCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 10; // strlen("getcselnum") = 10
+    char *p_string_buffer = string_buffer + string_buffer_offset + 10;
     int count = 0;
 
     SelectLink *link = root_select_link.next;
@@ -1242,12 +1230,12 @@ int ONScripterLabel::exbtnCommand()
     ButtonLink *button;
     
     if ( !strncmp( string_buffer + string_buffer_offset, "exbtn_d", 7 ) ){
-        p_string_buffer = string_buffer + string_buffer_offset + 7; // strlen("exbtn_d") = 7
+        p_string_buffer = string_buffer + string_buffer_offset + 7;
         button = &exbtn_d_button_link;
         if ( button->exbtn_ctl ) delete[] button->exbtn_ctl;
     }
     else{
-        p_string_buffer = string_buffer + string_buffer_offset + 5; // strlen("exbtn") = 5
+        p_string_buffer = string_buffer + string_buffer_offset + 5;
         sprite_no = readInt( &p_string_buffer );
         no = readInt( &p_string_buffer );
 
@@ -1279,10 +1267,10 @@ int ONScripterLabel::exbtnCommand()
 
 int ONScripterLabel::erasetextwindowCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 15; // strlen("erasetextwindow") = 15
+    char *p_string_buffer = string_buffer + string_buffer_offset + 15;
 
-    erase_text_window_flag = (readInt( &p_string_buffer )==1)?true:false;
-    
+    erase_text_window_mode = readInt( &p_string_buffer );
+
     return RET_CONTINUE;
 }
 
@@ -1297,7 +1285,6 @@ int ONScripterLabel::endCommand()
     }
     if ( midi_info ){
         Mix_HaltMusic();
-        //SDL_Delay(500);
         Mix_FreeMusic( midi_info );
     }
     SDL_Quit();
@@ -1306,7 +1293,7 @@ int ONScripterLabel::endCommand()
 
 int ONScripterLabel::dwavestopCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 9; // strlen("dwave") = 9
+    char *p_string_buffer = string_buffer + string_buffer_offset + 9;
     int ch = readInt( &p_string_buffer );
 
     if ( wave_sample[ch] ){
@@ -1324,11 +1311,11 @@ int ONScripterLabel::dwaveCommand()
     
     if ( !strncmp( string_buffer + string_buffer_offset, "dwaveloop", 9 ) ){
         wave_play_once_flag = true;
-        p_string_buffer = string_buffer + string_buffer_offset + 9; // strlen("dwaveloop") = 9
+        p_string_buffer = string_buffer + string_buffer_offset + 9;
     }
     else{
         wave_play_once_flag = false;
-        p_string_buffer = string_buffer + string_buffer_offset + 5; // strlen("dwave") = 5
+        p_string_buffer = string_buffer + string_buffer_offset + 5;
     }
 
     wavestopCommand();
@@ -1342,7 +1329,7 @@ int ONScripterLabel::dwaveCommand()
 
 int ONScripterLabel::delayCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 5; // strlen("delay") = 5
+    char *p_string_buffer = string_buffer + string_buffer_offset + 5;
 
     if ( event_mode & (WAIT_SLEEP_MODE | WAIT_INPUT_MODE ) ){
         event_mode = IDLE_EVENT_MODE;
@@ -1358,7 +1345,7 @@ int ONScripterLabel::delayCommand()
 
 int ONScripterLabel::cspCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 3; // strlen("csp") = 3
+    char *p_string_buffer = string_buffer + string_buffer_offset + 3;
     int no = readInt( &p_string_buffer );
 
     if ( no == -1 )
@@ -1374,7 +1361,7 @@ int ONScripterLabel::cspCommand()
 
 int ONScripterLabel::cselgotoCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 8; // strlen("cselgoto") = 8
+    char *p_string_buffer = string_buffer + string_buffer_offset + 8;
 
     int csel_no = readInt( &p_string_buffer );
 
@@ -1399,7 +1386,7 @@ int ONScripterLabel::cselgotoCommand()
 
 int ONScripterLabel::cselbtnCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 7; // strlen("cselbtn") = 7
+    char *p_string_buffer = string_buffer + string_buffer_offset + 7;
 
     int csel_no   = readInt( &p_string_buffer );
     int button_no = readInt( &p_string_buffer );
@@ -1448,7 +1435,7 @@ int ONScripterLabel::clickCommand()
 
 int ONScripterLabel::clCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 2; // strlen("cl") = 2
+    char *p_string_buffer = string_buffer + string_buffer_offset + 2;
     
     readStr( &p_string_buffer, tmp_string_buffer );
     char loc = tmp_string_buffer[0];
@@ -1478,7 +1465,7 @@ int ONScripterLabel::clCommand()
 
 int ONScripterLabel::cellCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 4; // strlen("cell") = 4
+    char *p_string_buffer = string_buffer + string_buffer_offset + 4;
     
     int sprite_no = readInt( &p_string_buffer );
     int no        = readInt( &p_string_buffer );
@@ -1491,7 +1478,7 @@ int ONScripterLabel::cellCommand()
 
 int ONScripterLabel::captionCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 7; // strlen("caption") = 7
+    char *p_string_buffer = string_buffer + string_buffer_offset + 7;
 
     readStr( &p_string_buffer, tmp_string_buffer );
 
@@ -1536,7 +1523,7 @@ int ONScripterLabel::captionCommand()
 
 int ONScripterLabel::btndefCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 6; // strlen("btndef") = 6
+    char *p_string_buffer = string_buffer + string_buffer_offset + 6;
     readStr( &p_string_buffer, tmp_string_buffer );
 
     if ( strcmp( tmp_string_buffer, "clear" ) ){
@@ -1561,17 +1548,17 @@ int ONScripterLabel::btnCommand()
     last_button_link->next = new ButtonLink();
     last_button_link = last_button_link->next;
     
-    char *p_string_buffer = string_buffer + string_buffer_offset + 3; // strlen("btn") = 3
+    char *p_string_buffer = string_buffer + string_buffer_offset + 3;
     last_button_link->button_type  = NORMAL_BUTTON;
     last_button_link->no           = readInt( &p_string_buffer );
-    last_button_link->image_rect.x = readInt( &p_string_buffer );
-    last_button_link->image_rect.y = readInt( &p_string_buffer );
-    last_button_link->image_rect.w = readInt( &p_string_buffer );
-    last_button_link->image_rect.h = readInt( &p_string_buffer );
+    last_button_link->image_rect.x = readInt( &p_string_buffer ) / screen_ratio;
+    last_button_link->image_rect.y = readInt( &p_string_buffer ) / screen_ratio;
+    last_button_link->image_rect.w = readInt( &p_string_buffer ) / screen_ratio;
+    last_button_link->image_rect.h = readInt( &p_string_buffer ) / screen_ratio;
     last_button_link->select_rect = last_button_link->image_rect;
 
-    src_rect.x = readInt( &p_string_buffer );
-    src_rect.y = readInt( &p_string_buffer );
+    src_rect.x = readInt( &p_string_buffer ) / screen_ratio;
+    src_rect.y = readInt( &p_string_buffer ) / screen_ratio;
     src_rect.w = last_button_link->image_rect.w;
     src_rect.h = last_button_link->image_rect.h;
 
@@ -1588,20 +1575,20 @@ int ONScripterLabel::btnwaitCommand()
     bool del_flag, textbtn_flag = false, selectbtn_flag = false;
 
     if ( !strncmp( string_buffer + string_buffer_offset, "btnwait2", 8 ) ){
-        p_string_buffer = string_buffer + string_buffer_offset + 8; // strlen("btnwait2") = 8
+        p_string_buffer = string_buffer + string_buffer_offset + 8;
         del_flag = false;
     }
     else if ( !strncmp( string_buffer + string_buffer_offset, "btnwait", 7 ) ){
-        p_string_buffer = string_buffer + string_buffer_offset + 7; // strlen("btnwait") = 7
+        p_string_buffer = string_buffer + string_buffer_offset + 7;
         del_flag = true;
     }
     else if ( !strncmp( string_buffer + string_buffer_offset, "textbtnwait", 11 ) ){
-        p_string_buffer = string_buffer + string_buffer_offset + 11; // strlen("textbtnwait") = 11
+        p_string_buffer = string_buffer + string_buffer_offset + 11;
         del_flag = false;
         textbtn_flag = true;
     }
     else if ( !strncmp( string_buffer + string_buffer_offset, "selectbtnwait", 13 ) ){
-        p_string_buffer = string_buffer + string_buffer_offset + 13; // strlen("selectbtnwait") = 13
+        p_string_buffer = string_buffer + string_buffer_offset + 13;
         del_flag = false;
         selectbtn_flag = true;
     }
@@ -1638,12 +1625,12 @@ int ONScripterLabel::btnwaitCommand()
             p_button_link = p_button_link->next;
         }
 
-        refreshAccumulationSurface( accumulation_surface,
-                                    NULL,
-                                    ( !erase_text_window_flag && text_on_flag)?REFRESH_SHADOW_MODE:REFRESH_NORMAL_MODE );
+        refreshSurface( accumulation_surface,
+                        NULL,
+                        ( erase_text_window_mode == 0 && text_on_flag)?REFRESH_SHADOW_MODE:REFRESH_NORMAL_MODE );
         SDL_BlitSurface( accumulation_surface, NULL, text_surface, NULL );
 
-        if ( !erase_text_window_flag && text_on_flag ){
+        if ( erase_text_window_mode == 0 && text_on_flag ){
             restoreTextBuffer();
             display_mode = TEXT_DISPLAY_MODE;
         }
@@ -1662,8 +1649,8 @@ int ONScripterLabel::btnwaitCommand()
             if ( p_button_link->button_type == CUSTOM_SELECT_BUTTON ){
             
                 f_info.xy[0] = f_info.xy[1] = 0;
-                f_info.top_xy[0] = p_button_link->image_rect.x;
-                f_info.top_xy[1] = p_button_link->image_rect.y;
+                f_info.top_xy[0] = p_button_link->image_rect.x * screen_ratio;
+                f_info.top_xy[1] = p_button_link->image_rect.y * screen_ratio;
 
                 int counter = 0;
                 SelectLink *s_link = root_select_link.next;
@@ -1695,13 +1682,18 @@ int ONScripterLabel::btnwaitCommand()
         }
         internal_button_timer = SDL_GetTicks();
 
+        if ( textbtn_flag ){
+            event_mode |= WAIT_ANIMATION_MODE;
+            startTimer( MINIMUM_TIMER_RESOLUTION );
+        }
+        
         return RET_WAIT;
     }
 }
 
 int ONScripterLabel::btntimeCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 7; // strlen("btntime") = 7
+    char *p_string_buffer = string_buffer + string_buffer_offset + 7;
 
     btntime_value = readInt( &p_string_buffer );
     
@@ -1722,27 +1714,41 @@ int ONScripterLabel::brCommand()
 
 int ONScripterLabel::bltCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 3; // strlen("blt") = 3
-    SDL_Rect src_rect, dst_rect;
+    char *p_string_buffer = string_buffer + string_buffer_offset + 3;
+    SDL_Rect src_rect, dst_rect, clip, clipped;
 
-    dst_rect.x = readInt( &p_string_buffer );
-    dst_rect.y = readInt( &p_string_buffer );
-    dst_rect.w = readInt( &p_string_buffer );
-    dst_rect.h = readInt( &p_string_buffer );
-    src_rect.x = readInt( &p_string_buffer );
-    src_rect.y = readInt( &p_string_buffer );
-    src_rect.w = readInt( &p_string_buffer );
-    src_rect.h = readInt( &p_string_buffer );
+    dst_rect.x = readInt( &p_string_buffer ) / screen_ratio;
+    dst_rect.y = readInt( &p_string_buffer ) / screen_ratio;
+    dst_rect.w = readInt( &p_string_buffer ) / screen_ratio;
+    dst_rect.h = readInt( &p_string_buffer ) / screen_ratio;
+    src_rect.x = readInt( &p_string_buffer ) / screen_ratio;
+    src_rect.y = readInt( &p_string_buffer ) / screen_ratio;
+    src_rect.w = readInt( &p_string_buffer ) / screen_ratio;
+    src_rect.h = readInt( &p_string_buffer ) / screen_ratio;
 
+    clip.x = clip.y = 0;
+    clip.w = screen_width;
+    clip.h = screen_height;
+    doClipping( &dst_rect, &clip, &clipped );
+    src_rect.x += clipped.x;
+    src_rect.y += clipped.y;
+    src_rect.w -= clipped.x;
+    src_rect.h -= clipped.y;
+
+#ifndef SCREEN_ROTATION    
     SDL_BlitSurface( btndef_info.image_surface, &src_rect, screen_surface, &dst_rect );
     SDL_UpdateRect( screen_surface, dst_rect.x, dst_rect.y, dst_rect.w, dst_rect.h );
+#else    
+    blitRotation( btndef_info.image_surface, &src_rect, screen_surface, &dst_rect );
+    SDL_UpdateRect( screen_surface, screen_height - dst_rect.y - dst_rect.h, dst_rect.x, dst_rect.h, dst_rect.w );
+#endif    
     
     return RET_CONTINUE;
 }
 
 int ONScripterLabel::bgCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 2; // strlen("bg") = 2
+    char *p_string_buffer = string_buffer + string_buffer_offset + 2;
     
     readStr( &p_string_buffer, tmp_string_buffer );
 
@@ -1810,7 +1816,7 @@ int ONScripterLabel::barclearCommand()
 
 int ONScripterLabel::barCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 3; // strlen("bar") = 3
+    char *p_string_buffer = string_buffer + string_buffer_offset + 3;
 
     int no = readInt( &p_string_buffer );
     if ( bar_info[no] ) delete bar_info[no];
@@ -1821,11 +1827,11 @@ int ONScripterLabel::barCommand()
     bar_info[no]->alpha_offset = 0;
 
     int param           = readInt( &p_string_buffer );
-    bar_info[no]->pos.x = readInt( &p_string_buffer );
-    bar_info[no]->pos.y = readInt( &p_string_buffer );
-
-    bar_info[no]->pos.w = readInt( &p_string_buffer );
-    bar_info[no]->pos.h = readInt( &p_string_buffer );
+    bar_info[no]->pos.x = readInt( &p_string_buffer ) / screen_ratio;
+    bar_info[no]->pos.y = readInt( &p_string_buffer ) / screen_ratio;
+                          
+    bar_info[no]->pos.w = readInt( &p_string_buffer ) / screen_ratio;
+    bar_info[no]->pos.h = readInt( &p_string_buffer ) / screen_ratio;
     int max             = readInt( &p_string_buffer );
     if ( max == 0 ) errorAndExit( string_buffer + string_buffer_offset, "Invalid argument (max = 0)." );
     bar_info[no]->pos.w = bar_info[no]->pos.w * param / max;
@@ -1843,7 +1849,7 @@ int ONScripterLabel::barCommand()
 
 int ONScripterLabel::autoclickCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 9; // strlen("autoclick") = 9
+    char *p_string_buffer = string_buffer + string_buffer_offset + 9;
     autoclick_timer = readInt( &p_string_buffer );
 
     return RET_CONTINUE;
@@ -1851,16 +1857,17 @@ int ONScripterLabel::autoclickCommand()
 
 int ONScripterLabel::amspCommand()
 {
-    char *p_string_buffer = string_buffer + string_buffer_offset + 4; // strlen("amsp") = 4;
+    char *p_string_buffer = string_buffer + string_buffer_offset + 4;
 
     int no = readInt( &p_string_buffer );
-    sprite_info[ no ].pos.x = readInt( &p_string_buffer );
-    sprite_info[ no ].pos.y = readInt( &p_string_buffer );
-    sprite_info[ no ].trans = readInt( &p_string_buffer );
+    sprite_info[ no ].pos.x = readInt( &p_string_buffer ) / screen_ratio;
+    sprite_info[ no ].pos.y = readInt( &p_string_buffer ) / screen_ratio;
+
+    if ( end_with_comma_flag )
+        sprite_info[ no ].trans = readInt( &p_string_buffer );
 
     if ( sprite_info[ no ].trans > 255 ) sprite_info[ no ].trans = 255;
     else if ( sprite_info[ no ].trans < 0 ) sprite_info[ no ].trans = 0;
-    //printf("amsp [%d] %d %d %d\n",no, sprite_info[ no ].x, sprite_info[ no ].y, sprite_info[ no ].trans );
     
     return RET_CONTINUE;
 }
@@ -1868,9 +1875,9 @@ int ONScripterLabel::amspCommand()
 int ONScripterLabel::allspresumeCommand()
 {
     all_sprite_hide_flag = false;
-    refreshAccumulationSurface( accumulation_surface,
+    refreshSurface( accumulation_surface,
                                 NULL,
-                                ( !erase_text_window_flag && text_on_flag)?REFRESH_SHADOW_MODE:REFRESH_NORMAL_MODE );
+                                ( erase_text_window_mode == 0 && text_on_flag)?REFRESH_SHADOW_MODE:REFRESH_NORMAL_MODE );
     SDL_BlitSurface( accumulation_surface, NULL, text_surface, NULL );
     flush();
 
@@ -1880,9 +1887,9 @@ int ONScripterLabel::allspresumeCommand()
 int ONScripterLabel::allsphideCommand()
 {
     all_sprite_hide_flag = true;
-    refreshAccumulationSurface( accumulation_surface,
+    refreshSurface( accumulation_surface,
                                 NULL,
-                                ( !erase_text_window_flag && text_on_flag)?REFRESH_SHADOW_MODE:REFRESH_NORMAL_MODE );
+                                ( erase_text_window_mode == 0 && text_on_flag)?REFRESH_SHADOW_MODE:REFRESH_NORMAL_MODE );
     SDL_BlitSurface( accumulation_surface, NULL, text_surface, NULL );
     flush();
     

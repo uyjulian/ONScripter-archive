@@ -23,9 +23,9 @@
 
 #include "ONScripterLabel.h"
 
-#define EFFECT_STRIPE_WIDTH 16
-#define EFFECT_STRIPE_CURTAIN_WIDTH 24
-#define EFFECT_QUAKE_AMP 12
+#define EFFECT_STRIPE_WIDTH (16 / SCREEN_RATIO)
+#define EFFECT_STRIPE_CURTAIN_WIDTH (24 / SCREEN_RATIO)
+#define EFFECT_QUAKE_AMP (12 / SCREEN_RATIO)
 
 int ONScripterLabel::setEffect( int effect_no, char *buf )
 {
@@ -67,9 +67,9 @@ int ONScripterLabel::doEffect( int effect_no, AnimationInfo *anim, int effect_im
           case COLOR_EFFECT_IMAGE:
           case BG_EFFECT_IMAGE:
           case TACHI_EFFECT_IMAGE:
-            refreshAccumulationSurface( effect_dst_surface,
-                                        NULL,
-                                        ( !erase_text_window_flag && text_on_flag)?REFRESH_SHADOW_MODE:REFRESH_NORMAL_MODE );
+            refreshSurface( effect_dst_surface,
+                            NULL,
+                            ( erase_text_window_mode == 0 && text_on_flag)?REFRESH_SHADOW_MODE:REFRESH_NORMAL_MODE );
             break;
         }
 
@@ -197,8 +197,11 @@ int ONScripterLabel::doEffect( int effect_no, AnimationInfo *anim, int effect_im
         
       case 10: // Cross fade
         height = 256 * effect_counter / effect.duration;
-        alphaBlend( text_surface, 0, 0,
-                    effect_src_surface, 0, 0, screen_width, screen_height,
+        dst_rect.x = dst_rect.y = 0;
+        dst_rect.w = screen_width;
+        dst_rect.h = screen_height;
+        alphaBlend( text_surface, dst_rect,
+                    effect_src_surface, 0, 0,
                     effect_dst_surface, 0, 0,
                     NULL, 0, AnimationInfo::TRANS_COPY, height );
         break;
@@ -268,15 +271,21 @@ int ONScripterLabel::doEffect( int effect_no, AnimationInfo *anim, int effect_im
         break;
 
       case 15: // Fade with mask
-        alphaBlend( text_surface, 0, 0,
-                    effect_src_surface, 0, 0, screen_width, screen_height,
+        dst_rect.x = dst_rect.y = 0;
+        dst_rect.w = screen_width;
+        dst_rect.h = screen_height;
+        alphaBlend( text_surface, dst_rect,
+                    effect_src_surface, 0, 0,
                     effect_dst_surface, 0, 0,
                     NULL, 0, AnimationInfo::TRANS_FADE_MASK, 255, 256 * effect_counter / effect.duration );
         break;
         
       case 18: // Cross fade with mask
-        alphaBlend( text_surface, 0, 0,
-                    effect_src_surface, 0, 0, screen_width, screen_height,
+        dst_rect.x = dst_rect.y = 0;
+        dst_rect.w = screen_width;
+        dst_rect.h = screen_height;
+        alphaBlend( text_surface, dst_rect,
+                    effect_src_surface, 0, 0,
                     effect_dst_surface, 0, 0,
                     NULL, 0, AnimationInfo::TRANS_CROSSFADE_MASK, 255, 256 * effect_counter * 2 / effect.duration );
         break;
@@ -314,7 +323,7 @@ int ONScripterLabel::doEffect( int effect_no, AnimationInfo *anim, int effect_im
     effect_counter += effect_timer_resolution;
     if ( effect_counter < effect.duration ){
         if ( effect.effect != 0 ){
-            if ( !erase_text_window_flag && text_on_flag && effect.effect < CUSTOM_EFFECT_NO ){
+            if ( erase_text_window_mode == 0 && text_on_flag && effect.effect < CUSTOM_EFFECT_NO ){
                 restoreTextBuffer();
             }
             flush();
@@ -331,7 +340,7 @@ int ONScripterLabel::doEffect( int effect_no, AnimationInfo *anim, int effect_im
             SDL_BlitSurface( accumulation_surface, NULL, text_surface, NULL );
         }
 
-        if ( !erase_text_window_flag && text_on_flag ){
+        if ( erase_text_window_mode == 0 && text_on_flag ){
             restoreTextBuffer();
             display_mode = TEXT_DISPLAY_MODE;
         }

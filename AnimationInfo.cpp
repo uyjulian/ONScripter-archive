@@ -32,16 +32,17 @@ AnimationInfo::AnimationInfo(){
     color_list = NULL;
     file_name = NULL;
     mask_file_name = NULL;
+    is_animatable = false;
 
     /* Variables from AnimationInfo */
     valid = false;
     image_name = NULL;
     image_surface = NULL;
-    preserve_surface = NULL;
     mask_surface = NULL;
     trans = 255;
 
     font_size_xy[0] = font_size_xy[1] = -1;
+    remaining_time = 0;
 }
 
 AnimationInfo::~AnimationInfo(){
@@ -62,8 +63,6 @@ void AnimationInfo::setImageName( char *name ){
 void AnimationInfo::deleteSurface(){
     if ( image_surface ) SDL_FreeSurface( image_surface );
     image_surface = NULL;
-    if ( preserve_surface ) SDL_FreeSurface( preserve_surface );
-    preserve_surface = NULL;
     if ( mask_surface ) SDL_FreeSurface( mask_surface );
     mask_surface = NULL;
 }
@@ -93,6 +92,7 @@ void AnimationInfo::removeTag(){
         mask_file_name = NULL;
     }
     num_of_cells = 0;
+    is_animatable = false;
 }
 
 // 0 ... restart at the end
@@ -120,5 +120,10 @@ void AnimationInfo::proceedAnimation()
             direction = -1;
         }
     }
+
+    /*if ( duration_list[ current_cell ] == 0 )
+        remaining_time = -1;
+    else*/
+        remaining_time = duration_list[ current_cell ];
 }
 

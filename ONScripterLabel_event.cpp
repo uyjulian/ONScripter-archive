@@ -103,15 +103,24 @@ void midiCallback( int sig )
  * **************************************** */
 void ONScripterLabel::mouseMoveEvent( SDL_MouseMotionEvent *event )
 {
+#ifndef SCREEN_ROTATION
     mouseOverCheck( event->x, event->y );
+#else
+    mouseOverCheck( event->y, screen_height - event->x - 1 );
+#endif    
 }
 
 void ONScripterLabel::mousePressEvent( SDL_MouseButtonEvent *event )
 {
     if ( variable_edit_mode ) return;
     
+#ifndef SCREEN_ROTATION
     current_button_state.x = event->x;
     current_button_state.y = event->y;
+#else
+    current_button_state.x = event->y;
+    current_button_state.y = screen_height - event->x - 1;
+#endif
     
     if ( event->button == SDL_BUTTON_RIGHT && rmode_flag ){
         current_button_state.button = -1;
@@ -128,7 +137,8 @@ void ONScripterLabel::mousePressEvent( SDL_MouseButtonEvent *event )
             current_link_label_info->label_info = lookupLabel( trap_dist );
             current_link_label_info->current_line = 0;
             current_link_label_info->offset = 0;
-            if ( !(event_mode & WAIT_BUTTON_MODE) ) endCursor( clickstr_state );
+            //if ( !(event_mode & WAIT_BUTTON_MODE) ) stopAnimation( clickstr_state );
+            stopAnimation( clickstr_state );
             event_mode = IDLE_EVENT_MODE;
             startTimer( MINIMUM_TIMER_RESOLUTION );
             return;
@@ -143,7 +153,7 @@ void ONScripterLabel::mousePressEvent( SDL_MouseButtonEvent *event )
     }
     
     if ( event_mode & (WAIT_INPUT_MODE | WAIT_BUTTON_MODE) ){
-        if ( !(event_mode & WAIT_BUTTON_MODE) ) endCursor( clickstr_state );
+        stopAnimation( clickstr_state );
         startTimer( MINIMUM_TIMER_RESOLUTION );
     }
 }
@@ -314,7 +324,7 @@ void ONScripterLabel::keyPressEvent( SDL_KeyboardEvent *event )
         current_link_label_info->label_info = lookupLabel( trap_dist );
         current_link_label_info->current_line = 0;
         current_link_label_info->offset = 0;
-        endCursor( clickstr_state );
+        stopAnimation( clickstr_state );
         event_mode = IDLE_EVENT_MODE;
         startTimer( MINIMUM_TIMER_RESOLUTION );
         return;
@@ -325,7 +335,15 @@ void ONScripterLabel::keyPressEvent( SDL_KeyboardEvent *event )
             if ( --shortcut_mouse_line < 0 ) shortcut_mouse_line = 0;
             struct ButtonLink *p_button_link = root_button_link.next;
             for ( i=0 ; i<shortcut_mouse_line && p_button_link ; i++ ) p_button_link  = p_button_link->next;
-            if ( p_button_link ) SDL_WarpMouse( p_button_link->select_rect.x + p_button_link->select_rect.w / 2, p_button_link->select_rect.y + p_button_link->select_rect.h / 2 );
+            if ( p_button_link ){
+#ifndef SCREEN_ROTATION
+                SDL_WarpMouse( p_button_link->select_rect.x + p_button_link->select_rect.w / 2,
+                               p_button_link->select_rect.y + p_button_link->select_rect.h / 2 );
+#else
+                SDL_WarpMouse( screen_height - (p_button_link->select_rect.y + p_button_link->select_rect.h / 2) - 1,
+                               p_button_link->select_rect.x + p_button_link->select_rect.w / 2 );
+#endif                
+            }
         }
         else if ( event->keysym.sym == SDLK_DOWN || event->keysym.sym == SDLK_n ){
             shortcut_mouse_line++;
@@ -336,7 +354,15 @@ void ONScripterLabel::keyPressEvent( SDL_KeyboardEvent *event )
                 p_button_link = root_button_link.next;
                 for ( i=0 ; i<shortcut_mouse_line ; i++ ) p_button_link  = p_button_link->next;
             }
-            if ( p_button_link ) SDL_WarpMouse( p_button_link->select_rect.x + p_button_link->select_rect.w / 2, p_button_link->select_rect.y + p_button_link->select_rect.h / 2 );
+            if ( p_button_link ){
+#ifndef SCREEN_ROTATION
+                SDL_WarpMouse( p_button_link->select_rect.x + p_button_link->select_rect.w / 2,
+                               p_button_link->select_rect.y + p_button_link->select_rect.h / 2 );
+#else
+                SDL_WarpMouse( screen_height - (p_button_link->select_rect.y + p_button_link->select_rect.h / 2) - 1,
+                               p_button_link->select_rect.x + p_button_link->select_rect.w / 2 );
+#endif
+            }
         }
         else if ( event->keysym.sym == SDLK_RETURN || event->keysym.sym == SDLK_SPACE ){
             if ( event->keysym.sym == SDLK_RETURN ){
@@ -347,6 +373,7 @@ void ONScripterLabel::keyPressEvent( SDL_KeyboardEvent *event )
                 current_button_state.button = 0;
                 volatile_button_state.button = 0;
             }
+            stopAnimation( clickstr_state );
             startTimer( MINIMUM_TIMER_RESOLUTION );
             return;
         }
@@ -358,8 +385,8 @@ void ONScripterLabel::keyPressEvent( SDL_KeyboardEvent *event )
             volatile_button_state.button = -1;
             if ( event_mode & WAIT_INPUT_MODE && root_menu_link.next ){
                 system_menu_mode = SYSTEM_MENU;
-                endCursor( clickstr_state );
             }
+            stopAnimation( clickstr_state );
             startTimer( MINIMUM_TIMER_RESOLUTION );
             return;
         }
@@ -369,7 +396,7 @@ void ONScripterLabel::keyPressEvent( SDL_KeyboardEvent *event )
         if (event->keysym.sym == SDLK_RETURN || event->keysym.sym == SDLK_SPACE ){
             skip_flag = false;
             key_pressed_flag = true;
-            endCursor( clickstr_state );
+            stopAnimation( clickstr_state );
             startTimer( MINIMUM_TIMER_RESOLUTION );
         }
     }
@@ -379,7 +406,7 @@ void ONScripterLabel::keyPressEvent( SDL_KeyboardEvent *event )
             skip_flag = true;
             printf("toggle skip to true\n");
             key_pressed_flag = true;
-            endCursor( clickstr_state );
+            stopAnimation( clickstr_state );
             if ( (event_mode & (WAIT_BUTTON_MODE | WAIT_TEXTBTN_MODE)) != WAIT_BUTTON_MODE )
                 startTimer( MINIMUM_TIMER_RESOLUTION );
         }
@@ -387,7 +414,7 @@ void ONScripterLabel::keyPressEvent( SDL_KeyboardEvent *event )
             draw_one_page_flag = !draw_one_page_flag;
             printf("toggle draw one page flag to %s\n", (draw_one_page_flag?"true":"false") );
             if ( draw_one_page_flag ){
-                endCursor( clickstr_state );
+                stopAnimation( clickstr_state );
                 if ( (event_mode & (WAIT_BUTTON_MODE | WAIT_TEXTBTN_MODE)) != WAIT_BUTTON_MODE )
                     startTimer( MINIMUM_TIMER_RESOLUTION );
             }
@@ -419,20 +446,12 @@ void ONScripterLabel::timerEvent( void )
   timerEventTop:
 
     int ret;
-    
-    if ( event_mode & WAIT_ANIMATION_MODE ){
-        int no;
-    
-        if ( clickstr_state == CLICK_WAIT )         no = CURSOR_WAIT_NO;
-        else if ( clickstr_state == CLICK_NEWPAGE ) no = CURSOR_NEWPAGE_NO;
 
-        showAnimation( &cursor_info[ no ] );
-        if ( cursor_info[ no ].duration_list ){
-            startTimer( cursor_info[ no ].duration_list[ cursor_info[ no ].current_cell ] );
-        }
+    if ( event_mode & WAIT_ANIMATION_MODE ){
+        if ( !proceedAnimation() ) event_mode &= ~WAIT_ANIMATION_MODE;
     }
     else if ( event_mode & EFFECT_EVENT_MODE ){
-        if ( display_mode & TEXT_DISPLAY_MODE && erase_text_window_flag && strncmp( effect_command, "quake", 5 ) ){
+        if ( display_mode & TEXT_DISPLAY_MODE && erase_text_window_mode != 0 && strncmp( effect_command, "quake", 5 ) ){
             if ( effect_counter == 0 ){
                 flush();
                 SDL_BlitSurface( accumulation_surface, NULL, effect_dst_surface, NULL );
@@ -532,7 +551,6 @@ int ONScripterLabel::eventLoop()
             }
             if ( midi_info ){
                 Mix_HaltMusic();
-                //SDL_Delay(500);
                 Mix_FreeMusic( midi_info );
             }
             return(0);

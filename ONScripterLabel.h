@@ -221,7 +221,8 @@ private:
     /* Script related variables */
     typedef enum{ REFRESH_NORMAL_MODE = 0,
                       REFRESH_SAYA_MODE = 1,
-                      REFRESH_SHADOW_MODE = 2
+                      REFRESH_SHADOW_MODE = 2,
+                      REFRESH_CURSOR_MODE = 4
                       } REFRESH_MODE;
     
     int display_mode;
@@ -305,11 +306,12 @@ private:
                       } CURSOR_NO;
     AnimationInfo cursor_info[2];
 
-    void proceedAnimation( AnimationInfo *anim );
-    void showAnimation( AnimationInfo *anim );
+    bool proceedAnimation();
+    int proceedAnimationSub();
+    int estimateNextDuration( AnimationInfo *anim, SDL_Rect *rect, int minimum );
+    void resetRemainingTime( int t );
+    void stopAnimation( int click );
     void loadCursor( int no, char *str, int x, int y, bool abs_flag = false );
-    void startCursor( int click );
-    void endCursor( int click );
     
     /* ---------------------------------------- */
     /* Lookback related variables */
@@ -323,7 +325,7 @@ private:
     /* Text related variables */
     AnimationInfo sentence_font_info;
     char *font_file;
-    bool erase_text_window_flag;
+    int erase_text_window_mode;
     bool text_on_flag;
 
     void drawChar( char* text, struct FontInfo *info, bool flush_flag, SDL_Surface *surface, bool buffering_flag = true, SDL_Rect *clip=NULL );
@@ -407,14 +409,16 @@ private:
     void newPage( bool next_flag );
     
     void deleteLabelLink();
+    void blitRotation( SDL_Surface *src_surface, SDL_Rect *src_rect, SDL_Surface *dst_surface, SDL_Rect *dst_rect );
     void flush( SDL_Rect *rect=NULL );
     void flush( int x, int y, int w, int h );
     void executeLabel();
     int parseLine();
     void parseTaggedString( AnimationInfo *anim );
     void setupAnimationInfo( AnimationInfo *anim );
-    void alphaBlend( SDL_Surface *dst_surface, int x, int y,
-                     SDL_Surface *src1_surface, int x1, int y1, int wx, int wy,
+    int doClipping( SDL_Rect *dst, SDL_Rect *clip, SDL_Rect *clipped=NULL );
+    void alphaBlend( SDL_Surface *dst_surface, SDL_Rect dst_rect,
+                     SDL_Surface *src1_surface, int x1, int y1,
                      SDL_Surface *src2_surface, int x2, int y2,
                      SDL_Surface *mask_surface, int x3,
                      int trans_mode, unsigned char mask_value = 255, unsigned int effect_value=0, SDL_Rect *clip=NULL );
@@ -422,7 +426,7 @@ private:
     SDL_Surface *loadImage( char *file_name );
     void drawTaggedSurface( SDL_Surface *dst_surface, AnimationInfo *anim, SDL_Rect *clip );
     void makeMonochromeSurface( SDL_Surface *surface, SDL_Rect *dst_rect=NULL, FontInfo *info=NULL );
-    void refreshAccumulationSurface( SDL_Surface *surface, SDL_Rect *clip=NULL, int refresh_mode = REFRESH_NORMAL_MODE );
+    void refreshSurface( SDL_Surface *surface, SDL_Rect *clip=NULL, int refresh_mode = REFRESH_NORMAL_MODE );
     void mouseOverCheck( int x, int y );
     
     /* ---------------------------------------- */

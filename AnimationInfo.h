@@ -57,6 +57,7 @@ public:
     int *duration_list;
     uchar3 *color_list;
     int loop_mode;
+    bool is_animatable;
         
     char *file_name;
     char *mask_file_name;
@@ -64,16 +65,14 @@ public:
     /* Variables from AnimationInfo */
     bool valid;
     bool abs_flag;
-    //SDL_Rect pos;
     int alpha_offset;
     int trans;
-    //struct TaggedInfo tag;
     char *image_name;
     SDL_Surface *image_surface;
-    SDL_Surface *preserve_surface;
     SDL_Surface *mask_surface;
 
     int font_size_xy[2]; // used by prnum
+    int remaining_time;
 
     AnimationInfo();
     ~AnimationInfo();

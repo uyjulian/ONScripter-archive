@@ -86,6 +86,7 @@ static struct FuncLUT{
     {"mid",      &ScriptParser::midCommand},
     {"menusetwindow",      &ScriptParser::menusetwindowCommand},
     {"menuselectcolor",      &ScriptParser::menuselectcolorCommand},
+    {"lookbacksp",      &ScriptParser::lookbackspCommand},
     {"lookbackcolor",      &ScriptParser::lookbackcolorCommand},
     {"lookbackbutton",      &ScriptParser::lookbackbuttonCommand},
     {"len",      &ScriptParser::lenCommand},
@@ -134,7 +135,6 @@ ScriptParser::ScriptParser()
     filelog_flag = false;
     labellog_flag = false;
     num_of_label_accessed = 0;
-    underline_value = 479;
     rmode_flag = true;
     windowback_flag = false;
     usewheel_flag = false;
@@ -152,8 +152,9 @@ ScriptParser::ScriptParser()
     
     /* ---------------------------------------- */
     /* Global definitions */
-    screen_width = 640;
-    screen_height = 480;
+    screen_ratio = SCREEN_RATIO;
+    screen_width  = 640 / screen_ratio;
+    screen_height = 480 / screen_ratio;
     version_str = new char[strlen(VERSION_STR1)+
                           strlen("\n")+
                           strlen(VERSION_STR2)+
@@ -175,6 +176,7 @@ ScriptParser::ScriptParser()
     memcpy( lookback_image_name[2], DEFAULT_LOOKBACK_NAME2, strlen( DEFAULT_LOOKBACK_NAME2 ) + 1 );
     lookback_image_name[3] = new char[ strlen( DEFAULT_LOOKBACK_NAME3 ) + 1 ];
     memcpy( lookback_image_name[3], DEFAULT_LOOKBACK_NAME3, strlen( DEFAULT_LOOKBACK_NAME3 ) + 1 );
+    lookback_sp[0] = lookback_sp[1] = -1;
     lookback_color[0] = 0xff;
     lookback_color[1] = 0xff;
     lookback_color[2] = 0x00;
@@ -432,10 +434,10 @@ int ScriptParser::readScript()
     /* ---------------------------------------- */
     /* 800 x 600 check */
     if ( !strncmp( script_buffer, ";mode800", 8 ) ){
-        screen_width    = 800;
-        screen_height   = 600;
-        underline_value = 599;
+        screen_width  = 800 / screen_ratio;
+        screen_height = 600 / screen_ratio;
     }
+    underline_value = screen_height - 1;
          
     return 0;
 }
@@ -944,7 +946,11 @@ int ScriptParser::getSystemCallNo( char *buffer )
     else if ( !strcmp( buffer, "load" ) )        return SYSTEM_LOAD;
     else if ( !strcmp( buffer, "lookback" ) )    return SYSTEM_LOOKBACK;
     else if ( !strcmp( buffer, "windowerase" ) ) return SYSTEM_WINDOWERASE;
-    else return -1;
+    else if ( !strcmp( buffer, "rmenu" ) )       return SYSTEM_MENU;
+    else{
+        printf("Unsupported system call %s\n", buffer );
+        return -1;
+    }
 }
 
 void ScriptParser::saveGlovalData()

@@ -37,7 +37,7 @@ extern unsigned short convSJIS2UTF16( unsigned short in );
 void ONScripterLabel::drawChar( char* text, struct FontInfo *info, bool flush_flag, SDL_Surface *surface, bool buffering_flag, SDL_Rect *clip )
 {
     int xy[2];
-    SDL_Rect src_rect, dst_rect;
+    SDL_Rect src_rect, dst_rect, clipped_rect;
     SDL_Surface *tmp_surface = NULL;
     SDL_Color color;
     unsigned short index, unicode;
@@ -53,7 +53,7 @@ void ONScripterLabel::drawChar( char* text, struct FontInfo *info, bool flush_fl
     if ( info->ttf_font == NULL ){
         int font_size = (info->font_size_xy[0] < info->font_size_xy[1])?
             info->font_size_xy[0]:info->font_size_xy[1];
-        info->ttf_font = TTF_OpenFont( font_file, font_size );
+        info->ttf_font = TTF_OpenFont( font_file, font_size / screen_ratio );
         if ( !info->ttf_font ){
             fprintf( stderr, "can't open font file: %s\n", font_file );
             SDL_Quit();
@@ -88,11 +88,11 @@ void ONScripterLabel::drawChar( char* text, struct FontInfo *info, bool flush_fl
         info->xy[0] = 0;
         info->xy[1]++;
     }
-    xy[0] = info->xy[0] * info->pitch_xy[0] + info->top_xy[0];
-    xy[1] = info->xy[1] * info->pitch_xy[1] + info->top_xy[1];
+    xy[0] = (info->xy[0] * info->pitch_xy[0] + info->top_xy[0]) / screen_ratio;
+    xy[1] = (info->xy[1] * info->pitch_xy[1] + info->top_xy[1]) / screen_ratio;
     
     dst_rect.x = xy[0] + 1 + minx;
-    if ( !(text[0] & 0x80) && text[1] ) dst_rect.x += info->pitch_xy[0] / 2;
+    if ( !(text[0] & 0x80) && text[1] ) dst_rect.x += info->pitch_xy[0] / 2 / screen_ratio;
     dst_rect.y = xy[1] + TTF_FontAscent( (TTF_Font*)info->ttf_font ) - maxy;
     if ( info->display_shadow ){
         color.r = color.g = color.b = 0;
@@ -105,27 +105,12 @@ void ONScripterLabel::drawChar( char* text, struct FontInfo *info, bool flush_fl
             if ( surface ){
                 bool out_of_region = false;
                 if ( clip ){
-                    if ( dst_rect.x >= clip->x + clip->w || dst_rect.x + src_rect.w <= clip->x ||
-                         dst_rect.y >= clip->y + clip->h || dst_rect.y + src_rect.h <= clip->y ){
+                    if ( doClipping( &dst_rect, clip, &clipped_rect ) ){
                         out_of_region = true;
                     }
                     else{
-                        if ( dst_rect.x < clip->x ){
-                            src_rect.w -= clip->x - dst_rect.x;
-                            src_rect.x += clip->x - dst_rect.x;
-                            dst_rect.x = clip->x;
-                        }
-                        if ( clip->x + clip->w < dst_rect.x + src_rect.w ){
-                            src_rect.w = clip->x + clip->w - dst_rect.x;
-                        }
-                        if ( dst_rect.y < clip->y ){
-                            src_rect.h -= clip->y - dst_rect.y;
-                            src_rect.y += clip->y - dst_rect.y;
-                            dst_rect.y = clip->y;
-                        }
-                        if ( clip->y + clip->h < dst_rect.y + src_rect.h ){
-                            src_rect.h = clip->y + clip->h - dst_rect.y;
-                        }
+                        src_rect.x += clipped_rect.x;
+                        src_rect.y += clipped_rect.y;
                     }
                 }
                 if ( !out_of_region )
@@ -150,27 +135,12 @@ void ONScripterLabel::drawChar( char* text, struct FontInfo *info, bool flush_fl
         if ( surface ){
             bool out_of_region = false;
             if ( clip ){
-                if ( dst_rect.x >= clip->x + clip->w || dst_rect.x + src_rect.w <= clip->x ||
-                     dst_rect.y >= clip->y + clip->h || dst_rect.y + src_rect.h <= clip->y ){
+                if ( doClipping( &dst_rect, clip, &clipped_rect ) ){
                     out_of_region = true;
                 }
                 else{
-                    if ( dst_rect.x < clip->x ){
-                        src_rect.w -= clip->x - dst_rect.x;
-                        src_rect.x += clip->x - dst_rect.x;
-                        dst_rect.x = clip->x;
-                    }
-                    if ( clip->x + clip->w < dst_rect.x + src_rect.w ){
-                        src_rect.w = clip->x + clip->w - dst_rect.x;
-                    }
-                    if ( dst_rect.y < clip->y ){
-                        src_rect.h -= clip->y - dst_rect.y;
-                        src_rect.y += clip->y - dst_rect.y;
-                        dst_rect.y = clip->y;
-                    }
-                    if ( clip->y + clip->h < dst_rect.y + src_rect.h ){
-                        src_rect.h = clip->y + clip->h - dst_rect.y;
-                    }
+                    src_rect.x += clipped_rect.x;
+                    src_rect.y += clipped_rect.y;
                 }
             }
             if ( !out_of_region )
@@ -237,18 +207,18 @@ void ONScripterLabel::drawString( char *str, uchar3 color, FontInfo *info, bool 
     for ( i=0 ; i<3 ; i++ ) info->color[i] = org_color[i];
 
     /* ---------------------------------------- */
-    /* Calculate the area of the selection */
+    /* Calculate the area of selection */
     if ( rect ){
         if ( current_text_xy[1] == info->xy[1] ){
-            rect->x = info->top_xy[0] + current_text_xy[0] * info->pitch_xy[0];
-            rect->w = info->pitch_xy[0] * (info->xy[0] - current_text_xy[0] + 1);
+            rect->x = (info->top_xy[0] + current_text_xy[0] * info->pitch_xy[0]) / screen_ratio;
+            rect->w = (info->pitch_xy[0] * (info->xy[0] - current_text_xy[0] + 1)) / screen_ratio;
         }
         else{
-            rect->x = info->top_xy[0];
-            rect->w = info->pitch_xy[0] * info->num_xy[0];
+            rect->x = info->top_xy[0] / screen_ratio;
+            rect->w = info->pitch_xy[0] * info->num_xy[0] / screen_ratio;
         }
-        rect->y = current_text_xy[1] * info->pitch_xy[1] + info->top_xy[1];// - info->pitch_xy[1] + 3;
-        rect->h = (info->xy[1] - current_text_xy[1] + 1) * info->pitch_xy[1];
+        rect->y = (current_text_xy[1] * info->pitch_xy[1] + info->top_xy[1]) / screen_ratio;// - info->pitch_xy[1] + 3;
+        rect->h = (info->xy[1] - current_text_xy[1] + 1) * info->pitch_xy[1] / screen_ratio;
     }
 }
 
@@ -314,8 +284,8 @@ int ONScripterLabel::clickWait( char *out_text )
             event_mode |= WAIT_SLEEP_MODE;
             startTimer( autoclick_timer );
         }
-        else if ( cursor_info[ CURSOR_WAIT_NO ].num_of_cells > 0 ){
-            startCursor( CLICK_WAIT );
+        else /*if ( cursor_info[ CURSOR_WAIT_NO ].num_of_cells > 0 )*/{
+            event_mode |= WAIT_ANIMATION_MODE;
             startTimer( MINIMUM_TIMER_RESOLUTION );
         }
         return RET_WAIT;
@@ -347,8 +317,8 @@ int ONScripterLabel::clickNewPage( char *out_text )
             event_mode |= WAIT_SLEEP_MODE;
             startTimer( autoclick_timer );
         }
-        else if ( cursor_info[ CURSOR_NEWPAGE_NO ].num_of_cells > 0 ){
-            startCursor( CLICK_NEWPAGE );
+        else /*if ( cursor_info[ CURSOR_NEWPAGE_NO ].num_of_cells > 0 )*/{
+            event_mode |= WAIT_ANIMATION_MODE;
             startTimer( MINIMUM_TIMER_RESOLUTION );
         }
     }

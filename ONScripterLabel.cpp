@@ -1952,8 +1952,8 @@ void ONScripterLabel::refreshAccumulationSruface( SDL_Surface *surface )
 
 int ONScripterLabel::clickWait( char *out_text )
 {
-    clickstr_state = CLICK_WAIT;
     if ( skip_flag || draw_one_page_flag ){
+        clickstr_state = CLICK_NONE;
         if ( out_text ){
             drawChar( out_text, &sentence_font, false );
             string_buffer_offset += 2;
@@ -1965,6 +1965,7 @@ int ONScripterLabel::clickWait( char *out_text )
         return RET_CONTINUE;
     }
     else{
+        clickstr_state = CLICK_WAIT;
         if ( out_text ){
             drawChar( out_text, &sentence_font );
         }
@@ -1984,8 +1985,8 @@ int ONScripterLabel::clickWait( char *out_text )
 
 int ONScripterLabel::clickNewPage( char *out_text )
 {
-    clickstr_state = CLICK_NEWPAGE;
     if ( skip_flag ){
+        clickstr_state = CLICK_NONE;
         if ( out_text ){
             drawChar( out_text, &sentence_font, false );
         }
@@ -2008,6 +2009,7 @@ int ONScripterLabel::clickNewPage( char *out_text )
         return RET_CONTINUE;
     }
     else{
+        clickstr_state = CLICK_NEWPAGE;
         if ( out_text ){
             drawChar( out_text, &sentence_font );
         }

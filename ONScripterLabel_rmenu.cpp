@@ -413,7 +413,6 @@ int ONScripterLabel::saveSaveFile( int no )
 void ONScripterLabel::leaveSystemCall( bool restore_flag )
 {
     int i;
-    //printf("leaveSystemCall\n");
 
     if ( restore_flag ){
         SDL_BlitSurface( shelter_select_surface, NULL, select_surface, NULL );
@@ -430,6 +429,9 @@ void ONScripterLabel::leaveSystemCall( bool restore_flag )
     system_menu_mode = SYSTEM_NULL;
     system_menu_enter_flag = false;
     key_pressed_flag = false;
+
+    //printf("leaveSystemCall %d %d\n",event_mode, clickstr_state);
+
     if ( event_mode & WAIT_SLEEP_MODE ){
         event_mode &= ~WAIT_SLEEP_MODE;
         startTimer( MINIMUM_TIMER_RESOLUTION );

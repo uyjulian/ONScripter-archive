@@ -1137,18 +1137,19 @@ int ONScripterLabel::gettimerCommand()
 
 int ONScripterLabel::getregCommand()
 {
-    char *path = NULL;
-    const char *buf = script_h.readStr();
+    char *path = NULL, *key = NULL;
+    script_h.readToken();
     
-    if ( buf[0] != '$') errorAndExit( script_h.getStringBuffer(), "getreg: no string variable." );
+    if ( script_h.getStringBuffer()[0] != '$') errorAndExit( "getreg: no string variable." );
     char *p_buf = script_h.getStringBuffer()+1;
     int no = script_h.parseInt( &p_buf );
 
+    const char *buf = script_h.readStr();
+    setStr( &path, buf );
     buf = script_h.readStr();
-    setStr( &path , buf );
-    buf = script_h.readStr();
+    setStr( &key, buf );
 
-    printf("  reading Registry file for [%s] %s\n", path, buf );
+    printf("  reading Registry file for [%s] %s\n", path, key );
         
     char reg_buf[256], reg_buf2[256];
     FILE *fp;
@@ -1163,26 +1164,26 @@ int ONScripterLabel::getregCommand()
             unsigned int c=0;
             while ( reg_buf[c] != ']' && reg_buf[c] != '\0' ) c++;
             if ( !strncmp( reg_buf + 1, path, (c-1>strlen(path))?(c-1):strlen(path) ) ){
-                while( fgets( reg_buf, 256, fp) ){
-                    //p_buf = reg_buf+1;
-                    script_h.pushCurrent( reg_buf+1 );
-                    buf = script_h.readStr( reg_buf2 );
-                    if ( strncmp( reg_buf2,
-                                  buf,
-                                  (strlen(reg_buf2)>strlen(buf))?strlen(reg_buf2):strlen(buf) ) ){
+                while( fgets( reg_buf2, 256, fp) ){
+
+                    script_h.pushCurrent( reg_buf2 );
+                    buf = script_h.readStr( NULL, true );
+                    if ( strncmp( buf,
+                                  key,
+                                  (strlen(buf)>strlen(key))?strlen(buf):strlen(key) ) ){
                         script_h.popCurrent();
                         continue;
                     }
                     
-                    script_h.readStr( reg_buf2 );
-                    if ( reg_buf2[0] != '=' ){
+                    buf = script_h.readStr();
+                    if ( buf[0] != '=' ){
                         script_h.popCurrent();
                         continue;
                     }
 
-                    script_h.readStr( reg_buf2 );
+                    buf = script_h.readStr();
                     script_h.popCurrent();
-                    setStr( &script_h.str_variables[ no ], reg_buf2 );
+                    setStr( &script_h.str_variables[ no ], buf );
                     printf("  $%d = %s\n", no, script_h.str_variables[ no ] );
                     found_flag = true;
                     break;

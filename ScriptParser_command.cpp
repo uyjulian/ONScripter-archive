@@ -727,7 +727,6 @@ void ScriptParser::gosubReal( const char *label, bool textgosub_flag, char *curr
 int ScriptParser::gosubCommand()
 {
     const char *buf = script_h.readStr();
-    //skipToken();
     gosubReal( buf+1, false, script_h.next_script );
 
     return RET_JUMP;
@@ -855,7 +854,8 @@ int ScriptParser::dimCommand()
         script_h.array_variables[ no ].data = new int[ dim ];
         memset( script_h.array_variables[ no ].data, 0, sizeof(int) * dim );
     }
-
+    skipToken();
+    
     return RET_CONTINUE;
 }
 

@@ -221,16 +221,15 @@ bool ScriptHandler::readToken( bool advance_flag )
     else while ( ch != 0x0a && ch != '\0' )
     {
         if ( op_flag && !text_flag ){
-            while ( ch == '<' ||
-                    ch == '>' ||
-                    ch == '=' ||
-                    ch == '!' ||
-                    ch == '&' )
+            while ( ch == '<' || ch == '>' ||
+                    ch == '=' || ch == '!' ||
+                    ch == '&')
             {
                 addStringBuffer( ch, string_counter++ );
                 ch = *buf++;
             }
-            if ( string_counter > 0 ){
+            if ( string_counter > 0 &&
+                 (string_buffer[0] != '!' || string_counter != 1 ) ){
                 break;
             }
             else{

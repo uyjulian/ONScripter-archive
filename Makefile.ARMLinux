@@ -4,8 +4,8 @@
 #
 
 INCS = `sdl-config --cflags` `smpeg-config --cflags`
-LIBS = `sdl-config --libs` `smpeg-config --libs` -lSDL_ttf -lSDL_image -lSDL_mixer -lbz2 -lfreetype -lm
-DEFS = -DLINUX -DPDA
+LIBS = `sdl-config --libs` `smpeg-config --libs` -lSDL_ttf -lSDL_image -lSDL_mixer -lbz2 -lfreetype -lmad -lm
+DEFS = -DLINUX -DPDA -DMP3_MAD
 
 EXESUFFIX =
 OBJSUFFIX = .o
@@ -20,5 +20,6 @@ CFLAGS = -O3 -Wall -Wpointer-arith -fcheck-new -pipe -c $(INCS) $(DEFS)
 RM = rm -f
 
 TARGET = onscripter$(EXESUFFIX) sardec$(EXESUFFIX) nsadec$(EXESUFFIX)
+EXT_OBJS = MadWrapper$(OBJSUFFIX)
 
 include Makefile.onscripter

@@ -9,7 +9,8 @@ GUI_OBJS = ONScripterLabel$(OBJSUFFIX) ONScripterLabel_command$(OBJSUFFIX) ONScr
 SAR_OBJS = sardec$(OBJSUFFIX) DirectReader$(OBJSUFFIX) BaseReader$(OBJSUFFIX) SarReader$(OBJSUFFIX)
 NSA_OBJS = nsadec$(OBJSUFFIX) DirectReader$(OBJSUFFIX) BaseReader$(OBJSUFFIX) SarReader$(OBJSUFFIX) NsaReader$(OBJSUFFIX)
 DECODER_OBJS = BaseReader$(OBJSUFFIX) DirectReader$(OBJSUFFIX) SarReader$(OBJSUFFIX) NsaReader$(OBJSUFFIX)
-ONSCRIPTER_OBJS = onscripter$(OBJSUFFIX) $(DECODER_OBJS) ScriptParser$(OBJSUFFIX) ScriptParser_command$(OBJSUFFIX) $(GUI_OBJS) sjis2utf16$(OBJSUFFIX)
+ONSCRIPTER_OBJS = onscripter$(OBJSUFFIX) $(DECODER_OBJS) ScriptParser$(OBJSUFFIX) ScriptParser_command$(OBJSUFFIX) \
+	$(GUI_OBJS) sjis2utf16$(OBJSUFFIX) $(EXT_OBJS)
 PARSER_HEADER = BaseReader.h SarReader.h NsaReader.h DirectReader.h ScriptParser.h AnimationInfo.h
 ONSCRIPTER_HEADER = ONScripterLabel.h $(PARSER_HEADER)
 
@@ -50,3 +51,4 @@ ONScripterLabel_event$(OBJSUFFIX): $(ONSCRIPTER_HEADER)
 ONScripterLabel_rmenu$(OBJSUFFIX): $(ONSCRIPTER_HEADER)
 ONScripterLabel_animation$(OBJSUFFIX): $(ONSCRIPTER_HEADER)
 AnimationInfo$(OBJSUFFIX): AnimationInfo.h
+MadWrapper$(OBJSUFFIX): MadWrapper.h

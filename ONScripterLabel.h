@@ -28,8 +28,13 @@
 #include <SDL.h>
 #include <SDL_image.h>
 #include <SDL_ttf.h>
-#include <smpeg.h>
 #include <SDL_mixer.h>
+
+#if defined(MP3_MAD)
+#include "MadWrapper.h"
+#else
+#include <smpeg.h>
+#endif
 
 #define ONS_VERSION "beta"
 
@@ -382,7 +387,6 @@ private:
     bool music_play_once_flag;
     char *music_file_name;
     unsigned char *mp3_buffer;
-    SMPEG_Info mp3_info;
     SMPEG *mp3_sample;
     Mix_Music *midi_info;
     

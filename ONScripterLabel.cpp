@@ -1062,7 +1062,7 @@ int ONScripterLabel::playMP3( int cd_no )
         char file_name[128];
         
         sprintf( file_name, "cd%ctrack%2.2d.mp3", DELIMITER, cd_no );
-        mp3_sample = SMPEG_new( file_name, &mp3_info, 0 );
+        mp3_sample = SMPEG_new( file_name, NULL, 0 );
     }
     else{
         unsigned long length;
@@ -1070,7 +1070,7 @@ int ONScripterLabel::playMP3( int cd_no )
         length = cBR->getFileLength( music_file_name );
         mp3_buffer = new unsigned char[length];
         cBR->getFile( music_file_name, mp3_buffer );
-        mp3_sample = SMPEG_new_rwops( SDL_RWFromMem( mp3_buffer, length ), &mp3_info, 0 );
+        mp3_sample = SMPEG_new_rwops( SDL_RWFromMem( mp3_buffer, length ), NULL, 0 );
     }
 
     if ( SMPEG_error( mp3_sample ) ){
@@ -1080,10 +1080,12 @@ int ONScripterLabel::playMP3( int cd_no )
         mp3_sample = NULL;
     }
     else{
+#ifndef MP3_MAD        
         SMPEG_enableaudio( mp3_sample, 0 );
         SMPEG_actualSpec( mp3_sample, &audio_format );
 
         SMPEG_enableaudio( mp3_sample, 1 );
+#endif
         SMPEG_play( mp3_sample );
         SMPEG_setvolume( mp3_sample, mp3_volume );
 

@@ -12,7 +12,7 @@
 </CENTER>
 
 Created: Feb. 6, 2002<br>
-Last updated: May 21, 2002
+Last updated: May 26, 2002
 
 <HR>
 
@@ -27,9 +27,9 @@ href="http://www2.osk.3web.ne.jp/~naokikun/index.htm">高橋直樹</a>氏が開発したゲ
 
 <p>ONScripter で何ができるのかについてはαβεさんの[<A HREF="http://abe.platina.sakura.ne.jp/onscripter/">ONScripter のスゝメ</A>]を参照してください。</p>
 
-<p>現在はベータ版<A HREF="onscripter-beta-20020521.tar.gz">onscripter-beta-20020521.tar.gz</A>を配布しております。<br>
+<p>現在はベータ版<A HREF="onscripter-beta-20020526.tar.gz">onscripter-beta-20020526.tar.gz</A>を配布しております。<br>
 ベータ版ゆえデバッグ出力が有効になっていますが、正式版になったら取り除きます。<br>
-(一つ前のベータ版<A HREF="onscripter-beta-20020520.tar.gz">onscripter-beta-20020520.tar.gz</A>)</p>
+(一つ前のベータ版<A HREF="onscripter-beta-20020521.tar.gz">onscripter-beta-20020521.tar.gz</A>)</p>
 
 <p>更新内容については[<A HREF="onscripter_devel.html">開発日誌</A>]を参照して下さい。</p>
 
@@ -122,7 +122,12 @@ href="http://www2.osk.3web.ne.jp/~naokikun/index.htm">高橋直樹</a>氏が開発したゲ
   <DD> SDL-1.2.4, SDL_image-1.2.2, SDL_mixer-1.2.3, SDL_ttf-2.0.5
   <DT> ・<A HREF="http://www.lokigames.com/development/smpeg.php3">SMPEG (SDL Mpeg Player Library)</A>
   <DD> SMPEG-0.4.4
-  <DT> ・<A HREF="http://www.freetype.org/"> FreeType 2.0.9 </A>
+  <DT> ・<A HREF="http://www.freetype.org/"> FreeType </A>
+  <DD> FreeType 2.0.9 
+  <DT> ・<A HREF="http://www.mars.org/home/rob/proj/mpeg/">MAD: Mpeg Audio Decoder</A>
+  <DD> mad-0.14.2b
+  <DD> これは必要ではありませんが、Zaurus で MP3 を聞きたい方はほぼ必須。
+  <DD> コンパイル時に MP3_MAD を定義することで、SMPEG に差し換えて使用されます。
   <DT> ・Unicode で指定された日本語 TTF フォント
   <DT> ・C++ 処理系
   <DD> Linux g++ 2.95.4
@@ -161,6 +166,7 @@ href="http://www2.osk.3web.ne.jp/~naokikun/index.htm">高橋直樹</a>氏が開発したゲ
 
 <OL>
   <LI> (<FONT color="#ff0000">高</FONT>)windowback の挙動がおかしいのを直す
+  <LI> (<FONT color="#ff8800">中</FONT>)Zaurus 用にアーカイブ内の画像を半分の大きさにするコンバータを作る
   <LI> (<FONT color="#ff8800">中</FONT>)puttext 内の文字列で \@/ を取り扱えるようにする
   <LI> (<FONT color="#ff8800">中</FONT>)blt の拡大縮小に対応。
   <LI> (<FONT color="#ff8800">中</FONT>)雪をスムーズに降らせる

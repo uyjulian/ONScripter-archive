@@ -338,20 +338,17 @@ void ONScripterLabel::keyPressEvent( SDL_KeyboardEvent *event )
             }
             if ( p_button_link ) SDL_WarpMouse( p_button_link->select_rect.x + p_button_link->select_rect.w / 2, p_button_link->select_rect.y + p_button_link->select_rect.h / 2 );
         }
-        else if ( event->keysym.sym == SDLK_RETURN ||
-                  event->keysym.sym == SDLK_SPACE ){
-            if ( shortcut_mouse_line >= 0 ){
-                if ( event->keysym.sym == SDLK_RETURN ){
-                    current_button_state.button = current_over_button;
-                    volatile_button_state.button = current_over_button;
-                }
-                else{
-                    current_button_state.button = 0;
-                    volatile_button_state.button = 0;
-                }
-                startTimer( MINIMUM_TIMER_RESOLUTION );
-                return;
+        else if ( event->keysym.sym == SDLK_RETURN || event->keysym.sym == SDLK_SPACE ){
+            if ( event->keysym.sym == SDLK_RETURN ){
+                current_button_state.button = current_over_button;
+                volatile_button_state.button = current_over_button;
             }
+            else{
+                current_button_state.button = 0;
+                volatile_button_state.button = 0;
+            }
+            startTimer( MINIMUM_TIMER_RESOLUTION );
+            return;
         }
     }
 

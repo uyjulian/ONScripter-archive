@@ -205,7 +205,7 @@ int ONScripterLabel::spstrCommand()
     char *p_string_buffer = string_buffer + string_buffer_offset + 5; // strlen("spstr") = 5
 
     readStr( &p_string_buffer, tmp_string_buffer );
-    decodeExbtnControl( NULL, tmp_string_buffer, false );
+    decodeExbtnControl( NULL, tmp_string_buffer, false, true );
     
     return RET_CONTINUE;
 }

@@ -267,9 +267,9 @@ private:
 
     void deleteButtonLink();
     void refreshMouseOverButton();
-    int refreshSprite( SDL_Surface *surface, int sprite_no, bool active_flag, int cell_no, bool draw_flag );
-    int decodeExbtnControl( SDL_Surface *surface, char *ctl_str, bool draw_flag );
-    void drawExbtn( SDL_Surface *surface, char *ctl_str );
+    int refreshSprite( SDL_Surface *surface, int sprite_no, bool active_flag, int cell_no, bool draw_flag, bool change_flag );
+    int decodeExbtnControl( SDL_Surface *surface, char *ctl_str, bool draw_flag, bool change_flag );
+    void drawExbtn( char *ctl_str );
     
     /* ---------------------------------------- */
     /* Background related variables */

@@ -126,8 +126,6 @@ int ONScripterLabel::loadSaveFile( int no )
         return -1;
     }
 
-    deleteLabelLink();
-
     /* ---------------------------------------- */
     /* Load magic number */
     for ( i=0 ; i<(int)strlen( SAVEFILE_MAGIC_NUMBER ) ; i++ )
@@ -139,8 +137,14 @@ int ONScripterLabel::loadSaveFile( int no )
     else{
         file_version = (fgetc( fp ) * 100) | fgetc( fp );
     }
-    printf("Save file version is %d.%d\n",file_version / 100, file_version % 100 );
+    printf("Save file version is %d.%d\n", file_version/100, file_version%100 );
+    if ( file_version > SAVEFILE_VERSION_MAJOR*100 + SAVEFILE_VERSION_MINOR ){
+        printf("Save file is newer than %d.%d, please use the latest ONScripter.\n", SAVEFILE_VERSION_MAJOR, SAVEFILE_VERSION_MINOR );
+        return -1;
+    }
     
+    deleteLabelLink();
+
     /* ---------------------------------------- */
     /* Load text history */
     loadInt( fp, &text_history_num );
@@ -229,6 +233,9 @@ int ONScripterLabel::loadSaveFile( int no )
         if ( file_version >= 102 ){
             loadInt( fp, &j );
             current_link_label_info->end_of_line_flag = (j==1)?true:false;
+        }
+        else{
+            current_link_label_info->end_of_line_flag = false;
         }
         loadInt( fp, &address );
         current_link_label_info->current_script =
@@ -885,7 +892,11 @@ void ONScripterLabel::executeSystemYesNo()
             }
             else if ( yesno_caller == SYSTEM_LOAD ){
 
-                loadSaveFile( yesno_selected_file_no );
+                if ( loadSaveFile( yesno_selected_file_no ) ){
+                    system_menu_mode = yesno_caller;
+                    advancePhase();
+                    return;
+                }
                 leaveSystemCall( false );
                 saveon_flag = true;
             }

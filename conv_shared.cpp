@@ -25,6 +25,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <jpeglib.h>
+#include <bzlib.h>
 
 float scale_ratio;
 
@@ -73,9 +74,25 @@ void rescaleImage( unsigned char *original_buffer, int width, int height, int by
     unsigned char *buf_p = rescaled_tmp_buffer;
     for ( i=0 ; i<h ; i++ ){
         for ( j=0 ; j<w ; j++ ){
-            int k = (width * byte_per_pixel + width_pad) * (int)(i * scale_ratio) + (int)(j * scale_ratio) * byte_per_pixel;
-            for ( s=0 ; s<byte_per_pixel ; s++ )
-                *buf_p++ = original_buffer[ k++ ];
+            float dx = j * scale_ratio;
+            float dy = i * scale_ratio;
+            int ix = (int)dx;
+            int iy = (int)dy;
+            dx -= ix;
+            dy -= iy;
+
+            int wd = width * byte_per_pixel + width_pad;
+            int k = wd * iy + ix * byte_per_pixel;
+            
+            for ( s=0 ; s<byte_per_pixel ; s++, k++ ){
+                float pic;
+                
+                pic  = (1.0 - dx) * (1.0 - dy) * original_buffer[ k ];
+                pic +=        dx  * (1.0 - dy) * original_buffer[ k+byte_per_pixel ];
+                pic += (1.0 - dx) *        dy  * original_buffer[ k+wd ];
+                pic +=        dx  *        dy  * original_buffer[ k+byte_per_pixel+wd ];
+                *buf_p++ = (unsigned char)pic;
+            }
         }
         for ( j=0 ; j<w_pad ; j++ )
             *buf_p ++ = 0;

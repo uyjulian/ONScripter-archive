@@ -1710,7 +1710,8 @@ int ONScripterLabel::btnwaitCommand()
                 drawString( s_link->text, f_info.off_color, &f_info, false, text_surface );
             }
 
-            SDL_BlitSurface( text_surface, &p_button_link->image_rect, p_button_link->no_selected_surface, NULL );
+            if ( p_button_link->no_selected_surface )
+                SDL_BlitSurface( text_surface, &p_button_link->image_rect, p_button_link->no_selected_surface, NULL );
 
             p_button_link = p_button_link->next;
         }

@@ -45,7 +45,7 @@ public:
 
     int openForConvert( char *nsa_name );
     int writeHeader( FILE *fp );
-    void putFile( FILE *fp, int no, size_t offset, size_t length, bool modified_flag, unsigned char *buffer );
+    size_t putFile( FILE *fp, int no, size_t offset, size_t length, size_t original_length, int compression_type, bool modified_flag, unsigned char *buffer );
     
 private:
     bool sar_flag;

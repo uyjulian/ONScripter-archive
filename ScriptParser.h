@@ -1,6 +1,6 @@
 /* -*- C++ -*-
  * 
- *  ScriptParser.h - Define block analyzer of ONScripter
+ *  ScriptParser.h - Define block parser of ONScripter
  *
  *  Copyright (c) 2001-2002 Ogapee. All rights reserved.
  *

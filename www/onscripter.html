@@ -12,7 +12,7 @@
 </CENTER>
 
 Since: Feb. 6, 2002<br>
-Last updated: Sep. 12, 2002<br>
+Last updated: Sep. 15, 2002<br>
 <HR>
 
 <table>
@@ -26,12 +26,12 @@ href="http://www2.osk.3web.ne.jp/~naokikun/index.htm">高橋直樹</a>氏が開発された
 
 <p>ONScripter で何ができるのかについてはαβεさんの[<A HREF="http://abe.platina.sakura.ne.jp/onscripter/">ONScripter のスゝメ</A>]を参照してください。</p>
 
-<p>現在はベータ版<A HREF="onscripter-beta-20020912.tar.gz">onscripter-beta-20020912.tar.gz</A>を配布しております。<FONT color="#ff0000">サーバが prohosting の場合は直接ダウンロードできません。一旦左クリックして先に進み、そこでもう一回左クリックしてください。</FONT><br>
+<p>現在はベータ版<A HREF="onscripter-beta-20020915.tar.gz">onscripter-beta-20020915.tar.gz</A>を配布しております。<FONT color="#ff0000">サーバが prohosting の場合は直接ダウンロードできません。一旦左クリックして先に進み、そこでもう一回左クリックしてください。</FONT><br>
 ベータ版ゆえデバッグ出力が有効になっていますが、正式版になったら取り除きます。<br>
-(一つ前のベータ版<A HREF="onscripter-beta-20020911.tar.gz">onscripter-beta-20020911.tar.gz</A>)<br>
+(一つ前のベータ版<A HREF="onscripter-beta-20020912.tar.gz">onscripter-beta-20020912.tar.gz</A>)<br>
 ザウルス(SL-5500, SL-A300)用のバイナリパッケージは<A HREF="zaurus/index.html">こちら</A>からどうぞ。</p>
 
-<p>更新内容については[<A HREF="onscripter_devel.html">開発日誌</A>]を参照して下さい。</p>
+<p>更新内容については[<A HREF="onscripter_devel.2002_3.html">開発日誌</A>]を参照して下さい。</p>
 
 <p>動作報告・バグ報告・機能追加要望・パッチは随時受け付けますので[<A HREF="http://abe.platina.sakura.ne.jp/kagemai/kagemai.rhtml?project=ONScripter">バグトラッキングシステム</A>]までお願いします。<br>
 「○○ゲームの××場面がなんかおかしい」という程度でも結構ですのでお気軽にどうぞ。<br>
@@ -243,16 +243,16 @@ href="http://www2.osk.3web.ne.jp/~naokikun/index.htm">高橋直樹</a>氏が開発された
 <p> 以下に示すオプションを指定できます。ただし、オプション無しがデフォルト動作です。</p>
 
 <table>
-<tr><td> オプション </td><td>説明</td></tr>
-<tr><td>-h,--help</td><td>へルプを表示して終了。</td></tr>
-<tr><td>-v,--version</td><td>バージョンを表示して終了。</td></tr>
-<tr><td>--cdaudio</td><td>CD Audio 演奏モードに変更。CD Audio が使えなかったとしても MP3 ファイルは使用しません。</td></tr>
-<tr><td>--font file</td><td>使用するフォントの path を指定。</td></tr>
-<tr><td>--registry file</td><td>使用する registry file を指定。</td></tr>
-<tr><td>--root path</td><td>使用するゲームファイルのあるディレクトリを指定。</td></tr>
+<tr><th> オプション </th><th>説明</th></tr>
+<tr><td>-h,--help</td><td>へルプを表示して終了します。</td></tr>
+<tr><td>-v,--version</td><td>バージョンを表示して終了します。</td></tr>
+<tr><td>--cdaudio</td><td>CD Audio 演奏モードに変更します。CD Audio が使えなかったとしても MP3 ファイルは使用しません。</td></tr>
+<tr><td>-f,--font file</td><td>使用するフォントの path を指定します。</td></tr>
+<tr><td>--registry file</td><td>使用する registry file を指定します。</td></tr>
+<tr><td>-r,--root path</td><td>使用するゲームファイルのあるディレクトリを指定します。</td></tr>
 <tr><td>--force-button-shortcut</td><td>getenter と useescspc のコマンドを無視します。つまり、マウスのクリックを強制的に esc, space, return キーに割り付けます。</td></tr>
-<tr><td>--disable-rescale</td><td>画像の解像度を PDA 用に落としたアーカイブと、PDA を設定してコンパイルした ONScripter とを同時に使用する場合に、ONScripter 内で解像度を落とすことを抑制します。</td></tr>
-<tr><td>--edit</td><td>z キーを押したときに、音量及び変数の編集モードに入れるようになる。</td></tr>
+<tr><td>--disable-rescale</td><td>-DPDA を付けてコンパイルした ONScripter で、画像の解像度を PDA 用に落としたアーカイブを使用する場合は、このオプションを設定してください。ONScripter 内で解像度を 320x240 用に変換することを抑制します。</td></tr>
+<tr><td>--edit</td><td>z キーを押したときに、音量及び変数の編集モードに入れるようになります。</td></tr>
 </table>
 
 </td></tr><tr><td>
@@ -395,7 +395,9 @@ cd/track14.mp3<BR>
 <p> Zaurus ( SL-5500, SL-A300 ) でプレイする場合は、画面の大きさが 
 320x240 になります。そこで、あらかじめアーカイブ中の画像ファイルを 
 320x240 に合うように小さくしておくことで、アーカイブサイズの減少を図る
-ことができ、少ない記憶デバイスを有効活用することができます。</p>
+ことができ、少ない記憶デバイスを有効活用することができます。なお、SPB 
+圧縮の画像は、後述の -e オプションを指定しない場合、BMP として格納され
+ます。</p>
 
 <p>
 画面のサイズが 640x480 で、拡張子が sar のアーカイブに対しては、
@@ -406,12 +408,27 @@ cd/track14.mp3<BR>
 
 画面のサイズが 800x600 で、拡張子が nsa のアーカイブに対しては、
 <pre>
-&gt; nsaconv 800 arc.nsa zaurus_dir/arc.nsa
-&gt; nsaconv 800 arc1.nsa zaurus_dir/arc1.nsa
+&gt; nsaconv [-e] 800 arc.nsa zaurus_dir/arc.nsa
+&gt; nsaconv [-e] 800 arc1.nsa zaurus_dir/arc1.nsa
 ...
 </pre>
 
 として変換してください。
+</p>
+
+<p>
+
+-e オプションを付けると、wav と bmp ファイルを nbz 圧縮します。これを
+行うと、NSA アーカイブの圧縮の種類を示すフラグに ONScripter 独自の値を
+設定します。この独自拡張については、本家が将来アーカイブの仕様を拡張し
+たときにバッティングする可能性がありますが、その時はそれを回避するよう
+にコンバータを修正し、再コンバートすることで解決できます。その場合でも、
+save file 等には一切影響がありませんので、Zaurus で使用される方はこの
+オプションを付けてコンバートすることをお勧めします。wav を bzip2 で圧
+縮するので、wav を多用するゲームではかなりアーカイバが小さくなります。
+デメリットとしては、bzip2 の復号を行うため若干遅くなりますが、気づかな
+い程度です。
+
 </p>
 
 <p>

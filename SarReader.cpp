@@ -145,7 +145,6 @@ int SarReader::writeHeaderSub( ArchiveInfo *ai, FILE *fp, bool nsa_flag )
         writeLong( fp, ai->fi_list[i].length );
 
         if ( nsa_flag ){
-            ai->fi_list[i].original_length = ai->fi_list[i].length;
             writeLong( fp, ai->fi_list[i].original_length );
         }
     }
@@ -159,17 +158,26 @@ int SarReader::writeHeader( FILE *fp )
     return writeHeaderSub( ai, fp, false );
 }
 
-void SarReader::putFileSub( ArchiveInfo *ai, FILE *fp, int no, size_t offset, size_t length, bool modified_flag, unsigned char *buffer )
+size_t SarReader::putFileSub( ArchiveInfo *ai, FILE *fp, int no, size_t offset, size_t length, size_t original_length, int compression_type, bool modified_flag, unsigned char *buffer )
 {
-    ai->fi_list[no].offset = offset;
+    ai->fi_list[no].compression_type = compression_type;
     ai->fi_list[no].length = length;
-    
-    fseek( fp, ai->fi_list[no].offset, SEEK_SET );
-    if ( ai->fi_list[no].compression_type == NBZ_COMPRESSION ){
-        writeLong( fp, ai->fi_list[no].original_length );
-    }
+    ai->fi_list[no].original_length = original_length;
+
+    fseek( fp, offset, SEEK_SET );
     if ( modified_flag ){
-        ai->fi_list[no].compression_type = NO_COMPRESSION;
+        if ( ai->fi_list[no].compression_type == NBZ_COMPRESSION ){
+            writeLong( fp, ai->fi_list[no].original_length );
+            fseek( ai->file_handle, ai->fi_list[no].offset+2, SEEK_SET );
+            if ( readChar( ai->file_handle ) != 'B' || readChar( ai->file_handle ) != 'Z' ){ // in case the original is not compressed in NBZ
+                ai->fi_list[no].length = encodeNBZ( fp, length, buffer ) + 4;
+                ai->fi_list[no].offset = offset;
+                return ai->fi_list[no].length;
+            }
+        }
+        else{
+            ai->fi_list[no].compression_type = NO_COMPRESSION;
+        }
     }
     else{
         fseek( ai->file_handle, ai->fi_list[no].offset, SEEK_SET );
@@ -184,12 +192,16 @@ void SarReader::putFileSub( ArchiveInfo *ai, FILE *fp, int no, size_t offset, si
         fwrite( buffer, 1, c, fp );
         buffer += c;
     }
+
+    ai->fi_list[no].offset = offset;
+    
+    return ai->fi_list[no].length;
 }
 
-void SarReader::putFile( FILE *fp, int no, size_t offset, size_t length, bool modified_flag, unsigned char *buffer )
+size_t SarReader::putFile( FILE *fp, int no, size_t offset, size_t length, size_t original_length, bool modified_flag, unsigned char *buffer )
 {
     ArchiveInfo *ai = archive_info.next;
-    putFileSub( ai, fp, no, offset, length, modified_flag, buffer );
+    return putFileSub( ai, fp, no, offset, length, original_length, ai->fi_list[no].compression_type, modified_flag, buffer );
 }
 
 int SarReader::close()

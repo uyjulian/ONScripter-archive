@@ -74,23 +74,27 @@ int main( int argc, char **argv )
             buffer = new unsigned char[length];
             buffer_length = length;
         }
-        if ( cSR.getFile( sFI.name, buffer ) != length ){
-            fprintf( stderr, "file %s can't be retrieved %ld\n", sFI.name, length );
-            continue;
-        }
 
         sFI.offset = offset;
         if ( (strlen( sFI.name ) > 3 && !strcmp( sFI.name + strlen( sFI.name ) - 3, "JPG") ||
               strlen( sFI.name ) > 4 && !strcmp( sFI.name + strlen( sFI.name ) - 4, "JPEG") ) ){
+            if ( cSR.getFile( sFI.name, buffer ) != length ){
+                fprintf( stderr, "file %s can't be retrieved %ld\n", sFI.name, length );
+                continue;
+            }
             sFI.length = rescaleJPEG( buffer, length, &rescaled_buffer );
-            cSR.putFile( fp, i, sFI.offset, sFI.length, true, rescaled_buffer );
+            cSR.putFile( fp, i, sFI.offset, sFI.length, sFI.length, true, rescaled_buffer );
         }
         else if ( strlen( sFI.name ) > 3 && !strcmp( sFI.name + strlen( sFI.name ) - 3, "BMP") ){
+            if ( cSR.getFile( sFI.name, buffer ) != length ){
+                fprintf( stderr, "file %s can't be retrieved %ld\n", sFI.name, length );
+                continue;
+            }
             sFI.length = rescaleBMP( buffer, length, &rescaled_buffer );
-            cSR.putFile( fp, i, sFI.offset, sFI.length, true, rescaled_buffer );
+            cSR.putFile( fp, i, sFI.offset, sFI.length, sFI.length, true, rescaled_buffer );
         }
         else{
-            cSR.putFile( fp, i, sFI.offset, sFI.length, false, buffer );
+            cSR.putFile( fp, i, sFI.offset, sFI.length, sFI.original_length, false, buffer );
         }
         
         offset += sFI.length;

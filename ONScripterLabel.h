@@ -1,6 +1,6 @@
 /* -*- C++ -*-
  * 
- *  ONScripterLabel.h - Execution block analyzer of ONScripter
+ *  ONScripterLabel.h - Execution block parser of ONScripter
  *
  *  Copyright (c) 2001-2002 Ogapee. All rights reserved.
  *

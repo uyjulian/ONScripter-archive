@@ -41,17 +41,23 @@ int main( int argc, char **argv )
     unsigned long length, offset = 0, buffer_length = 0;
     unsigned char *buffer = NULL, *rescaled_buffer = NULL;
     unsigned int i, count;
+    bool enhanced_flag = false;
     FILE *fp;
 
-    if ( argc == 4 ){
+    if ( argc == 4 || argc == 5 ){
+        if ( argc == 5 ){
+            if ( !strcmp( argv[1], "-e" ) ) enhanced_flag = true;
+            argc--;
+            argv++;
+        }
         int s = atoi( argv[1] );
         if      ( s == 640 ) scale_ratio = 2.0;
         else if ( s == 800 ) scale_ratio = 2.5;
         else argc = 1;
     }
     if ( argc != 4 ){
-        fprintf( stderr, "Usage: sardec 640 arc_file rescaled_arc_file\n");
-        fprintf( stderr, "Usage: sardec 800 arc_file rescaled_arc_file\n");
+        fprintf( stderr, "Usage: nsadec [-e] 640 arc_file rescaled_arc_file\n");
+        fprintf( stderr, "Usage: nsadec [-e] 800 arc_file rescaled_arc_file\n");
         exit(-1);
     }
 
@@ -74,23 +80,34 @@ int main( int argc, char **argv )
             buffer = new unsigned char[length];
             buffer_length = length;
         }
-        if ( cSR.getFile( sFI.name, buffer ) != length ){
-            fprintf( stderr, "file %s can't be retrieved %ld\n", sFI.name, length );
-            continue;
-        }
 
         sFI.offset = offset;
         if ( (strlen( sFI.name ) > 3 && !strcmp( sFI.name + strlen( sFI.name ) - 3, "JPG") ||
               strlen( sFI.name ) > 4 && !strcmp( sFI.name + strlen( sFI.name ) - 4, "JPEG") ) ){
+            if ( cSR.getFile( sFI.name, buffer ) != length ){
+                fprintf( stderr, "file %s can't be retrieved %ld\n", sFI.name, length );
+                continue;
+            }
             sFI.length = rescaleJPEG( buffer, length, &rescaled_buffer );
-            cSR.putFile( fp, i, sFI.offset, sFI.length, true, rescaled_buffer );
+            cSR.putFile( fp, i, sFI.offset, sFI.length, sFI.length, sFI.compression_type, true, rescaled_buffer );
         }
         else if ( strlen( sFI.name ) > 3 && !strcmp( sFI.name + strlen( sFI.name ) - 3, "BMP") ){
+            if ( cSR.getFile( sFI.name, buffer ) != length ){
+                fprintf( stderr, "file %s can't be retrieved %ld\n", sFI.name, length );
+                continue;
+            }
             sFI.length = rescaleBMP( buffer, length, &rescaled_buffer );
-            cSR.putFile( fp, i, sFI.offset, sFI.length, true, rescaled_buffer );
+            cSR.putFile( fp, i, sFI.offset, sFI.length, sFI.length, enhanced_flag?BaseReader::NBZ_COMPRESSION:sFI.compression_type, true, rescaled_buffer );
+        }
+        else if ( enhanced_flag && strlen( sFI.name ) > 3 && !strcmp( sFI.name + strlen( sFI.name ) - 3, "WAV") ){
+            if ( cSR.getFile( sFI.name, buffer ) != length ){
+                fprintf( stderr, "file %s can't be retrieved %ld\n", sFI.name, length );
+                continue;
+            }
+            sFI.length = cSR.putFile( fp, i, sFI.offset, sFI.length, length, BaseReader::NBZ_COMPRESSION, true, buffer );
         }
         else{
-            cSR.putFile( fp, i, sFI.offset, sFI.length, false, buffer );
+            cSR.putFile( fp, i, sFI.offset, sFI.length, sFI.original_length, sFI.compression_type, false, buffer );
         }
         
         offset += sFI.length;

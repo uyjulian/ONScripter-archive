@@ -93,10 +93,10 @@ int NsaReader::writeHeader( FILE *fp )
     return writeHeaderSub( ai, fp, true );
 }
 
-void NsaReader::putFile( FILE *fp, int no, size_t offset, size_t length, bool modified_flag, unsigned char *buffer )
+size_t NsaReader::putFile( FILE *fp, int no, size_t offset, size_t length, size_t original_length, int compression_type, bool modified_flag, unsigned char *buffer )
 {
     ArchiveInfo *ai = &archive_info;
-    putFileSub( ai, fp, no, offset, length, modified_flag, buffer );
+    return putFileSub( ai, fp, no, offset, length, original_length , compression_type, modified_flag, buffer );
 }
 
 char *NsaReader::getArchiveName() const

@@ -274,11 +274,12 @@ bool ScriptHandler::readToken()
             if ( !text_flag && ch >= 'A' && ch <= 'Z' ) ch += 'a' - 'A';
             addStringBuffer( ch, string_counter++ );
         }
-        else if ( ch >= '0' && ch <= '9' ){
+        else if ( ch >= '0' && ch <= '9' || ch == '-' ){
             if ( string_counter == 0 ){
                 text_flag = false;
                 num_flag = true;
             }
+            else if ( ch == '-' && !text_flag ) break;
             addStringBuffer( ch, string_counter++ );
         }
         else if ( ch == ',' && string_counter == 0 ) // for select
@@ -371,7 +372,8 @@ bool ScriptHandler::readToken()
                    ch == '&' ||
                    ch == ':' ||
                    ch == ';' ||
-                   ch == ')')  ) break;
+                   ch == ')' || 
+                   ch == '*' ) ) break;
             addStringBuffer( ch, string_counter++ );
         }
             

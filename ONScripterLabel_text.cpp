@@ -561,8 +561,8 @@ int ONScripterLabel::textCommand()
             drawChar( out_text, &sentence_font, flush_flag, text_surface );
         }
         if ( skip_flag || draw_one_page_flag || sentence_font.wait_time == 0){
-            string_buffer_offset++;
             if ( script_h.getStringBuffer()[ string_buffer_offset + 1 ] ) string_buffer_offset++;
+            string_buffer_offset++;
             return RET_CONTINUE_NOREAD;
         }
         else{

@@ -29,6 +29,7 @@
 #endif
 
 #define READ_LENGTH 4096
+#define WRITE_LENGTH 5000
 
 DirectReader::DirectReader( char *path )
 {
@@ -252,6 +253,31 @@ size_t DirectReader::decodeNBZ( FILE *fp, size_t offset, unsigned char *buf )
 	BZ2_bzReadClose( &err, bfp );
 
     return original_length - count;
+}
+
+size_t DirectReader::encodeNBZ( FILE *fp, size_t length, unsigned char *buf )
+{
+    unsigned int bytes_in, bytes_out;
+	int err;
+
+	BZFILE *bfp = BZ2_bzWriteOpen( &err, fp, 9, 0, 30 );
+	if ( bfp == NULL || err != BZ_OK ) return 0;
+
+	while( err == BZ_OK && length > 0 ){
+        if ( length >= WRITE_LENGTH ){
+            BZ2_bzWrite( &err, bfp, buf, WRITE_LENGTH );
+            buf += WRITE_LENGTH;
+            length -= WRITE_LENGTH;
+        }
+        else{
+            BZ2_bzWrite( &err, bfp, buf, length );
+            break;
+        }
+	}
+
+	BZ2_bzWriteClose( &err, bfp, 0, &bytes_in, &bytes_out );
+    
+    return bytes_out;
 }
 
 int DirectReader::getbit( FILE *fp, int n )

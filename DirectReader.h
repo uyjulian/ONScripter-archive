@@ -60,6 +60,7 @@ protected:
     void writeLong( FILE *fp, unsigned long ch );
     char capital_name[ MAX_FILE_NAME_LENGTH + 1 ];
     size_t decodeNBZ( FILE *fp, size_t offset, unsigned char *buf );
+    size_t encodeNBZ( FILE *fp, size_t length, unsigned char *buf );
     int getbit( FILE *fp, int n );
     size_t decodeSPB( FILE *fp, size_t offset, unsigned char *buf );
 

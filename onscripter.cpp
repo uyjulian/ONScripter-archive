@@ -27,14 +27,14 @@ void optionHelp()
 {
     printf( "Usage: onscripter [option ...]\n" );
     printf( "      --cdaudio\t\tuse CD audio if available\n");
-    printf( "      --font file\tuse file as a default font\n");
+    printf( "  -f, --font file\tuse file as a default font\n");
     printf( "      --registry file\tuse file as a default registry file\n");
-    printf( "      --root path\tuse path as a root path for archives\n");
+    printf( "  -r, --root path\tuse path as a root path to the archives\n");
     printf( "      --force-button-shortcut\tignore useescspc and getenter command\n");
-    printf( "      --disable-rescale\tdo not rescale images when running on Zaurus\n");
-    printf( "      --edit\t\tedit volumes and variables when 'z' is pressed\n");
-    printf( "  -h, --help\t\tdisplay this help and exit\n");
-    printf( "  -v, --version\t\toutput version information and exit\n");
+    printf( "      --disable-rescale\tdo not rescale the images in the archives when compiled with -DPDA\n");
+    printf( "      --edit\t\tenable editing the volumes and the variables when 'z' is pressed\n");
+    printf( "  -h, --help\t\tshow this help and exit\n");
+    printf( "  -v, --version\t\tshow the version information and exit\n");
     exit(0);
 }
 
@@ -74,7 +74,7 @@ int main( int argc, char **argv )
             else if ( !strcmp( argv[0]+1, "-cdaudio" ) ){
                 cdaudio_flag = true;
             }
-            else if ( !strcmp( argv[0]+1, "-font" ) ){
+            else if ( !strcmp( argv[0]+1, "f" ) || !strcmp( argv[0]+1, "-font" ) ){
                 argc--;
                 argv++;
                 if ( default_font ) delete[] default_font;
@@ -88,7 +88,7 @@ int main( int argc, char **argv )
                 default_registry = new char[ strlen( argv[0] ) + 1 ];
                 memcpy( default_registry, argv[0], strlen( argv[0] ) + 1 );
             }
-            else if ( !strcmp( argv[0]+1, "-root" ) ){
+            else if ( !strcmp( argv[0]+1, "r" ) || !strcmp( argv[0]+1, "-root" ) ){
                 argc--;
                 argv++;
                 if ( default_archive_path ) delete[] default_archive_path;

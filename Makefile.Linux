@@ -5,7 +5,7 @@
 
 INCS = `sdl-config --cflags` `smpeg-config --cflags`
 LIBS = `sdl-config --libs` `smpeg-config --libs` -lSDL_ttf -lSDL_image -lSDL_mixer -lbz2 -lm
-DEFS = -DLINUX -DONSCRIPTER_CDAUDIO_SUPPORT
+DEFS = -DLINUX
 
 EXESUFFIX =
 OBJSUFFIX = .o

@@ -26,9 +26,7 @@
 void optionHelp()
 {
     printf( "Usage: onscripter [option ...]\n" );
-#ifdef ONSCRIPTER_CDAUDIO_SUPPORT
     printf( "      --cdaudio\t\tuse CD audio if available\n");
-#endif    
     printf( "      --font file\tuse file as a default font\n");
     printf( "      --registry file\tuse file as a default registry file\n");
     printf( "      --edit\t\tedit volumes and variables when 'z' is pressed\n");
@@ -64,11 +62,9 @@ int main( int argc, char **argv )
             else if ( !strcmp( argv[0]+1, "v" ) || !strcmp( argv[0]+1, "-version" ) ){
                 optionVersion();
             }
-#ifdef ONSCRIPTER_CDAUDIO_SUPPORT
             else if ( !strcmp( argv[0]+1, "-cdaudio" ) ){
                 cdaudio_flag = true;
             }
-#endif            
             else if ( !strcmp( argv[0]+1, "-font" ) ){
                 argc--;
                 argv++;

@@ -69,7 +69,7 @@ unsigned long DirectReader::readLong( FILE *fp )
     return ret;
 }
 
-int DirectReader::open()
+int DirectReader::open( char *name )
 {
     return 0;
 }
@@ -79,6 +79,11 @@ int DirectReader::close()
     return 0;
 }
     
+char *DirectReader::getArchiveName() const
+{
+    return "direct";
+}
+
 int DirectReader::getNumFiles()
 {
     return 0;

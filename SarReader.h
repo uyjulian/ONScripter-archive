@@ -32,8 +32,9 @@ public:
     SarReader();
     ~SarReader();
 
-    int open();
+    int open( char *name=NULL );
     int close();
+    char *getArchiveName() const;
     int getNumFiles();
     int getNumAccessed();
     
@@ -44,6 +45,8 @@ public:
     
 protected:
     struct ArchiveInfo archive_info;
+    struct ArchiveInfo *root_archive_info, *last_archive_info;
+    int num_of_sar_archives;
 
     int readArchive( ArchiveInfo *ai, bool nsa_flag = false );
     int getIndexFromFile( ArchiveInfo *ai, char *file_name );

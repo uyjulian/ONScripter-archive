@@ -33,8 +33,6 @@
 #include "NsaReader.h"
 #include "DirectReader.h"
 
-#define ONSCRITER_VERSION 192
-
 #define MINIMUM_TIMER_RESOLUTION 10
 
 #define VARIABLE_RANGE 4096
@@ -128,6 +126,7 @@ public:
     int rmenuCommand();
     int returnCommand();
     int numaliasCommand();
+    int nsaCommand();
     int nextCommand();
     int mulCommand();
     int movCommand();
@@ -333,7 +332,8 @@ protected:
     void getSJISFromInteger( char *buffer, int no, bool add_space_flag=true );
     void addStringBuffer( char ch, int string_counter );
     unsigned char convHexToDec( char ch );
-
+    void readColor( uchar3 *color, char *buf );
+    
     void errorAndExit( char *str );
 
     void saveInt( FILE *fp, int var );

@@ -54,10 +54,12 @@ static struct FuncLUT{
     {"selectcolor",     &ScriptParser::selectcolorCommand},
     {"savenumber",     &ScriptParser::savenumberCommand},
     {"savename",     &ScriptParser::savenameCommand},
+    {"sar",    &ScriptParser::nsaCommand},
     {"roff",    &ScriptParser::roffCommand},
     {"rmenu",    &ScriptParser::rmenuCommand},
     {"return",   &ScriptParser::returnCommand},
     {"numalias", &ScriptParser::numaliasCommand},
+    {"nsa",    &ScriptParser::nsaCommand},
     {"notif",    &ScriptParser::ifCommand},
     {"next",    &ScriptParser::nextCommand},
     {"nsa",    &ScriptParser::arcCommand},
@@ -449,6 +451,12 @@ unsigned char ScriptParser::convHexToDec( char ch )
     else return 0;
 }
 
+void ScriptParser::readColor( uchar3 *color, char *buf ){
+    (*color)[0] = convHexToDec( buf[0] ) << 4 | convHexToDec( buf[1] );
+    (*color)[1] = convHexToDec( buf[2] ) << 4 | convHexToDec( buf[3] );
+    (*color)[2] = convHexToDec( buf[4] ) << 4 | convHexToDec( buf[5] );
+}
+
 int ScriptParser::parseNumAlias( char **buf )
 {
     char ch;
@@ -760,6 +768,10 @@ int ScriptParser::parseLine()
 
     while( string_buffer[ string_buffer_offset ] == ' ' ||
            string_buffer[ string_buffer_offset ] == '\t' ) string_buffer_offset++;
+    if ( string_buffer[ string_buffer_offset ] == ':' ){
+        string_buffer_offset++;
+        return RET_CONTINUE;
+    }
     if ( string_buffer[ string_buffer_offset ] == '\0' || string_buffer[ string_buffer_offset ] == ';' ) return RET_COMMENT;
     else if ( string_buffer[ string_buffer_offset ] & 0x80 ) return RET_NOMATCH;
 
@@ -1181,6 +1193,7 @@ int ScriptParser::readInt( char **buf )
             
             if ( (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || ch == '_' ){
                 if (ch >= 'A' && ch <= 'Z') ch += 'a' - 'A';
+                if ( !first_flag && num_alias_flag == false ) break;
                 alias_buf[ alias_buf_len++ ] = ch;
             }
             else if ( ch >= '0' && ch <= '9' ){

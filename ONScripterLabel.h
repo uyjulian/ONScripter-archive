@@ -108,6 +108,7 @@ public:
     int clickCommand();
     int clCommand();
     int cellCommand();
+    int captionCommand();
     int btnwait2Command();
     int btnwaitCommand();
     int btndefCommand();
@@ -334,6 +335,7 @@ private:
     /* Cursor related variables */
     struct AnimationInfo cursor_info[2];
 
+    void proceedAnimation( AnimationInfo *anim );
     void loadCursor( int no, char *str, int x, int y, bool abs_flag = false );
     void startCursor( int click );
     void endCursor( int click );

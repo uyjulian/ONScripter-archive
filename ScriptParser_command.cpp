@@ -150,17 +150,11 @@ int ScriptParser::selectcolorCommand()
 
     readStr( &p_string_buffer, tmp_string_buffer );
     if ( tmp_string_buffer[0] != '#' ) errorAndExit( string_buffer + string_buffer_offset );
-
-    sentence_font.on_color[0] = convHexToDec( tmp_string_buffer[1] ) << 4 | convHexToDec( tmp_string_buffer[2] );
-    sentence_font.on_color[1] = convHexToDec( tmp_string_buffer[3] ) << 4 | convHexToDec( tmp_string_buffer[4] );
-    sentence_font.on_color[2] = convHexToDec( tmp_string_buffer[5] ) << 4 | convHexToDec( tmp_string_buffer[6] );
+    readColor( &sentence_font.on_color, tmp_string_buffer + 1 );
 
     readStr( &p_string_buffer, tmp_string_buffer );
     if ( tmp_string_buffer[0] != '#' ) errorAndExit( string_buffer + string_buffer_offset );
-
-    sentence_font.off_color[0] = convHexToDec( tmp_string_buffer[1] ) << 4 | convHexToDec( tmp_string_buffer[2] );
-    sentence_font.off_color[1] = convHexToDec( tmp_string_buffer[3] ) << 4 | convHexToDec( tmp_string_buffer[4] );
-    sentence_font.off_color[2] = convHexToDec( tmp_string_buffer[5] ) << 4 | convHexToDec( tmp_string_buffer[6] );
+    readColor( &sentence_font.off_color, tmp_string_buffer + 1 );
     
     return RET_CONTINUE;
 }
@@ -270,6 +264,20 @@ int ScriptParser::numaliasCommand()
     last_name_alias = last_name_alias->next;
     last_name_alias->next = NULL;
     
+    return RET_CONTINUE;
+}
+
+int ScriptParser::nsaCommand()
+{
+    printf("nsa\n");
+
+    delete cBR;
+    cBR = new NsaReader();
+    if ( cBR->open() ){
+        printf(" *** failed to open archive, exitting ...  ***\n");
+        exit(-1);
+    }
+
     return RET_CONTINUE;
 }
 
@@ -425,10 +433,8 @@ int ScriptParser::menusetwindowCommand()
 
     menu_font.display_transparency = true;
     if ( strlen( tmp_string_buffer ) != 7 ) errorAndExit( string_buffer + string_buffer_offset );
-    menu_font.window_color[0] = convHexToDec( tmp_string_buffer[1] ) << 4 | convHexToDec( tmp_string_buffer[2] );
-    menu_font.window_color[1] = convHexToDec( tmp_string_buffer[3] ) << 4 | convHexToDec( tmp_string_buffer[4] );
-    menu_font.window_color[2] = convHexToDec( tmp_string_buffer[5] ) << 4 | convHexToDec( tmp_string_buffer[6] );
-    
+    readColor( &menu_font.window_color, tmp_string_buffer + 1 );
+
 #if 0
     printf("    trans %u %u %u\n",
            menu_font.window_color[0], menu_font.window_color[1], menu_font.window_color[2] );
@@ -443,26 +449,17 @@ int ScriptParser::menuselectcolorCommand()
 
     readStr( &p_string_buffer, tmp_string_buffer );
     if ( tmp_string_buffer[0] != '#' ) errorAndExit( string_buffer + string_buffer_offset );
-
-    menu_font.on_color[0] = convHexToDec( tmp_string_buffer[1] ) << 4 | convHexToDec( tmp_string_buffer[2] );
-    menu_font.on_color[1] = convHexToDec( tmp_string_buffer[3] ) << 4 | convHexToDec( tmp_string_buffer[4] );
-    menu_font.on_color[2] = convHexToDec( tmp_string_buffer[5] ) << 4 | convHexToDec( tmp_string_buffer[6] );
+    readColor( &menu_font.on_color, tmp_string_buffer + 1 );
     for ( i=0 ; i<3 ; i++ ) system_font.on_color[i] = menu_font.on_color[i];
 
     readStr( &p_string_buffer, tmp_string_buffer );
     if ( tmp_string_buffer[0] != '#' ) errorAndExit( string_buffer + string_buffer_offset );
-
-    menu_font.off_color[0] = convHexToDec( tmp_string_buffer[1] ) << 4 | convHexToDec( tmp_string_buffer[2] );
-    menu_font.off_color[1] = convHexToDec( tmp_string_buffer[3] ) << 4 | convHexToDec( tmp_string_buffer[4] );
-    menu_font.off_color[2] = convHexToDec( tmp_string_buffer[5] ) << 4 | convHexToDec( tmp_string_buffer[6] );
+    readColor( &menu_font.off_color, tmp_string_buffer + 1 );
     for ( i=0 ; i<3 ; i++ ) system_font.off_color[i] = menu_font.off_color[i];
     
     readStr( &p_string_buffer, tmp_string_buffer );
     if ( tmp_string_buffer[0] != '#' ) errorAndExit( string_buffer + string_buffer_offset );
-
-    menu_font.nofile_color[0] = convHexToDec( tmp_string_buffer[1] ) << 4 | convHexToDec( tmp_string_buffer[2] );
-    menu_font.nofile_color[1] = convHexToDec( tmp_string_buffer[3] ) << 4 | convHexToDec( tmp_string_buffer[4] );
-    menu_font.nofile_color[2] = convHexToDec( tmp_string_buffer[5] ) << 4 | convHexToDec( tmp_string_buffer[6] );
+    readColor( &menu_font.nofile_color, tmp_string_buffer + 1 );
     for ( i=0 ; i<3 ; i++ ) system_font.nofile_color[i] = menu_font.nofile_color[i];
     
     return RET_CONTINUE;
@@ -474,10 +471,7 @@ int ScriptParser::lookbackcolorCommand()
 
     readStr( &p_string_buffer, tmp_string_buffer );
     if ( tmp_string_buffer[0] != '#' ) errorAndExit( string_buffer + string_buffer_offset );
-
-    lookback_color[0] = convHexToDec( tmp_string_buffer[1] ) << 4 | convHexToDec( tmp_string_buffer[2] );
-    lookback_color[1] = convHexToDec( tmp_string_buffer[3] ) << 4 | convHexToDec( tmp_string_buffer[4] );
-    lookback_color[2] = convHexToDec( tmp_string_buffer[5] ) << 4 | convHexToDec( tmp_string_buffer[6] );
+    readColor( &lookback_color, tmp_string_buffer + 1 );
 
     return RET_CONTINUE;
 }
@@ -1035,13 +1029,18 @@ int ScriptParser::arcCommand()
 {
     char *p_string_buffer = string_buffer + string_buffer_offset + 3; // strlen("arc") = 3
     readStr( &p_string_buffer, tmp_string_buffer );
-    printf("arc %s\n", tmp_string_buffer );
 
-    delete cBR;
-    cBR = new NsaReader();
-    if ( cBR->open() ){
-        printf(" *** failed to open archive, exitting ...  ***\n");
-        exit(-1);
+    int i = 0;
+    while ( tmp_string_buffer[i] != '|' && tmp_string_buffer[i] != '\0' ) i++;
+    tmp_string_buffer[i] = '\0';
+
+    if ( strcmp( cBR->getArchiveName(), "sar" ) ){
+        delete cBR;
+        cBR = new SarReader();
+    }
+    if ( cBR->open( tmp_string_buffer ) ){
+        printf(" *** failed to open archive %s ...  ***\n", tmp_string_buffer );
+        //exit(-1);
     }
     return RET_CONTINUE;
 }

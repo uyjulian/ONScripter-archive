@@ -26,10 +26,8 @@
 
 SarReader::SarReader()
 {
-    archive_info.file_handle = NULL;
-    archive_info.fi_list = NULL;
-    archive_info.num_of_files = 0;
-    archive_info.num_of_accessed = 0;
+    root_archive_info = last_archive_info = &archive_info;
+    num_of_sar_archives = 0;
 }
 
 SarReader::~SarReader()
@@ -37,14 +35,22 @@ SarReader::~SarReader()
     close();
 }
 
-int SarReader::open()
+int SarReader::open( char *name )
 {
-    if ( (archive_info.file_handle = fopen( SAR_ARCHIVE_NAME, "rb" ) ) == NULL ){
+    printf("SarReader::open %s\n",name);
+    ArchiveInfo* info = new ArchiveInfo();
+
+    if ( (info->file_handle = fopen( name, "rb" ) ) == NULL ){
         fprintf( stderr, "can't open file %s\n", SAR_ARCHIVE_NAME );
+        delete info;
         return -1;
     }
 
-    readArchive( &archive_info );
+    readArchive( info );
+
+    last_archive_info->next = info;
+    last_archive_info = last_archive_info->next;
+    num_of_sar_archives++;
 
     return 0;
 }
@@ -101,28 +107,63 @@ int SarReader::readArchive( struct ArchiveInfo *ai, bool nsa_flag )
 
 int SarReader::close()
 {
-    if ( archive_info.file_handle ){
-        fclose( archive_info.file_handle );
-        delete[] archive_info.fi_list;
+    ArchiveInfo *info = archive_info.next;
+    
+    for ( int i=0 ; i<num_of_sar_archives ; i++ ){
+        if ( info->file_handle ){
+            fclose( info->file_handle );
+            delete[] info->fi_list;
+        }
+        last_archive_info = info;
+        info = info->next;
+        delete last_archive_info;
     }
     return 0;
 }
 
+char *SarReader::getArchiveName() const
+{
+    return "sar";
+}
+
 int SarReader::getNumFiles(){
-    return archive_info.num_of_files;
+    ArchiveInfo *info = archive_info.next;
+    int num = 0;
+    
+    for ( int i=0 ; i<num_of_sar_archives ; i++ ){
+        num += info->num_of_files;
+        info = info->next;
+    }
+    
+    return num;
 }
 
 int SarReader::getNumAccessed(){
-    return archive_info.num_of_accessed;
+    ArchiveInfo *info = archive_info.next;
+    int num = 0;
+    
+    for ( int i=0 ; i<num_of_sar_archives ; i++ ){
+        num += info->num_of_accessed;
+        info = info->next;
+    }
+    
+    return num;
 }
 
 bool SarReader::getAccessFlag( char *file_name )
 {
-    int i = getIndexFromFile( &archive_info, file_name );
-
-    if ( i == archive_info.num_of_files ) return false;
+    ArchiveInfo *info = archive_info.next;
+    int j;
     
-    return archive_info.fi_list[i].access_flag;
+    for ( int i=0 ; i<num_of_sar_archives ; i++ ){
+        j = getIndexFromFile( info, file_name );
+        if ( j != info->num_of_files ) break;
+        info = info->next;
+    }
+
+    if ( !info ) return false;
+    
+    return info->fi_list[j].access_flag;
 }
 
 int SarReader::getIndexFromFile( ArchiveInfo *ai, char *file_name )
@@ -150,15 +191,21 @@ size_t SarReader::getFileLength( char *file_name )
     size_t ret;
     if ( ( ret = DirectReader::getFileLength( file_name ) ) ) return ret;
 
-    int i = getIndexFromFile( &archive_info, file_name );
-    if ( i == archive_info.num_of_files ) return 0;
-
-    if ( !archive_info.fi_list[i].access_flag ){
-        archive_info.num_of_accessed++;
-        archive_info.fi_list[i].access_flag = true;
+    ArchiveInfo *info = archive_info.next;
+    int j;
+    for ( int i=0 ; i<num_of_sar_archives ; i++ ){
+        j = getIndexFromFile( info, file_name );
+        if ( j != info->num_of_files ) break;
+        info = info->next;
+    }
+    if ( !info ) return 0;
+    
+    if ( !info->fi_list[j].access_flag ){
+        info->num_of_accessed++;
+        info->fi_list[j].access_flag = true;
     }
 
-    return archive_info.fi_list[i].original_length;
+    return info->fi_list[j].original_length;
 }
 
 size_t SarReader::getFileSub( ArchiveInfo *ai, char *file_name, unsigned char *buf )
@@ -179,14 +226,26 @@ size_t SarReader::getFile( char *file_name, unsigned char *buf )
     size_t ret;
     if ( ( ret = DirectReader::getFile( file_name, buf ) ) ) return ret;
 
-    if ( !archive_info.file_handle ) return 0;
+    ArchiveInfo *info = archive_info.next;
+    size_t j;
+    for ( int i=0 ; i<num_of_sar_archives ; i++ ){
+        if ( (j = getFileSub( info, file_name, buf )) > 0 ) break;
+        info = info->next;
+    }
 
-    return getFileSub( &archive_info, file_name, buf );
+    return j;
 }
 
 struct SarReader::FileInfo SarReader::getFileByIndex( int index )
 {
-    assert( index < archive_info.num_of_files );
+    ArchiveInfo *info = archive_info.next;
+    for ( int i=0 ; i<num_of_sar_archives ; i++ ){
+        if ( index < info->num_of_files ) return info->fi_list[index];
+        index -= info->num_of_files;
+        info = info->next;
+    }
+
+    assert( false );
 
     return archive_info.fi_list[index];
 }

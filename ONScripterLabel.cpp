@@ -112,6 +112,7 @@ static struct FuncLUT{
     {"click", &ONScripterLabel::clickCommand},
     {"cl", &ONScripterLabel::clCommand},
     {"cell", &ONScripterLabel::cellCommand},
+    {"caption", &ONScripterLabel::captionCommand},
     {"btnwait2", &ONScripterLabel::btnwaitCommand},
     {"btnwait", &ONScripterLabel::btnwaitCommand},
     {"btndef",  &ONScripterLabel::btndefCommand},
@@ -187,6 +188,7 @@ ONScripterLabel::ONScripterLabel()
     printf("ONScripterLabel::ONScripterLabel\n");
     
     SetVideoMode();
+    SDL_WM_SetCaption( "ONScripter", "ONScripter" );
 
     if ( Mix_OpenAudio( 44100, MIX_DEFAULT_FORMAT, MIX_DEFAULT_CHANNELS, DEFAULT_AUDIOBUF ) < 0 ){
         fprintf(stderr, "Couldn't open audio device!\n"
@@ -237,11 +239,11 @@ ONScripterLabel::ONScripterLabel()
     SDL_SetAlpha( shelter_select_surface, DEFAULT_BLIT_FLAG, SDL_ALPHA_OPAQUE );
     shelter_text_surface = SDL_CreateRGBSurface( DEFAULT_SURFACE_FLAG, screen_width, screen_height, 32, rmask, gmask, bmask, amask );
     SDL_SetAlpha( shelter_text_surface, DEFAULT_BLIT_FLAG, SDL_ALPHA_OPAQUE );
-
+#if 0
     SDL_BlitSurface( background_surface, NULL, accumulation_surface, NULL );
     SDL_BlitSurface( accumulation_surface, NULL, select_surface, NULL );
     SDL_BlitSurface( select_surface, NULL, text_surface, NULL );
-
+#endif
     flush();
 
     internal_timer = SDL_GetTicks();
@@ -339,13 +341,7 @@ ONScripterLabel::ONScripterLabel()
     sentence_font.xy[0] = 0;
     sentence_font.xy[1] = 0;
 
-    /* for savfile */
     bg_effect_image = COLOR_EFFECT_IMAGE;
-
-    /* for debugging */
-    //num_variables[351] = 1;
-    //num_variables[1020] = 1;
-    //timer_id = NULL;
 
     clearCurrentTextBuffer();
 }
@@ -569,14 +565,35 @@ void ONScripterLabel::mousePressEvent( SDL_MouseButtonEvent *event )
     }
 }
 
+// 0 ... restart at the end
+// 1 ... stop at the end
+// 2 ... reverse at the end
+// 3 ... no animation
+void ONScripterLabel::proceedAnimation( AnimationInfo *anim )
+{
+    if ( anim->tag.loop_mode != 3 && anim->tag.num_of_cells > 1 )
+        anim->tag.current_cell += anim->tag.direction;
+
+    if ( anim->tag.current_cell < 0 ){ // loop_mode must be 2
+        anim->tag.current_cell = 1;
+        anim->tag.direction = 1;
+    }
+    else if ( anim->tag.current_cell >= anim->tag.num_of_cells ){
+        if ( anim->tag.loop_mode == 0 ){
+            anim->tag.current_cell = 0;
+        }
+        else if ( anim->tag.loop_mode == 1 ){
+            anim->tag.current_cell = anim->tag.num_of_cells - 1;
+        }
+        else{
+            anim->tag.current_cell = anim->tag.num_of_cells - 2;
+            anim->tag.direction = -1;
+        }
+    }
+}
+
 void ONScripterLabel::timerEvent( void )
 {
-#if 0    
-    if ( sentence_font.wait_time == 0 )
-        printf("timer wait_time = 0\n");
-#endif
-    //printf("timerEvent %d\n", event_mode);
-
   timerEventTop:
     
     int ret;
@@ -587,8 +604,6 @@ void ONScripterLabel::timerEvent( void )
     
         if ( clickstr_state == CLICK_WAIT )         no = CURSOR_WAIT_NO;
         else if ( clickstr_state == CLICK_NEWPAGE ) no = CURSOR_NEWPAGE_NO;
-        //printf("cursor dayo %d %d\n", no,cursor_info[ no ].tag.num_of_cells);
-        //clickstr_state = CLICK_NONE;
         
         if ( cursor_info[ no ].tag.duration_list ){
             if ( cursor_info[ no ].image_surface ){
@@ -613,27 +628,8 @@ void ONScripterLabel::timerEvent( void )
                 flush( dst_rect.x, dst_rect.y, src_rect.w, src_rect.h );
             }
 
-            cursor_info[ no ].tag.current_cell +=  cursor_info[ no ].tag.direction;
+            proceedAnimation( &cursor_info[ no ] );
 
-            if ( cursor_info[ no ].tag.current_cell < 0 ){
-                if ( cursor_info[ no ].tag.loop_mode == 1 )
-                    cursor_info[ no ].tag.current_cell = 0;
-                else
-                    cursor_info[ no ].tag.current_cell = 1;
-                cursor_info[ no ].tag.direction = 1;
-            }
-            else if ( cursor_info[ no ].tag.current_cell >= cursor_info[ no ].tag.num_of_cells ){
-                if ( cursor_info[ no ].tag.loop_mode == 0 ){
-                    cursor_info[ no ].tag.current_cell = 0;
-                }
-                else if ( cursor_info[ no ].tag.loop_mode == 1 ){
-                    cursor_info[ no ].tag.current_cell--;
-                }
-                else{
-                    cursor_info[ no ].tag.current_cell = cursor_info[ no ].tag.num_of_cells - 2;
-                    cursor_info[ no ].tag.direction = -1;
-                }
-            }
             //printf("timer %d %d\n",cursor_info[ no ].count,cursor_info[ no ].tag.duration_list[ cursor_info[ no ].count ]);
             startTimer( cursor_info[ no ].tag.duration_list[ cursor_info[ no ].tag.current_cell ] );
         }
@@ -681,9 +677,8 @@ void ONScripterLabel::timerEvent( void )
         }
     }
     else{
-        if ( system_menu_mode != SYSTEM_NULL || (event_mode & WAIT_MOUSE_MODE && volatile_button_state.button == -1)  ){
+        if ( system_menu_mode != SYSTEM_NULL || (event_mode & WAIT_MOUSE_MODE && volatile_button_state.button == -1)  )
             executeSystemCall();
-        }
         else
             executeLabel();
     }
@@ -769,10 +764,7 @@ void ONScripterLabel::executeLabel()
            current_link_label_info->current_line,
            current_link_label_info->offset );
 #endif
-#if 0    
-    if ( sentence_font.wait_time == 0 )
-        printf("exe wait_time = 0\n");
-#endif
+
     int i, ret1, ret2;
     int line_cache = -1;
     bool first_read_flag = true;
@@ -1571,9 +1563,7 @@ void ONScripterLabel::parseTaggedString( char *buffer, struct TaggedInfo *tag )
             }
             tag->color_list = new uchar3[ tag->num_of_cells ];
             for ( i=0 ; i<tag->num_of_cells ; i++ ){
-                tag->color_list[i][0] = convHexToDec( buffer[1] ) << 4 | convHexToDec( buffer[2] );
-                tag->color_list[i][1] = convHexToDec( buffer[3] ) << 4 | convHexToDec( buffer[4] );
-                tag->color_list[i][2] = convHexToDec( buffer[5] ) << 4 | convHexToDec( buffer[6] );
+                readColor( &tag->color_list[i], buffer + 1 );
                 buffer += 7;
             }
         }
@@ -1713,6 +1703,8 @@ void ONScripterLabel::enterNewPage()
 
 int ONScripterLabel::playMP3( int cd_no )
 {
+    if ( !audio_open_flag ) return -1;
+
     if ( mp3_file_name == NULL ){
         char file_name[128];
         
@@ -1758,6 +1750,8 @@ int ONScripterLabel::playWave( char *file_name, bool loop_flag, int channel )
 {
     unsigned long length;
     unsigned char *buffer;
+
+    if ( !audio_open_flag ) return -1;
     
     if ( channel >= MIX_CHANNELS ) channel = MIX_CHANNELS - 1;
 
@@ -2046,9 +2040,7 @@ int ONScripterLabel::clickWait( char *out_text )
     }
     else{
         clickstr_state = CLICK_WAIT;
-        if ( out_text ){
-            drawChar( out_text, &sentence_font );
-        }
+        if ( out_text ) drawChar( out_text, &sentence_font );
         event_mode = WAIT_MOUSE_MODE | WAIT_KEY_MODE;
         key_pressed_flag = false;
         if ( autoclick_timer > 0 ){
@@ -2413,12 +2405,6 @@ int ONScripterLabel::textCommand( char *text )
             else{
                 p_string_buffer = &string_buffer[ string_buffer_offset ];
                 sentence_font.wait_time = readInt( &p_string_buffer );
-#if 0                
-                if ( sentence_font.wait_time == 0 ){
-                    printf("damedayo wait = 0\n");
-                    exit(0);
-                }
-#endif                
                 string_buffer_offset = p_string_buffer - string_buffer;
             }
         }
@@ -2470,13 +2456,8 @@ int ONScripterLabel::textCommand( char *text )
         return RET_CONTINUE;
     }
     else if ( ch == '#' ){
-        string_buffer_offset++;
-        sentence_font.color[0] = convHexToDec( string_buffer[ string_buffer_offset++ ] ) << 4 |
-            convHexToDec( string_buffer[ string_buffer_offset++ ] );
-        sentence_font.color[1] = convHexToDec( string_buffer[ string_buffer_offset++ ] ) << 4 |
-            convHexToDec( string_buffer[ string_buffer_offset++ ] );
-        sentence_font.color[2] = convHexToDec( string_buffer[ string_buffer_offset++ ] ) << 4 |
-            convHexToDec( string_buffer[ string_buffer_offset++ ] );
+        readColor( &sentence_font.color, string_buffer + string_buffer_offset + 1 );
+        string_buffer_offset += 7;
         return RET_CONTINUE;
     }
     else{

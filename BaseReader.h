@@ -52,17 +52,27 @@ struct BaseReader
     };
 
     struct ArchiveInfo{
+        struct ArchiveInfo *next;
         FILE *file_handle;
         struct FileInfo *fi_list;
         int num_of_files;
         int num_of_accessed;
+
+        ArchiveInfo(){
+            next = NULL;
+            file_handle = NULL;
+            fi_list = NULL;
+            num_of_files = 0;
+            num_of_accessed = 0;
+        }
     };
 
     virtual ~BaseReader();
     
-    virtual int open() = 0;
+    virtual int open( char *name=NULL ) = 0;
     virtual int close() = 0;
     
+    virtual char *getArchiveName() const = 0;
     virtual int getNumFiles() = 0;
     virtual int getNumAccessed() = 0;
 

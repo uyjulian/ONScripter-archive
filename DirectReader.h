@@ -35,9 +35,10 @@ public:
     DirectReader();
     ~DirectReader();
 
-    int open();
+    int open( char *name=NULL );
     int close();
-    
+
+    char *getArchiveName() const;
     int getNumFiles();
     int getNumAccessed();
 

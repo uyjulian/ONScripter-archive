@@ -24,6 +24,7 @@
 #include "ONScripterLabel.h"
 
 #define DEFAULT_WAVE_CHANNEL 1
+#define ONSCRIPTER_VERSION 196
 
 int ONScripterLabel::waveCommand()
 {
@@ -115,6 +116,9 @@ int ONScripterLabel::trapCommand()
     }
     else if ( !strcmp( tmp_string_buffer, "off" ) ){
         trap_flag = false;
+    }
+    else{
+        printf("[%s] is not supported\n", string_buffer + string_buffer_offset );
     }
               
     printf("trapCommand %s\n", tmp_string_buffer );
@@ -232,9 +236,7 @@ int ONScripterLabel::setwindowCommand()
     if ( tmp_string_buffer[0] == '#' ){
         sentence_font.display_transparency = true;
         if ( strlen( tmp_string_buffer ) != 7 ) errorAndExit( string_buffer + string_buffer_offset );
-        sentence_font.window_color[0] = convHexToDec( tmp_string_buffer[1] ) << 4 | convHexToDec( tmp_string_buffer[2] );
-        sentence_font.window_color[1] = convHexToDec( tmp_string_buffer[3] ) << 4 | convHexToDec( tmp_string_buffer[4] );
-        sentence_font.window_color[2] = convHexToDec( tmp_string_buffer[5] ) << 4 | convHexToDec( tmp_string_buffer[6] );
+        readColor( &sentence_font.window_color, tmp_string_buffer + 1 );
 
         sentence_font.window_rect[0] = readInt( &p_string_buffer );
         sentence_font.window_rect[1] = readInt( &p_string_buffer );
@@ -714,9 +716,7 @@ int ONScripterLabel::monocroCommand()
     }
     else{
         monocro_flag = true;
-        monocro_color[0] = convHexToDec( tmp_string_buffer[1] ) << 4 | convHexToDec( tmp_string_buffer[2] );
-        monocro_color[1] = convHexToDec( tmp_string_buffer[3] ) << 4 | convHexToDec( tmp_string_buffer[4] );
-        monocro_color[2] = convHexToDec( tmp_string_buffer[5] ) << 4 | convHexToDec( tmp_string_buffer[6] );
+        readColor( &monocro_color, tmp_string_buffer + 1 );
         for ( int i=0 ; i<256 ; i++ ){
             monocro_color_lut[i][0] = (monocro_color[0] * i) >> 8;
             monocro_color_lut[i][1] = (monocro_color[1] * i) >> 8;
@@ -858,7 +858,7 @@ int ONScripterLabel::getversionCommand()
 {
     char *p_string_buffer = string_buffer + string_buffer_offset + 10; // strlen("getversion") = 10
     
-    setInt( p_string_buffer, ONSCRITER_VERSION );
+    setInt( p_string_buffer, ONSCRIPTER_VERSION );
 
     return RET_CONTINUE;
 }
@@ -1061,6 +1061,59 @@ int ONScripterLabel::cellCommand()
     return RET_CONTINUE;
 }
 
+int ONScripterLabel::captionCommand()
+{
+    char *p_string_buffer = string_buffer + string_buffer_offset + 7; // strlen("caption") = 7
+    char *caption_string;
+
+    readStr( &p_string_buffer, tmp_string_buffer );
+
+    caption_string = new char[ strlen( tmp_string_buffer ) + 1 ];
+
+#if defined(LINUX) /* convert sjis to euc */
+    int i = 0;
+    while ( tmp_string_buffer[i] ) {
+        if ( (unsigned char)tmp_string_buffer[i] > 0x80 ) {
+            unsigned char c1, c2;
+            c1 = tmp_string_buffer[i];
+            c2 = tmp_string_buffer[i+1];
+
+            c1 -= (c1 <= 0x9f) ? 0x71 : 0xb1;
+            c1 = c1 * 2 + 1;
+            if (c2 >= 0x9e) {
+                c2 -= 0x7e;
+                c1++;
+            }
+            else if (c2 >= 0x80) {
+                c2 -= 0x20;
+            }
+            else {
+                c2 -= 0x1f;
+            }
+
+            caption_string[i]   = c1 | 0x80;
+            caption_string[i+1] = c2 | 0x80;
+            i += 2;
+        }
+        else {
+            caption_string[i] = tmp_string_buffer[i];
+            i++;
+        }
+    }
+    caption_string[i] = '\0';
+#elif defined(WIN32)
+    strcpy( caption_string, tmp_string_buffer );
+#endif
+
+    printf("caption \"%s\"\n", caption_string);
+    SDL_WM_SetCaption( caption_string, caption_string );
+
+    delete[] caption_string;
+
+    return RET_CONTINUE;
+}
+
+
 int ONScripterLabel::btndefCommand()
 {
     char *p_string_buffer = string_buffer + string_buffer_offset + 6; // strlen("btndef") = 6
@@ -1221,9 +1274,7 @@ int ONScripterLabel::bgCommand()
             bg_image_tag.color[0] = bg_image_tag.color[1] = bg_image_tag.color[2] = 0x00;
         }
         else if ( tmp_string_buffer[0] == '#' ){
-            bg_image_tag.color[0] = convHexToDec( tmp_string_buffer[1] ) << 4 | convHexToDec( tmp_string_buffer[2] );
-            bg_image_tag.color[1] = convHexToDec( tmp_string_buffer[3] ) << 4 | convHexToDec( tmp_string_buffer[4] );
-            bg_image_tag.color[2] = convHexToDec( tmp_string_buffer[5] ) << 4 | convHexToDec( tmp_string_buffer[6] );
+            readColor( &bg_image_tag.color, tmp_string_buffer + 1 );
         }
         else{
             parseTaggedString( tmp_string_buffer, &bg_image_tag );
@@ -1235,8 +1286,6 @@ int ONScripterLabel::bgCommand()
         else           return doEffect( tmp_effect.effect, &bg_image_tag, bg_effect_image );
     }
     else{
-        /* ---------------------------------------- */
-        /* Delete all tachi iamges if exist */
         for ( int i=0 ; i<3 ; i++ ){
             tachi_info[i].deleteImageName();
             tachi_info[i].deleteImageSurface();

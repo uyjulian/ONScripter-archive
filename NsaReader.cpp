@@ -34,22 +34,15 @@
 
 NsaReader::NsaReader()
 {
-    int i;
-    for ( i=0 ; i<MAX_EXTRA_ARCHIVE ; i++ ){
-        archive_info2[i].file_handle = NULL;
-        archive_info2[i].fi_list = NULL;
-        archive_info2[i].num_of_files = 0;
-        archive_info2[i].num_of_accessed = 0;
-    }
     sar_flag = true;
-    num_of_archives = 0;
+    num_of_nsa_archives = 0;
 }
 
 NsaReader::~NsaReader()
 {
 }
 
-int NsaReader::open()
+int NsaReader::open( char *name )
 {
     int i;
     char archive_name[256];
@@ -70,17 +63,22 @@ int NsaReader::open()
             //fprintf( stderr, "can't open file %s\n", archive_name );
             return 0;
         }
-        num_of_archives = i+1;
+        num_of_nsa_archives = i+1;
         readArchive( &archive_info2[i], true );
     }
 
     return 0;
 }
 
+char *NsaReader::getArchiveName() const
+{
+    return "nsa";
+}
+
 int NsaReader::getNumFiles(){
     int total = archive_info.num_of_files, i;
 
-    for ( i=0 ; i<num_of_archives ; i++ ) total += archive_info2[i].num_of_files;
+    for ( i=0 ; i<num_of_nsa_archives ; i++ ) total += archive_info2[i].num_of_files;
     
     return total;
 }
@@ -88,7 +86,7 @@ int NsaReader::getNumFiles(){
 int NsaReader::getNumAccessed(){
     int total = archive_info.num_of_accessed, i;
 
-    for ( i=0 ; i<num_of_archives ; i++ ) total += archive_info2[i].num_of_accessed;
+    for ( i=0 ; i<num_of_nsa_archives ; i++ ) total += archive_info2[i].num_of_accessed;
     
     return total;
 }
@@ -100,7 +98,7 @@ bool NsaReader::getAccessFlag( char *file_name )
     j = getIndexFromFile( &archive_info, file_name );
     if ( archive_info.num_of_files != j ) return archive_info.fi_list[j].access_flag;
 
-    for ( i=0 ; i<num_of_archives ; i++ ){
+    for ( i=0 ; i<num_of_nsa_archives ; i++ ){
         j = getIndexFromFile( &archive_info2[i], file_name );
         if ( archive_info2[i].num_of_files != j ) return archive_info2[i].fi_list[j].access_flag;
     }
@@ -142,7 +140,7 @@ size_t NsaReader::getFileLength( char *file_name )
     
     if ( ( ret = getFileLengthSub( &archive_info, file_name )) ) return ret;
 
-    for ( i=0 ; i<num_of_archives ; i++ ){
+    for ( i=0 ; i<num_of_nsa_archives ; i++ ){
         if ( (ret = getFileLengthSub( &archive_info2[i], file_name )) ) return ret;
     }
     
@@ -173,7 +171,7 @@ size_t NsaReader::getFile( char *file_name, unsigned char *buffer )
 
     if ( (ret = getFileSub( &archive_info, file_name, buffer )) ) return ret;
 
-    for ( i=0 ; i<num_of_archives ; i++ ){
+    for ( i=0 ; i<num_of_nsa_archives ; i++ ){
         if ( (ret = getFileSub( &archive_info2[i], file_name, buffer )) ) return ret;
     }
 
@@ -187,7 +185,7 @@ struct NsaReader::FileInfo NsaReader::getFileByIndex( int index )
     if ( index < archive_info.num_of_files ) return archive_info.fi_list[index];
     index -= archive_info.num_of_files;
 
-    for ( i=0 ; i<num_of_archives ; i++ ){
+    for ( i=0 ; i<num_of_nsa_archives ; i++ ){
         if ( index < archive_info2[i].num_of_files ) return archive_info2[i].fi_list[index];
         index -= archive_info2[i].num_of_files;
     }

@@ -1,6 +1,6 @@
 # -*- Makefile -*-
 #
-# Makefile.Linux - Makefile rules for linux
+# Makefile.ARMLinux - Makefile rules for linux on Zaurus
 #
 
 INCS = `sdl-config --cflags` `smpeg-config --cflags`

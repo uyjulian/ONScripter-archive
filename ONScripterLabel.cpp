@@ -283,6 +283,7 @@ ONScripterLabel::ONScripterLabel( bool cdaudio_flag, char *default_font, char *d
     last_button_link = &root_button_link;
     current_over_button = 0;
 
+    variable_edit_mode = NOT_EDIT_MODE;
     this->edit_flag = edit_flag;
 
     /* ---------------------------------------- */

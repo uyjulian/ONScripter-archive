@@ -364,7 +364,7 @@ int ScriptParser::menusetwindowCommand()
 
     //menu_font.font.setPixelSize( menu_font.font_size );
     //menu_font.top_xy[1] += menu_font.font_size;
-#if 1
+#if 0
     printf("ONScripterLabel::menusetwindowCommand font=%d (%d,%d) bold=%d, shadow=%d\n",
            menu_font.font_size, menu_font.pitch_xy[0], menu_font.pitch_xy[1],
            menu_font.display_bold, menu_font.display_shadow );
@@ -380,7 +380,7 @@ int ScriptParser::menusetwindowCommand()
     sscanf( mask, "%i", &menu_font.window_color_mask[1] );
     mask[2] = menu_font.window_color[5]; mask[3] = menu_font.window_color[6];
     sscanf( mask, "%i", &menu_font.window_color_mask[2] );
-#if 1
+#if 0
     printf("    trans %s\n",
            menu_font.window_color );
 #endif

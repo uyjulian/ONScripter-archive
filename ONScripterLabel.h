@@ -85,6 +85,7 @@ public:
     int playCommand();
     int mspCommand();
     int mp3Command();
+    int monocroCommand();
     int lspCommand();
     int locateCommand();
     int loadgameCommand();
@@ -197,10 +198,11 @@ private:
     long internal_timer;
     long autoclick_timer;
 
-    bool rmode_flag;
+    bool monocro_flag;
+    uchar3 monocro_color;
+    uchar3 monocro_color_lut[256];
 
-    bool system_menu_enter_flag;
-    int  system_menu_mode;
+    bool rmode_flag;
 
     Uint32 rmask, gmask, bmask, amask;
     
@@ -316,11 +318,15 @@ private:
     struct ONScripterLabel::ButtonLink *getSelectableSentence( char *buffer, struct FontInfo *info, bool flush_flag = true );
     void drawTaggedSurface( SDL_Surface *dst_surface, int x, int y, int w, int h,
                            SDL_Surface *src_surface, TaggedInfo *tagged_info );
+    void makeMonochromeSurface( SDL_Surface *surface, SDL_Rect *dst_rect=NULL );
     void refreshAccumulationSruface( SDL_Surface *surface );
     void restoreTextBuffer();
 
     /* ---------------------------------------- */
     /* System call related method */
+    bool system_menu_enter_flag;
+    int  system_menu_mode;
+
     struct TaggedInfo bg_image_tag;
     EFFECT_IMAGE bg_effect_image;
     int shelter_event_mode;

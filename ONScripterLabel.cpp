@@ -82,6 +82,7 @@ static struct FuncLUT{
     {"mp3save", &ONScripterLabel::mp3Command},
     {"mp3loop", &ONScripterLabel::mp3Command},
     {"mp3", &ONScripterLabel::mp3Command},
+    {"monocro", &ONScripterLabel::monocroCommand},
     {"lsph", &ONScripterLabel::lspCommand},
     {"lsp", &ONScripterLabel::lspCommand},
     {"loadgame", &ONScripterLabel::loadgameCommand},
@@ -267,6 +268,8 @@ ONScripterLabel::ONScripterLabel()
 
     internal_timer = SDL_GetTicks();
     autoclick_timer = 0;
+
+    monocro_flag = false;
 
     system_menu_enter_flag = false;
     system_menu_mode = SYSTEM_NULL;
@@ -733,6 +736,7 @@ void ONScripterLabel::mouseMoveEvent( SDL_MouseMotionEvent *event )
                 rect.w = p_button_link->image_surface->w;
                 rect.h = p_button_link->image_surface->h;
                 SDL_BlitSurface( p_button_link->image_surface, NULL, text_surface, &rect );
+                if ( monocro_flag ) makeMonochromeSurface( text_surface, &rect );
                 flush( p_button_link->x, p_button_link->y, rect.w, rect.h );
             }
             current_over_button_link.x = p_button_link->x;
@@ -1740,9 +1744,15 @@ struct ONScripterLabel::ButtonLink *ONScripterLabel::getSelectableSentence( char
     /* Create ButtonLink from the rendered text */
     button_link = new struct ButtonLink();
 
-    button_link->x = info->top_xy[0];
+    if ( current_text_xy[1] == info->xy[1] ){
+        button_link->x = info->top_xy[0] + current_text_xy[0] * info->pitch_xy[0];
+        button_link->wx = info->pitch_xy[0] * (info->xy[0] - current_text_xy[0] + 1);
+    }
+    else{
+        button_link->x = info->top_xy[0];
+        button_link->wx = info->pitch_xy[0] * info->num_xy[0];
+    }
     button_link->y = current_text_xy[1] * info->pitch_xy[1] + info->top_xy[1];// - info->pitch_xy[1] + 3;
-    button_link->wx = info->pitch_xy[0] * info->num_xy[0];
     button_link->wy = (info->xy[1] - current_text_xy[1] + 1) * info->pitch_xy[1];
     button_link->x3 = 0;
     button_link->y3 = 0;
@@ -1836,6 +1846,41 @@ void ONScripterLabel::drawTaggedSurface( SDL_Surface *dst_surface, int x, int y,
     }
 }
 
+void ONScripterLabel::makeMonochromeSurface( SDL_Surface *surface, SDL_Rect *dst_rect )
+{
+    int i, j;
+    SDL_Rect rect;
+    Uint32 *buf;
+    Uint16 c;
+    
+    if ( dst_rect ){
+        rect.x = dst_rect->x;
+        rect.y = dst_rect->y;
+        rect.w = dst_rect->w;
+        rect.h = dst_rect->h;
+    }
+    else{
+        rect.x = rect.y = 0;
+        rect.w = surface->w;
+        rect.h = surface->h;
+    }
+
+    SDL_LockSurface( surface );
+    buf = (Uint32 *)surface->pixels + rect.y * surface->w + rect.x;
+    for ( i=rect.y ; i<rect.y + rect.h ; i++ ){
+        for ( j=rect.x ; j<rect.x + rect.w ; j++, buf++ ){
+            c = (((*buf >> surface->format->Rshift) & 0xff) * 77 +
+                 ((*buf >> surface->format->Gshift) & 0xff) * 151 +
+                 ((*buf >> surface->format->Bshift) & 0xff) * 28 ) >> 8; 
+            *buf = monocro_color_lut[c][0] << surface->format->Rshift |
+                monocro_color_lut[c][1] << surface->format->Gshift |
+                monocro_color_lut[c][2] << surface->format->Bshift;
+        }
+        buf += surface->w - rect.w;
+    }
+    SDL_UnlockSurface( surface );
+}
+
 void ONScripterLabel::refreshAccumulationSruface( SDL_Surface *surface )
 {
     int i, w, h;
@@ -1882,6 +1927,8 @@ void ONScripterLabel::refreshAccumulationSruface( SDL_Surface *surface )
                                sprite_info[i].image_surface, &sprite_info[i].tag );
         }
     }
+
+    if ( monocro_flag ) makeMonochromeSurface( surface );
 }
 
 int ONScripterLabel::clickWait( char *out_text )
@@ -2019,6 +2066,8 @@ void ONScripterLabel::endCursor( int click )
 {
     SDL_Rect dst_rect;
     int no;
+
+    if ( autoclick_timer > 0 ) return;
     
     if ( click == CLICK_WAIT ) no = CURSOR_WAIT_NO;
     else if ( click == CLICK_NEWPAGE ) no = CURSOR_NEWPAGE_NO;
@@ -2663,6 +2712,7 @@ int ONScripterLabel::resetCommand()
     sentence_font.xy[1] = 0;
     text_char_flag = false;
     skip_flag = false;
+    monocro_flag = false;
 
     deleteLabelLink();
     current_link_label_info->label_info = lookupLabel( "start" );
@@ -2846,6 +2896,34 @@ int ONScripterLabel::mspCommand()
     return RET_CONTINUE;
 }
 
+int ONScripterLabel::monocroCommand()
+{
+    printf("monocroCommand %s\n", string_buffer + string_buffer_offset);
+    int i;
+    char *p_string_buffer = string_buffer + string_buffer_offset + 7; // strlen("monocro") = 7
+
+    readStr( &p_string_buffer, tmp_string_buffer );
+
+    if ( !strcmp( tmp_string_buffer, "off" ) ){
+        monocro_flag = false;
+    }
+    else if ( tmp_string_buffer[0] != '#' ){
+        errorAndExit( string_buffer + string_buffer_offset );
+    }
+    else{
+        monocro_flag = true;
+        monocro_color[0] = convHexToDec( tmp_string_buffer[1] ) << 4 | convHexToDec( tmp_string_buffer[2] );
+        monocro_color[1] = convHexToDec( tmp_string_buffer[3] ) << 4 | convHexToDec( tmp_string_buffer[4] );
+        monocro_color[2] = convHexToDec( tmp_string_buffer[5] ) << 4 | convHexToDec( tmp_string_buffer[6] );
+        for ( i=0 ; i<256 ; i++ ){
+            monocro_color_lut[i][0] = (monocro_color[0] * i) >> 8;
+            monocro_color_lut[i][1] = (monocro_color[1] * i) >> 8;
+            monocro_color_lut[i][2] = (monocro_color[2] * i) >> 8;
+        }
+    }
+    return RET_CONTINUE;
+}
+
 int ONScripterLabel::lspCommand()
 {
     //printf("lspCommand %d\n", event_mode);
@@ -2971,7 +3049,7 @@ int ONScripterLabel::ldCommand()
 
 int ONScripterLabel::jumpfCommand()
 {
-    printf("jumpfCommand\n");
+    //printf("jumpfCommand\n");
     jumpf_flag = true;
     return RET_CONTINUE;
 }

@@ -270,6 +270,11 @@ int ONScripterLabel::loadSaveFile( int no )
     loadStr( fp, &mp3_file_name );
     if ( current_cd_track >= 0 || mp3_file_name ) playMP3( current_cd_track );
 
+    /* ---------------------------------------- */
+    /* Load monocro flag */
+    monocro_flag = (fgetc( fp )==1)?true:false;
+    for ( i=0 ; i<3 ; i++ ) monocro_color[i] = fgetc( fp );
+    
     fclose( fp );
 
     return 0;
@@ -377,6 +382,11 @@ int ONScripterLabel::saveSaveFile( int no )
     else              fputc( -1, fp );
     mp3_play_once_flag?fputc(1,fp):fputc(0,fp);
     saveStr( fp, mp3_file_name );
+    
+    /* ---------------------------------------- */
+    /* Save monocro flag */
+    monocro_flag?fputc(1,fp):fputc(0,fp);
+    for ( i=0 ; i<3 ; i++ ) fputc( monocro_color[i], fp );
     
     fclose( fp );
 

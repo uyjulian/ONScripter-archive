@@ -289,7 +289,7 @@ int ScriptParser::readScript()
     if ( (fp = fopen( "0.txt", "rb" )) != NULL ){
         do{
             fseek( fp, 0, SEEK_END );
-            script_buffer_length += ftell( fp );
+            script_buffer_length += ftell( fp ) + 2;
             sprintf( file_name, "%d.txt", ++file_counter );
             fclose( fp );
         }
@@ -332,6 +332,7 @@ int ScriptParser::readScript()
         for ( i=0 ; i<file_counter ; i++ ){
             sprintf( file_name, "%d.txt", i );
             fp = fopen( file_name, "rb" );
+            printf("opening %s\n",file_name);
             fseek( fp, 0, SEEK_END );
             len = ftell( fp );
             fseek( fp, 0, SEEK_SET );
@@ -343,6 +344,8 @@ int ScriptParser::readScript()
                 p_script_buffer += c;
             }
             fclose( fp );
+            *p_script_buffer++ = 0x0d;
+            *p_script_buffer++ = 0x0a;
         }
     }
     

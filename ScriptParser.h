@@ -48,12 +48,6 @@
 
 #define SKIP_SPACE(p) while ( *(p) == ' ' || *(p) == '\t' ) (p)++
 
-#if defined(PDA)
-#define SCREEN_RATIO 2
-#else
-#define SCREEN_RATIO 1
-#endif
-
 typedef unsigned char uchar3[3];
 
 class ScriptParser
@@ -229,7 +223,7 @@ protected:
 
     /* ---------------------------------------- */
     /* Global definitions */
-    int screen_ratio;
+    int screen_ratio1, screen_ratio2;
     int screen_width, screen_height;
     char *version_str;
     int underline_value;

@@ -151,9 +151,15 @@ ScriptParser::ScriptParser()
     
     /* ---------------------------------------- */
     /* Global definitions */
-    screen_ratio = SCREEN_RATIO;
-    screen_width  = 640 / screen_ratio;
-    screen_height = 480 / screen_ratio;
+#if defined(PDA)
+    screen_ratio1 = 1;
+    screen_ratio2 = 2;
+#else
+    screen_ratio1 = 1;
+    screen_ratio2 = 1;
+#endif
+    screen_width  = 640 * screen_ratio1 / screen_ratio2;
+    screen_height = 480 * screen_ratio1 / screen_ratio2;
     version_str = new char[strlen(VERSION_STR1)+
                           strlen("\n")+
                           strlen(VERSION_STR2)+
@@ -441,8 +447,15 @@ int ScriptParser::readScript()
     /* ---------------------------------------- */
     /* 800 x 600 check */
     if ( !strncmp( script_buffer, ";mode800", 8 ) ){
-        screen_width  = 800 / screen_ratio;
-        screen_height = 600 / screen_ratio;
+#if defined(PDA)
+        screen_ratio1 = 2;
+        screen_ratio2 = 5;
+#else
+        screen_ratio1 = 1;
+        screen_ratio2 = 1;
+#endif
+        screen_width  = 800 * screen_ratio1 / screen_ratio2;
+        screen_height = 600 * screen_ratio1 / screen_ratio2;
     }
     underline_value = screen_height - 1;
          

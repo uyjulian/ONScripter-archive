@@ -35,7 +35,7 @@
 
 #define SAVEFILE_MAGIC_NUMBER "ONS"
 #define SAVEFILE_VERSION_MAJOR 1
-#define SAVEFILE_VERSION_MINOR 0
+#define SAVEFILE_VERSION_MINOR 1
 
 #define READ_LENGTH 4096
 
@@ -188,10 +188,10 @@ int ONScripterLabel::loadSaveFile( int no )
     }
     loadStr( fp, &sentence_font_info.image_name );
 
-    loadInt( fp, &j ); sentence_font_info.pos.x = j / screen_ratio; 
-    loadInt( fp, &j ); sentence_font_info.pos.y = j / screen_ratio;
-    loadInt( fp, &j ); sentence_font_info.pos.w = j / screen_ratio;
-    loadInt( fp, &j ); sentence_font_info.pos.h = j / screen_ratio;
+    loadInt( fp, &j ); sentence_font_info.pos.x = j * screen_ratio1 / screen_ratio2; 
+    loadInt( fp, &j ); sentence_font_info.pos.y = j * screen_ratio1 / screen_ratio2;
+    loadInt( fp, &j ); sentence_font_info.pos.w = j * screen_ratio1 / screen_ratio2;
+    loadInt( fp, &j ); sentence_font_info.pos.h = j * screen_ratio1 / screen_ratio2;
 
     if ( !sentence_font.display_transparency ){
         parseTaggedString( &sentence_font_info );
@@ -201,7 +201,7 @@ int ONScripterLabel::loadSaveFile( int no )
     if ( sentence_font.ttf_font ) TTF_CloseFont( (TTF_Font*)sentence_font.ttf_font );
     int font_size = (sentence_font.font_size_xy[0] < sentence_font.font_size_xy[1])?
         sentence_font.font_size_xy[0]:sentence_font.font_size_xy[1];
-    sentence_font.ttf_font = (void*)TTF_OpenFont( font_file, font_size / screen_ratio );
+    sentence_font.ttf_font = (void*)TTF_OpenFont( font_file, font_size * screen_ratio1 / screen_ratio2 );
 
     loadInt( fp, &clickstr_state );
     loadInt( fp, &j );
@@ -239,7 +239,19 @@ int ONScripterLabel::loadSaveFile( int no )
     /* ---------------------------------------- */
     /* Load monocro flag */
     monocro_flag = (fgetc( fp )==1)?true:false;
+    if ( file_version >= 101 ){
+        monocro_flag_new = (fgetc( fp )==1)?true:false;
+    }
     for ( i=0 ; i<3 ; i++ ) monocro_color[i] = fgetc( fp );
+
+    if ( file_version >= 101 ){
+        for ( i=0 ; i<3 ; i++ ) monocro_color_new[i] = fgetc( fp );
+        need_refresh_flag = (fgetc( fp )==1)?true:false;
+    }
+    else{
+        need_refresh_flag = false;
+    }
+    
     for ( i=0 ; i<256 ; i++ ){
         monocro_color_lut[i][0] = (monocro_color[0] * i) >> 8;
         monocro_color_lut[i][1] = (monocro_color[1] * i) >> 8;
@@ -299,8 +311,8 @@ int ONScripterLabel::loadSaveFile( int no )
     for ( i=0 ; i<MAX_SPRITE_NUM ; i++ ){
         loadInt( fp, &j );
         sprite_info[i].valid = (j==1)?true:false;
-        loadInt( fp, &j ); sprite_info[i].pos.x = j / screen_ratio;
-        loadInt( fp, &j ); sprite_info[i].pos.y = j / screen_ratio;
+        loadInt( fp, &j ); sprite_info[i].pos.x = j * screen_ratio1 / screen_ratio2;
+        loadInt( fp, &j ); sprite_info[i].pos.y = j * screen_ratio1 / screen_ratio2;
         loadInt( fp, &sprite_info[i].trans );
         loadStr( fp, &sprite_info[i].image_name );
         if ( sprite_info[i].image_name ){
@@ -442,10 +454,10 @@ int ONScripterLabel::saveSaveFile( int no )
     for ( i=0 ; i<3 ; i++ )
         saveInt( fp, sentence_font.window_color[i] );
     saveStr( fp, sentence_font_info.image_name );
-    saveInt( fp, sentence_font_info.pos.x * screen_ratio );
-    saveInt( fp, sentence_font_info.pos.y * screen_ratio );
-    saveInt( fp, sentence_font_info.pos.w * screen_ratio );
-    saveInt( fp, sentence_font_info.pos.h * screen_ratio );
+    saveInt( fp, sentence_font_info.pos.x * screen_ratio2 / screen_ratio1 );
+    saveInt( fp, sentence_font_info.pos.y * screen_ratio2 / screen_ratio1 );
+    saveInt( fp, sentence_font_info.pos.w * screen_ratio2 / screen_ratio1 );
+    saveInt( fp, sentence_font_info.pos.h * screen_ratio2 / screen_ratio1 );
 
     saveInt( fp, clickstr_state );
     saveInt( fp, new_line_skip_flag?1:0 );
@@ -474,7 +486,11 @@ int ONScripterLabel::saveSaveFile( int no )
     /* ---------------------------------------- */
     /* Save monocro flag */
     monocro_flag?fputc(1,fp):fputc(0,fp);
+    monocro_flag_new?fputc(1,fp):fputc(0,fp);
     for ( i=0 ; i<3 ; i++ ) fputc( monocro_color[i], fp );
+    for ( i=0 ; i<3 ; i++ ) fputc( monocro_color_new[i], fp );
+
+    need_refresh_flag?fputc(1,fp):fputc(0,fp);
     
     /* ---------------------------------------- */
     /* Save current images */
@@ -492,8 +508,8 @@ int ONScripterLabel::saveSaveFile( int no )
     /* Save current sprites */
     for ( i=0 ; i<MAX_SPRITE_NUM ; i++ ){
         saveInt( fp, sprite_info[i].valid?1:0 );
-        saveInt( fp, sprite_info[i].pos.x * screen_ratio );
-        saveInt( fp, sprite_info[i].pos.y * screen_ratio );
+        saveInt( fp, sprite_info[i].pos.x * screen_ratio2 / screen_ratio1 );
+        saveInt( fp, sprite_info[i].pos.y * screen_ratio2 / screen_ratio1 );
         saveInt( fp, sprite_info[i].trans );
         saveStr( fp, sprite_info[i].image_name );
     }
@@ -636,8 +652,8 @@ void ONScripterLabel::executeSystemMenu()
 
         menu_font.num_xy[0] = menu_link_width;
         menu_font.num_xy[1] = menu_link_num;
-        menu_font.top_xy[0] = (screen_width * screen_ratio - menu_font.num_xy[0] * menu_font.pitch_xy[0]) / 2;
-        menu_font.top_xy[1] = (screen_height * screen_ratio  - menu_font.num_xy[1] * menu_font.pitch_xy[1]) / 2;
+        menu_font.top_xy[0] = (screen_width * screen_ratio2 / screen_ratio1 - menu_font.num_xy[0] * menu_font.pitch_xy[0]) / 2;
+        menu_font.top_xy[1] = (screen_height * screen_ratio2 / screen_ratio1  - menu_font.num_xy[1] * menu_font.pitch_xy[1]) / 2;
 
         menu_font.xy[0] = (menu_font.num_xy[0] - menu_link_width) / 2;
         menu_font.xy[1] = (menu_font.num_xy[1] - menu_link_num) / 2;

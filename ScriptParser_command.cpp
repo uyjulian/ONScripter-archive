@@ -68,7 +68,7 @@ int ScriptParser::underlineCommand()
     if ( current_mode != DEFINE_MODE ) errorAndExit( string_buffer + string_buffer_offset, "not in the define section" );
     char *p_string_buffer = string_buffer + string_buffer_offset + 9;
 
-    underline_value = readInt( &p_string_buffer ) / screen_ratio;
+    underline_value = readInt( &p_string_buffer ) * screen_ratio1 / screen_ratio2;
 
     return RET_CONTINUE;
 }

@@ -23,9 +23,9 @@
 
 #include "ONScripterLabel.h"
 
-#define EFFECT_STRIPE_WIDTH (16 / SCREEN_RATIO)
-#define EFFECT_STRIPE_CURTAIN_WIDTH (24 / SCREEN_RATIO)
-#define EFFECT_QUAKE_AMP (12 / SCREEN_RATIO)
+#define EFFECT_STRIPE_WIDTH (16 * screen_ratio1 / screen_ratio2)
+#define EFFECT_STRIPE_CURTAIN_WIDTH (24 * screen_ratio1 / screen_ratio2)
+#define EFFECT_QUAKE_AMP (12 * screen_ratio1 / screen_ratio2)
 
 int ONScripterLabel::setEffect( int effect_no, char *buf )
 {
@@ -60,6 +60,7 @@ int ONScripterLabel::doEffect( int effect_no, AnimationInfo *anim, int effect_im
         if ( effect_image != DIRECT_EFFECT_IMAGE )
             SDL_BlitSurface( text_surface, NULL, effect_src_surface, NULL );
 
+        if ( need_refresh_flag ) refreshSurfaceParameters();
         switch( effect_image ){
           case DIRECT_EFFECT_IMAGE:
             break;

@@ -53,7 +53,7 @@ void ONScripterLabel::drawChar( char* text, struct FontInfo *info, bool flush_fl
     if ( info->ttf_font == NULL ){
         int font_size = (info->font_size_xy[0] < info->font_size_xy[1])?
             info->font_size_xy[0]:info->font_size_xy[1];
-        info->ttf_font = TTF_OpenFont( font_file, font_size / screen_ratio );
+        info->ttf_font = TTF_OpenFont( font_file, font_size * screen_ratio1 / screen_ratio2 );
         if ( !info->ttf_font ){
             fprintf( stderr, "can't open font file: %s\n", font_file );
             SDL_Quit();
@@ -88,11 +88,11 @@ void ONScripterLabel::drawChar( char* text, struct FontInfo *info, bool flush_fl
         info->xy[0] = 0;
         info->xy[1]++;
     }
-    xy[0] = (info->xy[0] * info->pitch_xy[0] + info->top_xy[0]) / screen_ratio;
-    xy[1] = (info->xy[1] * info->pitch_xy[1] + info->top_xy[1]) / screen_ratio;
+    xy[0] = (info->xy[0] * info->pitch_xy[0] + info->top_xy[0]) * screen_ratio1 / screen_ratio2;
+    xy[1] = (info->xy[1] * info->pitch_xy[1] + info->top_xy[1]) * screen_ratio1 / screen_ratio2;
     
     dst_rect.x = xy[0] + 1 + minx;
-    if ( !(text[0] & 0x80) && text[1] ) dst_rect.x += info->pitch_xy[0] / 2 / screen_ratio;
+    if ( !(text[0] & 0x80) && text[1] ) dst_rect.x += info->pitch_xy[0] / 2 * screen_ratio1 / screen_ratio2;
     dst_rect.y = xy[1] + TTF_FontAscent( (TTF_Font*)info->ttf_font ) - maxy;
     if ( info->display_shadow ){
         color.r = color.g = color.b = 0;
@@ -210,15 +210,15 @@ void ONScripterLabel::drawString( char *str, uchar3 color, FontInfo *info, bool 
     /* Calculate the area of selection */
     if ( rect ){
         if ( current_text_xy[1] == info->xy[1] ){
-            rect->x = (info->top_xy[0] + current_text_xy[0] * info->pitch_xy[0]) / screen_ratio;
-            rect->w = (info->pitch_xy[0] * (info->xy[0] - current_text_xy[0] + 1)) / screen_ratio;
+            rect->x = (info->top_xy[0] + current_text_xy[0] * info->pitch_xy[0]) * screen_ratio1 / screen_ratio2;
+            rect->w = (info->pitch_xy[0] * (info->xy[0] - current_text_xy[0] + 1)) * screen_ratio1 / screen_ratio2;
         }
         else{
-            rect->x = info->top_xy[0] / screen_ratio;
-            rect->w = info->pitch_xy[0] * info->num_xy[0] / screen_ratio;
+            rect->x = info->top_xy[0] * screen_ratio1 / screen_ratio2;
+            rect->w = info->pitch_xy[0] * info->num_xy[0] * screen_ratio1 / screen_ratio2;
         }
-        rect->y = (current_text_xy[1] * info->pitch_xy[1] + info->top_xy[1]) / screen_ratio;// - info->pitch_xy[1] + 3;
-        rect->h = (info->xy[1] - current_text_xy[1] + 1) * info->pitch_xy[1] / screen_ratio;
+        rect->y = (current_text_xy[1] * info->pitch_xy[1] + info->top_xy[1]) * screen_ratio1 / screen_ratio2;// - info->pitch_xy[1] + 3;
+        rect->h = (info->xy[1] - current_text_xy[1] + 1) * info->pitch_xy[1] * screen_ratio1 / screen_ratio2;
     }
 }
 

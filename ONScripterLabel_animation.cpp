@@ -54,8 +54,8 @@ int ONScripterLabel::proceedAnimation()
              anim->is_animatable ){
             SDL_Rect dst_rect = anim->pos;
             if ( !anim->abs_flag ){
-                dst_rect.x += (sentence_font.xy[0] * sentence_font.pitch_xy[0] + sentence_font.top_xy[0]) / screen_ratio;
-                dst_rect.y += (sentence_font.xy[1] * sentence_font.pitch_xy[1] + sentence_font.top_xy[1]) / screen_ratio;
+                dst_rect.x += (sentence_font.xy[0] * sentence_font.pitch_xy[0] + sentence_font.top_xy[0]) * screen_ratio1 / screen_ratio2;
+                dst_rect.y += (sentence_font.xy[1] * sentence_font.pitch_xy[1] + sentence_font.top_xy[1]) * screen_ratio1 / screen_ratio2;
             }
 
             minimum_duration = estimateNextDuration( anim, &dst_rect, minimum_duration );
@@ -126,8 +126,8 @@ void ONScripterLabel::setupAnimationInfo( AnimationInfo *anim )
 
         FontInfo f_info = sentence_font;
         f_info.xy[0] = f_info.xy[1] = 0;
-        f_info.top_xy[0] = anim->pos.x * screen_ratio;
-        f_info.top_xy[1] = anim->pos.y * screen_ratio;
+        f_info.top_xy[0] = anim->pos.x * screen_ratio2 / screen_ratio1;
+        f_info.top_xy[1] = anim->pos.y * screen_ratio2 / screen_ratio1;
 
         if ( anim->font_size_xy[0] >= 0 ){
             f_info.font_size_xy[0] = f_info.pitch_xy[0] = anim->font_size_xy[0];
@@ -289,8 +289,8 @@ void ONScripterLabel::drawTaggedSurface( SDL_Surface *dst_surface, AnimationInfo
         }
         FontInfo f_info = sentence_font;
         f_info.xy[0] = f_info.xy[1] = 0;
-        f_info.top_xy[0] = anim->pos.x * screen_ratio;
-        f_info.top_xy[1] = anim->pos.y * screen_ratio;
+        f_info.top_xy[0] = anim->pos.x * screen_ratio2 / screen_ratio1;
+        f_info.top_xy[1] = anim->pos.y * screen_ratio2 / screen_ratio1;
 
         if ( anim->font_size_xy[0] >= 0 ){
             f_info.font_size_xy[0] = f_info.pitch_xy[0] = anim->font_size_xy[0];
@@ -317,8 +317,8 @@ void ONScripterLabel::drawTaggedSurface( SDL_Surface *dst_surface, AnimationInfo
 
     SDL_Rect dst_rect = anim->pos;
     if ( !anim->abs_flag ){
-        dst_rect.x += (sentence_font.xy[0] * sentence_font.pitch_xy[0] + sentence_font.top_xy[0]) / screen_ratio;
-        dst_rect.y += (sentence_font.xy[1] * sentence_font.pitch_xy[1] + sentence_font.top_xy[1]) / screen_ratio;
+        dst_rect.x += (sentence_font.xy[0] * sentence_font.pitch_xy[0] + sentence_font.top_xy[0]) * screen_ratio1 / screen_ratio2;
+        dst_rect.y += (sentence_font.xy[1] * sentence_font.pitch_xy[1] + sentence_font.top_xy[1]) * screen_ratio1 / screen_ratio2;
     }
 
     alphaBlend( dst_surface, dst_rect,
@@ -345,8 +345,8 @@ void ONScripterLabel::stopAnimation( int click )
     dst_rect = cursor_info[ no ].pos;
 
     if ( !cursor_info[ no ].abs_flag ) {
-        dst_rect.x += (sentence_font.xy[0] * sentence_font.pitch_xy[0] + sentence_font.top_xy[0]) / screen_ratio;
-        dst_rect.y += (sentence_font.xy[1] * sentence_font.pitch_xy[1] + sentence_font.top_xy[1]) / screen_ratio;
+        dst_rect.x += (sentence_font.xy[0] * sentence_font.pitch_xy[0] + sentence_font.top_xy[0]) * screen_ratio1 / screen_ratio2;
+        dst_rect.y += (sentence_font.xy[1] * sentence_font.pitch_xy[1] + sentence_font.top_xy[1]) * screen_ratio1 / screen_ratio2;
     }
 
     refreshSurface( text_surface, &dst_rect, REFRESH_SHADOW_MODE );

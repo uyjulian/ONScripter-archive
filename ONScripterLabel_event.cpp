@@ -112,17 +112,22 @@ void ONScripterLabel::mousePressEvent( SDL_MouseButtonEvent *event )
     
     current_button_state.x = event->x;
     current_button_state.y = event->y;
+    current_button_state.down_flag = false;
     
     if ( event->button == SDL_BUTTON_RIGHT &&
+         event->type == SDL_MOUSEBUTTONUP &&
          ( rmode_flag || (event_mode & WAIT_BUTTON_MODE) ) ) {
         current_button_state.button = -1;
         volatile_button_state.button = -1;
         last_mouse_state.button = -1;
     }
-    else if ( event->button == SDL_BUTTON_LEFT ){
+    else if ( event->button == SDL_BUTTON_LEFT &&
+              ( event->type == SDL_MOUSEBUTTONUP || btndown_flag ) ){
         current_button_state.button = current_over_button;
         volatile_button_state.button = current_over_button;
         last_mouse_state.button = current_over_button;
+        if ( event->type == SDL_MOUSEBUTTONUP )
+                current_button_state.down_flag = true;
         if ( trap_flag ){
             printf("trap by left mouse\n");
             trap_flag = false;
@@ -294,20 +299,22 @@ void ONScripterLabel::keyPressEvent( SDL_KeyboardEvent *event )
 {
     int i;
 
-    if ( variable_edit_mode ){
-        variableEditMode( event );
-        return;
-    }
+    if ( event->type == SDL_KEYUP ){
+        if ( variable_edit_mode ){
+            variableEditMode( event );
+            return;
+        }
 
-    if ( edit_flag && event->keysym.sym == SDLK_z ){
-        variable_edit_mode = EDIT_SELECT_MODE;
-        variable_edit_sign = 1;
-        variable_edit_num = 0;
-        sprintf( wm_edit_string, "%s%s", EDIT_MODE_PREFIX, EDIT_SELECT_STRING );
-        SDL_WM_SetCaption( wm_edit_string, wm_icon_string );
-    }
+        if ( edit_flag && event->keysym.sym == SDLK_z ){
+            variable_edit_mode = EDIT_SELECT_MODE;
+            variable_edit_sign = 1;
+            variable_edit_num = 0;
+            sprintf( wm_edit_string, "%s%s", EDIT_MODE_PREFIX, EDIT_SELECT_STRING );
+            SDL_WM_SetCaption( wm_edit_string, wm_icon_string );
+        }
 
-    if ( skip_flag && event->keysym.sym == SDLK_s) skip_flag = false;
+        if ( skip_flag && event->keysym.sym == SDLK_s) skip_flag = false;
+    }
 
     if ( trap_flag && (event->keysym.sym == SDLK_RETURN ||
                        event->keysym.sym == SDLK_SPACE ) ){
@@ -322,7 +329,9 @@ void ONScripterLabel::keyPressEvent( SDL_KeyboardEvent *event )
         return;
     }
     
-    if ( event_mode & WAIT_BUTTON_MODE ){
+    if ( event_mode & WAIT_BUTTON_MODE &&
+         ( event->type == SDL_KEYUP ||
+           ( btndown_flag && event->keysym.sym == SDLK_RETURN) ) ){
         if ( event->keysym.sym == SDLK_UP || event->keysym.sym == SDLK_p ){
             if ( --shortcut_mouse_line < 0 ) shortcut_mouse_line = 0;
             struct ButtonLink *p_button_link = root_button_link.next;
@@ -350,6 +359,10 @@ void ONScripterLabel::keyPressEvent( SDL_KeyboardEvent *event )
             if ( event->keysym.sym == SDLK_RETURN ){
                 current_button_state.button = current_over_button;
                 volatile_button_state.button = current_over_button;
+                if ( event->type == SDL_KEYDOWN )
+                    current_button_state.down_flag = true;
+                else
+                    current_button_state.down_flag = false;
             }
             else{
                 current_button_state.button = 0;
@@ -361,6 +374,8 @@ void ONScripterLabel::keyPressEvent( SDL_KeyboardEvent *event )
         }
     }
 
+    if ( event->type == SDL_KEYDOWN ) return;
+    
     if ( event_mode & (WAIT_INPUT_MODE | WAIT_BUTTON_MODE) ){
         if ( event->keysym.sym == SDLK_ESCAPE && rmode_flag ){
             current_button_state.button  = -1;
@@ -494,10 +509,14 @@ int ONScripterLabel::eventLoop()
             break;
             
           case SDL_MOUSEBUTTONDOWN:
+            if ( !btndown_flag ) break;
+          case SDL_MOUSEBUTTONUP:
             mousePressEvent( (SDL_MouseButtonEvent*)&event );
             break;
 
           case SDL_KEYDOWN:
+            if ( !btndown_flag ) break;
+          case SDL_KEYUP:
             keyPressEvent( (SDL_KeyboardEvent*)&event );
             break;
 

@@ -29,7 +29,7 @@ void optionHelp()
     printf( "      --cdaudio\t\tuse CD audio if available\n");
     printf( "      --font file\tuse file as a default font\n");
     printf( "      --registry file\tuse file as a default registry file\n");
-    printf( "      --arc path\tuse pathe as a root path for archives\n");
+    printf( "      --root path\tuse path as a root path for archives\n");
     printf( "      --edit\t\tedit volumes and variables when 'z' is pressed\n");
     printf( "  -h, --help\t\tdisplay this help and exit\n");
     printf( "  -v, --version\t\toutput version information and exit\n");
@@ -81,7 +81,7 @@ int main( int argc, char **argv )
                 default_registry = new char[ strlen( argv[0] ) + 1 ];
                 memcpy( default_registry, argv[0], strlen( argv[0] ) + 1 );
             }
-            else if ( !strcmp( argv[0]+1, "-arc" ) ){
+            else if ( !strcmp( argv[0]+1, "-root" ) ){
                 argc--;
                 argv++;
                 if ( default_archive_path ) delete[] default_archive_path;

@@ -118,9 +118,11 @@ public:
     int jumpfCommand();
     int jumpbCommand();
     int ispageCommand();
+    int isdownCommand();
     int getversionCommand();
     int gettimerCommand();
     int getregCommand();
+    int getmouseposCommand();
     int getcursorposCommand();
     int getcselnumCommand();
     int gameCommand();
@@ -140,6 +142,7 @@ public:
     int btnwait2Command();
     int btnwaitCommand();
     int btntimeCommand();
+    int btndownCommand();
     int btndefCommand();
     int btnCommand();
     int brCommand();
@@ -205,9 +208,10 @@ private:
     bool saveon_flag;
     bool shelter_soveon_flag; // used by csel
 
-    bool monocro_flag;
-    uchar3 monocro_color;
+    bool monocro_flag, monocro_flag_new;
+    uchar3 monocro_color, monocro_color_new;
     uchar3 monocro_color_lut[256];
+    bool need_refresh_flag;
 
     bool trap_flag;
     char *trap_dist;
@@ -221,6 +225,7 @@ private:
     long btntime_value;
     long internal_button_timer;
     long btnwait_time;
+    bool btndown_flag;
 
     /* ---------------------------------------- */
     /* Script related variables */
@@ -248,6 +253,7 @@ private:
 
     struct ButtonState{
         int x, y, button;
+        bool down_flag;
     } current_button_state, volatile_button_state, last_mouse_state, shelter_mouse_state;
 
     typedef enum{ NORMAL_BUTTON = 0,
@@ -425,9 +431,11 @@ private:
                      SDL_Surface *mask_surface, int x3,
                      int trans_mode, unsigned char mask_value = 255, unsigned int effect_value=0, SDL_Rect *clip=NULL, uchar3 *direct_color=NULL );
     int enterTextDisplayMode();
+    SDL_Surface *resizeSurface( SDL_Surface *src );
     SDL_Surface *loadImage( char *file_name );
     void drawTaggedSurface( SDL_Surface *dst_surface, AnimationInfo *anim, SDL_Rect *clip );
     void makeMonochromeSurface( SDL_Surface *surface, SDL_Rect *dst_rect=NULL, FontInfo *info=NULL );
+    void refreshSurfaceParameters();
     void refreshSurface( SDL_Surface *surface, SDL_Rect *clip=NULL, int refresh_mode = REFRESH_NORMAL_MODE );
     void mouseOverCheck( int x, int y );
     

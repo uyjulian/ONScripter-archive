@@ -112,9 +112,11 @@ static struct FuncLUT{
     {"jumpf", &ONScripterLabel::jumpfCommand},
     {"jumpb", &ONScripterLabel::jumpbCommand},
     {"ispage", &ONScripterLabel::ispageCommand},
+    {"isdown", &ONScripterLabel::isdownCommand},
     {"getversion", &ONScripterLabel::getversionCommand},
     {"gettimer", &ONScripterLabel::gettimerCommand},
     {"getreg", &ONScripterLabel::getregCommand},
+    {"getmousepos", &ONScripterLabel::getmouseposCommand},
     {"getcursorpos", &ONScripterLabel::getcursorposCommand},
     {"getcselnum", &ONScripterLabel::getcselnumCommand},
     {"getbtntimer", &ONScripterLabel::gettimerCommand},
@@ -138,6 +140,7 @@ static struct FuncLUT{
     {"btnwait2", &ONScripterLabel::btnwaitCommand},
     {"btnwait", &ONScripterLabel::btnwaitCommand},
     {"btntime", &ONScripterLabel::btntimeCommand},
+    {"btndown",  &ONScripterLabel::btndownCommand},
     {"btndef",  &ONScripterLabel::btndefCommand},
     {"btn",     &ONScripterLabel::btnCommand},
     {"br",      &ONScripterLabel::brCommand},
@@ -166,7 +169,7 @@ int ONScripterLabel::SetVideoMode()
     int bpp = 16;
 #else
     int bpp = 32;
-#endif    
+#endif
     screen_surface = SDL_SetVideoMode( screen_width, screen_height, bpp, DEFAULT_SURFACE_FLAG );
 	if ( screen_surface == NULL ) {
 		fprintf(stderr, "Couldn't set %dx%dx%d video mode: %s\n",
@@ -262,11 +265,12 @@ ONScripterLabel::ONScripterLabel( bool cdaudio_flag, char *default_font, char *d
     autoclick_timer = 0;
     btntime_value = 0;
     btnwait_time = 0;
-
+    btndown_flag = false;
+    
     tmp_save_fp = NULL;
     saveon_flag = true;
     
-    monocro_flag = false;
+    monocro_flag = monocro_flag_new = false;
     trap_flag = false;
     trap_dist = NULL;
     
@@ -336,7 +340,7 @@ ONScripterLabel::ONScripterLabel( bool cdaudio_flag, char *default_font, char *d
     new_line_skip_flag = false;
     erase_text_window_mode = 1;
     text_on_flag = true;
-    sentence_font.ttf_font = (void*)TTF_OpenFont( font_file, FONT_SIZE / screen_ratio );
+    sentence_font.ttf_font = (void*)TTF_OpenFont( font_file, FONT_SIZE * screen_ratio1 / screen_ratio2 );
     if ( !sentence_font.ttf_font ){
         fprintf( stderr, "can't open font file: %s\n", font_file );
         SDL_Quit();
@@ -618,6 +622,72 @@ int ONScripterLabel::parseLine( )
     return ret;
 }
 
+SDL_Surface *ONScripterLabel::resizeSurface( SDL_Surface *src )
+{
+    SDL_Rect rect;
+    SDL_Surface *dst;
+    Uint32 pixel[2][2], p;
+    int i, j;
+    
+    rect.x = rect.y = 0;
+    if ( (rect.w = src->w * screen_ratio1 / screen_ratio2) == 0 ) rect.w = 1;
+    if ( (rect.h = src->h * screen_ratio1 / screen_ratio2) == 0 ) rect.h = 1;
+    dst = SDL_CreateRGBSurface( DEFAULT_SURFACE_FLAG, rect.w, rect.h, 32, rmask, gmask, bmask, amask );
+
+    SDL_LockSurface( dst );
+    SDL_LockSurface( src );
+    Uint32 *src_buffer = (Uint32 *)src->pixels;
+    Uint32 *dst_buffer = (Uint32 *)dst->pixels;
+
+    for ( i=0 ; i<dst->h ; i++ ){
+        for ( j=0 ; j<dst->w ; j++ ){
+            int x = (j << 3) * screen_ratio2 / screen_ratio1;
+            int y = (i << 3) * screen_ratio2 / screen_ratio1;
+            int dx = x & 0x7;
+            int dy = y & 0x7;
+            x >>= 3;
+            y >>= 3;
+
+            pixel[0][0] = *(src_buffer + src->w * y + x);
+            if ( x+1 == src->w )
+                pixel[0][1] = pixel[0][0];
+            else
+                pixel[0][1] = *(src_buffer + src->w * y + (x+1));
+            
+            if ( y+1 == src->h ){
+                pixel[1][0] = pixel[0][0];
+                pixel[1][1] = pixel[0][1];
+            }
+            else{
+                pixel[1][0] = *(src_buffer + src->w * (y+1) + x);
+                pixel[1][1] = *(src_buffer + src->w * (y+1) + (x+1));
+            }
+
+            p = ((pixel[0][0] & rmask) * (8-dy) * (8-dx)) >> 6  & rmask;
+            p += ((pixel[0][1] & rmask) * (8-dy) * dx) >> 6  & rmask;
+            p += ((pixel[1][0] & rmask) * dy * (8-dx)) >> 6  & rmask;
+            p += ((pixel[1][1] & rmask) * dy * dx) >> 6  & rmask;
+                                        
+            p |= ((pixel[0][0] & gmask) * (8-dy) * (8-dx)) >> 6  & gmask;
+            p += ((pixel[0][1] & gmask) * (8-dy) * dx) >> 6  & gmask;
+            p += ((pixel[1][0] & gmask) * dy * (8-dx)) >> 6  & gmask;
+            p += ((pixel[1][1] & gmask) * dy * dx) >> 6  & gmask;
+                                        
+            p |= ((pixel[0][0] & bmask) * (8-dy) * (8-dx)) >> 6  & bmask;
+            p += ((pixel[0][1] & bmask) * (8-dy) * dx) >> 6  & bmask;
+            p += ((pixel[1][0] & bmask) * dy * (8-dx)) >> 6  & bmask;
+            p += ((pixel[1][1] & bmask) * dy * dx) >> 6  & bmask;
+            
+            *dst_buffer++ = p | amask;
+        }
+    }
+    
+    SDL_UnlockSurface( src );
+    SDL_UnlockSurface( dst );
+
+    return dst;
+}
+
 SDL_Surface *ONScripterLabel::loadImage( char *file_name )
 {
     unsigned long length;
@@ -640,16 +710,9 @@ SDL_Surface *ONScripterLabel::loadImage( char *file_name )
         return NULL;
     }
     ret = SDL_ConvertSurface( tmp, text_surface->format, DEFAULT_SURFACE_FLAG );
-    if ( ret && screen_ratio != 1 ){
+    if ( ret && screen_ratio2 != 1 ){
         SDL_Surface *ret2 = ret;
-        SDL_Rect rect;
-
-        rect.x = rect.y = 0;
-        if ( (rect.w = ret2->w / screen_ratio) == 0 ) rect.w = 1;
-        if ( (rect.h = ret2->h / screen_ratio) == 0 ) rect.h = 1;
-        ret = SDL_CreateRGBSurface( DEFAULT_SURFACE_FLAG, rect.w, rect.h, 32, rmask, gmask, bmask, amask );
-
-        SDL_SoftStretch( ret2, NULL, ret, &rect );
+        ret = resizeSurface( ret2 );
         SDL_FreeSurface( ret2 );
     }
     SDL_FreeSurface( tmp );
@@ -1015,6 +1078,10 @@ void ONScripterLabel::newPage( bool next_flag )
     }
 
     clearCurrentTextBuffer();
+    if ( need_refresh_flag ){
+        refreshSurfaceParameters();
+        refreshSurface( accumulation_surface, NULL, REFRESH_SHADOW_MODE );
+    }
     SDL_BlitSurface( accumulation_surface, NULL, text_surface, NULL );
 
     flush();
@@ -1095,7 +1162,7 @@ int ONScripterLabel::playMP3( int cd_no )
     }
 
     if ( SMPEG_error( mp3_sample ) ){
-        printf(" failed. [%s]\n",SMPEG_error( mp3_sample ));
+        //printf(" failed. [%s]\n",SMPEG_error( mp3_sample ));
         // The line below fails. ?????
         //SMPEG_delete( mp3_sample );
         mp3_sample = NULL;
@@ -1274,6 +1341,21 @@ void ONScripterLabel::makeMonochromeSurface( SDL_Surface *surface, SDL_Rect *dst
     }
 
     SDL_UnlockSurface( surface );
+}
+
+void ONScripterLabel::refreshSurfaceParameters()
+{
+    int i;
+    
+    monocro_flag = monocro_flag_new;
+    for ( i=0 ; i<3 ; i++ )
+        monocro_color[i] = monocro_color_new[i];
+    for ( i=0 ; i<256 ; i++ ){
+        monocro_color_lut[i][0] = (monocro_color[0] * i) >> 8;
+        monocro_color_lut[i][1] = (monocro_color[1] * i) >> 8;
+        monocro_color_lut[i][2] = (monocro_color[2] * i) >> 8;
+    }
+    need_refresh_flag = false;
 }
 
 void ONScripterLabel::refreshSurface( SDL_Surface *surface, SDL_Rect *clip, int refresh_mode )

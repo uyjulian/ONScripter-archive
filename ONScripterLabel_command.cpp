@@ -293,7 +293,7 @@ int ONScripterLabel::setwindowCommand()
     if ( sentence_font.ttf_font ) TTF_CloseFont( (TTF_Font*)sentence_font.ttf_font );
     int font_size = (sentence_font.font_size_xy[0] < sentence_font.font_size_xy[1])?
         sentence_font.font_size_xy[0]:sentence_font.font_size_xy[1];
-    sentence_font.ttf_font = (void*)TTF_OpenFont( font_file, font_size / screen_ratio );
+    sentence_font.ttf_font = (void*)TTF_OpenFont( font_file, font_size * screen_ratio1 / screen_ratio2 );
 
     readStr( &p_string_buffer, tmp_string_buffer );
     if ( tmp_string_buffer[0] == '#' ){
@@ -301,18 +301,18 @@ int ONScripterLabel::setwindowCommand()
         if ( strlen( tmp_string_buffer ) != 7 ) errorAndExit( string_buffer + string_buffer_offset );
         readColor( &sentence_font.window_color, tmp_string_buffer + 1 );
 
-        sentence_font_info.pos.x = readInt( &p_string_buffer ) / screen_ratio;
-        sentence_font_info.pos.y = readInt( &p_string_buffer ) / screen_ratio;
-        sentence_font_info.pos.w = readInt( &p_string_buffer ) / screen_ratio - sentence_font_info.pos.x + 1;
-        sentence_font_info.pos.h = readInt( &p_string_buffer ) / screen_ratio - sentence_font_info.pos.y + 1;
+        sentence_font_info.pos.x = readInt( &p_string_buffer ) * screen_ratio1 / screen_ratio2;
+        sentence_font_info.pos.y = readInt( &p_string_buffer ) * screen_ratio1 / screen_ratio2;
+        sentence_font_info.pos.w = readInt( &p_string_buffer ) * screen_ratio1 / screen_ratio2 - sentence_font_info.pos.x + 1;
+        sentence_font_info.pos.h = readInt( &p_string_buffer ) * screen_ratio1 / screen_ratio2 - sentence_font_info.pos.y + 1;
     }
     else{
         sentence_font.display_transparency = false;
         sentence_font_info.setImageName( tmp_string_buffer );
         parseTaggedString( &sentence_font_info );
         setupAnimationInfo( &sentence_font_info );
-        sentence_font_info.pos.x = readInt( &p_string_buffer ) / screen_ratio;
-        sentence_font_info.pos.y = readInt( &p_string_buffer ) / screen_ratio;
+        sentence_font_info.pos.x = readInt( &p_string_buffer ) * screen_ratio1 / screen_ratio2;
+        sentence_font_info.pos.y = readInt( &p_string_buffer ) * screen_ratio1 / screen_ratio2;
     }
 
     lookbackflushCommand();
@@ -342,8 +342,8 @@ int ONScripterLabel::setcursorCommand()
     char *buf = new char[ strlen( tmp_string_buffer ) + 1 ];
     memcpy( buf, tmp_string_buffer, strlen( tmp_string_buffer ) + 1 );
 
-    int x = readInt( &p_string_buffer ) / screen_ratio;
-    int y = readInt( &p_string_buffer ) / screen_ratio;
+    int x = readInt( &p_string_buffer ) * screen_ratio1 / screen_ratio2;
+    int y = readInt( &p_string_buffer ) * screen_ratio1 / screen_ratio2;
 
     loadCursor( no, buf, x, y, abs_flag );
     delete[] buf;
@@ -853,8 +853,8 @@ int ONScripterLabel::mspCommand()
     p_string_buffer = string_buffer + string_buffer_offset + 3;
 
     no = readInt( &p_string_buffer );
-    sprite_info[ no ].pos.x += readInt( &p_string_buffer );
-    sprite_info[ no ].pos.y += readInt( &p_string_buffer );
+    sprite_info[ no ].pos.x += readInt( &p_string_buffer ) * screen_ratio1 / screen_ratio2;
+    sprite_info[ no ].pos.y += readInt( &p_string_buffer ) * screen_ratio1 / screen_ratio2;
     sprite_info[ no ].trans += readInt( &p_string_buffer );
     if ( sprite_info[ no ].trans > 255 ) sprite_info[ no ].trans = 255;
     else if ( sprite_info[ no ].trans < 0 ) sprite_info[ no ].trans = 0;
@@ -906,20 +906,17 @@ int ONScripterLabel::monocroCommand()
     readStr( &p_string_buffer, tmp_string_buffer );
 
     if ( !strcmp( tmp_string_buffer, "off" ) ){
-        monocro_flag = false;
+        monocro_flag_new = false;
     }
     else if ( tmp_string_buffer[0] != '#' ){
         errorAndExit( string_buffer + string_buffer_offset );
     }
     else{
-        monocro_flag = true;
-        readColor( &monocro_color, tmp_string_buffer + 1 );
-        for ( int i=0 ; i<256 ; i++ ){
-            monocro_color_lut[i][0] = (monocro_color[0] * i) >> 8;
-            monocro_color_lut[i][1] = (monocro_color[1] * i) >> 8;
-            monocro_color_lut[i][2] = (monocro_color[2] * i) >> 8;
-        }
+        monocro_flag_new = true;
+        readColor( &monocro_color_new, tmp_string_buffer + 1 );
     }
+    need_refresh_flag = true;
+
     return RET_CONTINUE;
 }
 
@@ -962,8 +959,8 @@ int ONScripterLabel::lspCommand()
     readStr( &p_string_buffer, tmp_string_buffer );
     sprite_info[ no ].setImageName( tmp_string_buffer );
 
-    sprite_info[ no ].pos.x = readInt( &p_string_buffer ) / screen_ratio;
-    sprite_info[ no ].pos.y = readInt( &p_string_buffer ) / screen_ratio;
+    sprite_info[ no ].pos.x = readInt( &p_string_buffer ) * screen_ratio1 / screen_ratio2;
+    sprite_info[ no ].pos.y = readInt( &p_string_buffer ) * screen_ratio1 / screen_ratio2;
 
     if ( end_with_comma_flag )
         sprite_info[ no ].trans = readInt( &p_string_buffer );
@@ -1088,6 +1085,20 @@ int ONScripterLabel::ispageCommand()
     return RET_CONTINUE;
 }
 
+int ONScripterLabel::isdownCommand()
+{
+    char *p_string_buffer = string_buffer + string_buffer_offset + 6;
+
+    if ( current_button_state.down_flag ){
+        setInt( p_string_buffer, 1 );
+    }
+    else{
+        setInt( p_string_buffer, 0 );
+    }
+    
+    return RET_CONTINUE;
+}
+
 int ONScripterLabel::getversionCommand()
 {
     char *p_string_buffer = string_buffer + string_buffer_offset + 10;
@@ -1165,6 +1176,20 @@ int ONScripterLabel::getregCommand()
     if ( !found_flag ) fprintf( stderr, "  The key is not found.\n" );
     fclose(fp);
 
+    return RET_CONTINUE;
+}
+
+int ONScripterLabel::getmouseposCommand()
+{
+    char *p_string_buffer = string_buffer + string_buffer_offset + 11;
+    char *p_buf = p_string_buffer;
+
+    readInt( &p_string_buffer );
+    setInt( p_buf, current_button_state.x * screen_ratio2 / screen_ratio1 );
+    
+    p_buf = p_string_buffer;
+    setInt( p_buf, current_button_state.y * screen_ratio2 / screen_ratio1 );
+    
     return RET_CONTINUE;
 }
 
@@ -1522,6 +1547,14 @@ int ONScripterLabel::captionCommand()
 }
 
 
+int ONScripterLabel::btndownCommand()
+{
+    char *p_string_buffer = string_buffer + string_buffer_offset + 7;
+    btndown_flag = (readInt( &p_string_buffer )==1)?true:false;
+
+    return RET_CONTINUE;
+}
+
 int ONScripterLabel::btndefCommand()
 {
     char *p_string_buffer = string_buffer + string_buffer_offset + 6;
@@ -1552,14 +1585,14 @@ int ONScripterLabel::btnCommand()
     char *p_string_buffer = string_buffer + string_buffer_offset + 3;
     last_button_link->button_type  = NORMAL_BUTTON;
     last_button_link->no           = readInt( &p_string_buffer );
-    last_button_link->image_rect.x = readInt( &p_string_buffer ) / screen_ratio;
-    last_button_link->image_rect.y = readInt( &p_string_buffer ) / screen_ratio;
-    last_button_link->image_rect.w = readInt( &p_string_buffer ) / screen_ratio;
-    last_button_link->image_rect.h = readInt( &p_string_buffer ) / screen_ratio;
+    last_button_link->image_rect.x = readInt( &p_string_buffer ) * screen_ratio1 / screen_ratio2;
+    last_button_link->image_rect.y = readInt( &p_string_buffer ) * screen_ratio1 / screen_ratio2;
+    last_button_link->image_rect.w = readInt( &p_string_buffer ) * screen_ratio1 / screen_ratio2;
+    last_button_link->image_rect.h = readInt( &p_string_buffer ) * screen_ratio1 / screen_ratio2;
     last_button_link->select_rect = last_button_link->image_rect;
 
-    src_rect.x = readInt( &p_string_buffer ) / screen_ratio;
-    src_rect.y = readInt( &p_string_buffer ) / screen_ratio;
+    src_rect.x = readInt( &p_string_buffer ) * screen_ratio1 / screen_ratio2;
+    src_rect.y = readInt( &p_string_buffer ) * screen_ratio1 / screen_ratio2;
     src_rect.w = last_button_link->image_rect.w;
     src_rect.h = last_button_link->image_rect.h;
 
@@ -1610,6 +1643,7 @@ int ONScripterLabel::btnwaitCommand()
         }
 
         event_mode = IDLE_EVENT_MODE;
+        btndown_flag = false;
 
         return RET_CONTINUE;
     }
@@ -1650,8 +1684,8 @@ int ONScripterLabel::btnwaitCommand()
             if ( p_button_link->button_type == CUSTOM_SELECT_BUTTON ){
             
                 f_info.xy[0] = f_info.xy[1] = 0;
-                f_info.top_xy[0] = p_button_link->image_rect.x * screen_ratio;
-                f_info.top_xy[1] = p_button_link->image_rect.y * screen_ratio;
+                f_info.top_xy[0] = p_button_link->image_rect.x * screen_ratio2 / screen_ratio1;
+                f_info.top_xy[1] = p_button_link->image_rect.y * screen_ratio2 / screen_ratio1;
 
                 int counter = 0;
                 SelectLink *s_link = root_select_link.next;
@@ -1718,14 +1752,14 @@ int ONScripterLabel::bltCommand()
     char *p_string_buffer = string_buffer + string_buffer_offset + 3;
     SDL_Rect src_rect, dst_rect, clip, clipped;
 
-    dst_rect.x = readInt( &p_string_buffer ) / screen_ratio;
-    dst_rect.y = readInt( &p_string_buffer ) / screen_ratio;
-    dst_rect.w = readInt( &p_string_buffer ) / screen_ratio;
-    dst_rect.h = readInt( &p_string_buffer ) / screen_ratio;
-    src_rect.x = readInt( &p_string_buffer ) / screen_ratio;
-    src_rect.y = readInt( &p_string_buffer ) / screen_ratio;
-    src_rect.w = readInt( &p_string_buffer ) / screen_ratio;
-    src_rect.h = readInt( &p_string_buffer ) / screen_ratio;
+    dst_rect.x = readInt( &p_string_buffer ) * screen_ratio1 / screen_ratio2;
+    dst_rect.y = readInt( &p_string_buffer ) * screen_ratio1 / screen_ratio2;
+    dst_rect.w = readInt( &p_string_buffer ) * screen_ratio1 / screen_ratio2;
+    dst_rect.h = readInt( &p_string_buffer ) * screen_ratio1 / screen_ratio2;
+    src_rect.x = readInt( &p_string_buffer ) * screen_ratio1 / screen_ratio2;
+    src_rect.y = readInt( &p_string_buffer ) * screen_ratio1 / screen_ratio2;
+    src_rect.w = readInt( &p_string_buffer ) * screen_ratio1 / screen_ratio2;
+    src_rect.h = readInt( &p_string_buffer ) * screen_ratio1 / screen_ratio2;
 
     clip.x = clip.y = 0;
     clip.w = screen_width;
@@ -1823,11 +1857,11 @@ int ONScripterLabel::barCommand()
     bar_info[no]->alpha_offset = 0;
 
     int param           = readInt( &p_string_buffer );
-    bar_info[no]->pos.x = readInt( &p_string_buffer ) / screen_ratio;
-    bar_info[no]->pos.y = readInt( &p_string_buffer ) / screen_ratio;
+    bar_info[no]->pos.x = readInt( &p_string_buffer ) * screen_ratio1 / screen_ratio2;
+    bar_info[no]->pos.y = readInt( &p_string_buffer ) * screen_ratio1 / screen_ratio2;
                           
-    bar_info[no]->pos.w = readInt( &p_string_buffer ) / screen_ratio;
-    bar_info[no]->pos.h = readInt( &p_string_buffer ) / screen_ratio;
+    bar_info[no]->pos.w = readInt( &p_string_buffer ) * screen_ratio1 / screen_ratio2;
+    bar_info[no]->pos.h = readInt( &p_string_buffer ) * screen_ratio1 / screen_ratio2;
     int max             = readInt( &p_string_buffer );
     if ( max == 0 ) errorAndExit( string_buffer + string_buffer_offset, "Invalid argument (max = 0)." );
     bar_info[no]->pos.w = bar_info[no]->pos.w * param / max;
@@ -1856,8 +1890,8 @@ int ONScripterLabel::amspCommand()
     char *p_string_buffer = string_buffer + string_buffer_offset + 4;
 
     int no = readInt( &p_string_buffer );
-    sprite_info[ no ].pos.x = readInt( &p_string_buffer ) / screen_ratio;
-    sprite_info[ no ].pos.y = readInt( &p_string_buffer ) / screen_ratio;
+    sprite_info[ no ].pos.x = readInt( &p_string_buffer ) * screen_ratio1 / screen_ratio2;
+    sprite_info[ no ].pos.y = readInt( &p_string_buffer ) * screen_ratio1 / screen_ratio2;
 
     if ( end_with_comma_flag )
         sprite_info[ no ].trans = readInt( &p_string_buffer );

@@ -333,8 +333,6 @@ int ONScripterLabel::saveSaveFile( int no )
     LinkLabelInfo *info = &root_link_label_info;
 
     while( info ){
-        printf("hoe %s %d %d\n",info->label_info.name, info->current_line, info->offset );
-        
         fprintf( fp, "%s", info->label_info.name );
         fputc( 0, fp );
         saveInt( fp, info->current_line );
@@ -387,7 +385,7 @@ int ONScripterLabel::saveSaveFile( int no )
 
 void ONScripterLabel::leaveSystemCall( bool restore_flag )
 {
-    printf("leaveSystemCall\n");
+    //printf("leaveSystemCall\n");
 
     if ( restore_flag ){
         SDL_BlitSurface( shelter_select_surface, NULL, select_surface, NULL );
@@ -401,12 +399,19 @@ void ONScripterLabel::leaveSystemCall( bool restore_flag )
     system_menu_mode = SYSTEM_NULL;
     system_menu_enter_flag = false;
     key_pressed_flag = false;
-    if ( event_mode & WAIT_SLEEP_MODE ) startTimer( MINIMUM_TIMER_RESOLUTION );
+    if ( event_mode & WAIT_SLEEP_MODE ){
+        event_mode &= ~WAIT_SLEEP_MODE;
+        startTimer( MINIMUM_TIMER_RESOLUTION );
+    }
+    else{
+        startCursor( clickstr_state );
+        if ( event_mode & WAIT_CURSOR_MODE ) startTimer( MINIMUM_TIMER_RESOLUTION );
+    }
 }
 
 void ONScripterLabel::executeSystemCall()
 {
-    printf("*****  executeSystemCall %d %d*****\n", system_menu_enter_flag, volatile_button_state.button );
+    //printf("*****  executeSystemCall %d %d*****\n", system_menu_enter_flag, volatile_button_state.button );
 
     if ( !system_menu_enter_flag ){
         shelter_button_link = root_button_link.next;
@@ -451,7 +456,7 @@ void ONScripterLabel::executeSystemMenu()
 {
     MenuLink *tmp_menu_link;
 
-    printf("ONScripterLabel::executeSystemMenu()\n");
+    //printf("ONScripterLabel::executeSystemMenu()\n");
     
     if ( event_mode & (WAIT_MOUSE_MODE | WAIT_BUTTON_MODE) ){
         event_mode = IDLE_EVENT_MODE;
@@ -471,7 +476,7 @@ void ONScripterLabel::executeSystemMenu()
         last_menu_link = root_menu_link.next;
         while ( last_menu_link ){
             if ( current_button_state.button == counter++ ){
-                printf("label %s is selected \n",last_menu_link->label );
+                //printf("label %s is selected \n",last_menu_link->label );
                 system_menu_mode = last_menu_link->system_call_no;
             }
             
@@ -505,7 +510,7 @@ void ONScripterLabel::executeSystemMenu()
             last_button_link = last_button_link->next;
             last_button_link->no = counter++;
 
-            printf(" link label %s\n", tmp_menu_link->label );
+            //printf(" link label %s\n", tmp_menu_link->label );
             tmp_menu_link = tmp_menu_link->next;
             flush();
         }
@@ -518,7 +523,7 @@ void ONScripterLabel::executeSystemMenu()
 
 void ONScripterLabel::executeSystemSkip()
 {
-    printf("ONScripterLabel::executeSystemSkip() %d\n", event_mode );
+    //printf("ONScripterLabel::executeSystemSkip() %d\n", event_mode );
     skip_flag = true;
     shelter_event_mode |= WAIT_SLEEP_MODE;
     leaveSystemCall();
@@ -526,7 +531,7 @@ void ONScripterLabel::executeSystemSkip()
 
 void ONScripterLabel::executeSystemReset()
 {
-    printf("ONScripterLabel::executeSystemReset() %d\n", event_mode );
+    //printf("ONScripterLabel::executeSystemReset() %d\n", event_mode );
     resetCommand();
     event_mode = WAIT_SLEEP_MODE;
     leaveSystemCall( false );
@@ -534,7 +539,7 @@ void ONScripterLabel::executeSystemReset()
 
 void ONScripterLabel::executeWindowErase()
 {
-    printf("ONScripterLabel::executeWindowErase() %d\n", event_mode);
+    //printf("ONScripterLabel::executeWindowErase() %d\n", event_mode);
 
     if ( event_mode & (WAIT_MOUSE_MODE | WAIT_BUTTON_MODE) ){
         event_mode = IDLE_EVENT_MODE;
@@ -555,24 +560,24 @@ void ONScripterLabel::executeSystemLoad()
     unsigned int i;
     char out_text[3] = {'\0','\0','\0'};
 
-    printf("ONScripterLabel::executeSystemLoad() %d\n", event_mode);
+    //printf("ONScripterLabel::executeSystemLoad() %d\n", event_mode);
 
     if ( event_mode & (WAIT_MOUSE_MODE | WAIT_BUTTON_MODE) ){
-        event_mode = IDLE_EVENT_MODE;
 
+        if ( current_button_state.button == 0 ) return;
+        event_mode = IDLE_EVENT_MODE;
+        if ( loadSaveFile( current_button_state.button ) ){
+            event_mode  = WAIT_MOUSE_MODE | WAIT_BUTTON_MODE;
+            return;
+        }
+        
         deleteButtonLink();
+        deleteSelectLink();
 
         if ( current_button_state.button == -1 ){
             leaveSystemCall();
             return;
         }
-        else if ( current_button_state.button == 0 ){
-            event_mode = WAIT_MOUSE_MODE | WAIT_BUTTON_MODE;
-            return;
-        }
-
-        loadSaveFile( current_button_state.button );
-        deleteSelectLink();
         leaveSystemCall( false );
     }
     else{
@@ -634,7 +639,7 @@ void ONScripterLabel::executeSystemSave()
     unsigned int i;
     char out_text[3] = {'\0','\0','\0'};
 
-    printf("ONScripterLabel::executeSystemSave() %d\n", event_mode);
+    //printf("ONScripterLabel::executeSystemSave() %d\n", event_mode);
 
     if ( event_mode & (WAIT_MOUSE_MODE | WAIT_BUTTON_MODE) ){
         event_mode = IDLE_EVENT_MODE;

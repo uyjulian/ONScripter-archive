@@ -136,7 +136,6 @@ int SarReader::getNumAccessed(){
 
 bool SarReader::getAccessFlag( char *file_name )
 {
-    assert( archive_info.file_handle );
     int i = getIndexFromFile( &archive_info, file_name );
 
     if ( i == archive_info.num_of_files ) return false;
@@ -146,11 +145,14 @@ bool SarReader::getAccessFlag( char *file_name )
 
 int SarReader::getIndexFromFile( ArchiveInfo *ai, char *file_name )
 {
-    int i;
-    char *capital_name = new char[ strlen( file_name ) + 1 ];
-    
-    for ( i=0 ; i<(int)strlen( file_name )+1 ; i++ ){
-        capital_name[i] = file_name[i];
+    unsigned int i, len;
+
+    len = strlen( file_name );
+    if ( len > MAX_FILE_NAME_LENGTH ) len = MAX_FILE_NAME_LENGTH;
+    memcpy( capital_name, file_name, len );
+    capital_name[ len ] = '\0';
+
+    for ( i=0 ; i<len ; i++ ){
         if ( 'a' <= capital_name[i] && capital_name[i] <= 'z' ) capital_name[i] += 'A' - 'a';
         else if ( capital_name[i] == '/' ) capital_name[i] = '\\';
     }
@@ -158,16 +160,16 @@ int SarReader::getIndexFromFile( ArchiveInfo *ai, char *file_name )
         if ( !strcmp( capital_name, ai->fi_list[i].name ) ) break;
     }
 
-    delete[] capital_name;
     return i;
 }
 
 size_t SarReader::getFileLength( char *file_name )
 {
-    assert( archive_info.file_handle );
+    size_t ret;
+    if ( ( ret = DirectReader::getFileLength( file_name ) ) ) return ret;
 
     int i = getIndexFromFile( &archive_info, file_name );
-    assert ( i != archive_info.num_of_files );
+    if ( i == archive_info.num_of_files ) return 0;
 
     if ( !archive_info.fi_list[i].access_flag ){
         archive_info.num_of_accessed++;
@@ -180,7 +182,7 @@ size_t SarReader::getFileLength( char *file_name )
 size_t SarReader::getFileSub( ArchiveInfo *ai, char *file_name, unsigned char *buf )
 {
     int i = getIndexFromFile( ai, file_name );
-    assert ( i != ai->num_of_files );
+    if ( i == ai->num_of_files ) return 0;
 
     fseek( ai->file_handle, ai->fi_list[i].offset, SEEK_SET );
     return fread( buf, 1, ai->fi_list[i].length, ai->file_handle );
@@ -188,7 +190,10 @@ size_t SarReader::getFileSub( ArchiveInfo *ai, char *file_name, unsigned char *b
 
 size_t SarReader::getFile( char *file_name, unsigned char *buf )
 {
-    assert( archive_info.file_handle );
+    size_t ret;
+    if ( ( ret = DirectReader::getFile( file_name, buf ) ) ) return ret;
+
+    if ( !archive_info.file_handle ) return 0;
 
     return getFileSub( &archive_info, file_name, buf );
 }

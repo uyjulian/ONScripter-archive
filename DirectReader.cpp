@@ -72,24 +72,46 @@ bool DirectReader::getAccessFlag( char *file_name )
 size_t DirectReader::getFileLength( char *file_name )
 {
     FILE *fp;
-    size_t length = 0;
+    unsigned int i;
+    size_t len;
 
-    if ( (fp = fopen( file_name, "rb" )) != NULL ){
-        fseek( fp, 0, SEEK_END );
-        length = ftell( fp );
-        fclose( fp );
+    len = strlen( file_name );
+    if ( len > MAX_FILE_NAME_LENGTH ) len = MAX_FILE_NAME_LENGTH;
+    memcpy( capital_name, file_name, len );
+    capital_name[ len ] = '\0';
+
+    for ( i=0 ; i<len ; i++ ){
+        if ( capital_name[i] == '/' || capital_name[i] == '\\' ) capital_name[i] = (char)DELIMITER;
     }
 
-    return length;
+    if ( (fp = fopen( capital_name, "rb" )) != NULL ){
+        fseek( fp, 0, SEEK_END );
+        len = ftell( fp );
+        fclose( fp );
+    }
+    else
+        len = 0;
+    
+    return len;
 }
 
 size_t DirectReader::getFile( char *file_name, unsigned char *buffer )
 {
     FILE *fp;
+    unsigned int i;
     int c;
-    size_t total, len = 0;
+    size_t total = 0, len;
     
-    if ( (fp = fopen( file_name, "rb" )) != NULL ){
+    len = strlen( file_name );
+    if ( len > MAX_FILE_NAME_LENGTH ) len = MAX_FILE_NAME_LENGTH;
+    memcpy( capital_name, file_name, len );
+    capital_name[ len ] = '\0';
+
+    for ( i=0 ; i<len ; i++ ){
+        if ( capital_name[i] == '/' || capital_name[i] == '\\' ) capital_name[i] = (char)DELIMITER;
+    }
+
+    if ( (fp = fopen( capital_name, "rb" )) != NULL ){
         fseek( fp, 0, SEEK_END );
         total = len = ftell( fp );
         fseek( fp, 0, SEEK_SET );

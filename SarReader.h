@@ -24,10 +24,9 @@
 #ifndef __SAR_READER_H__
 #define __SAR_READER_H__
 
-#include "BaseReader.h"
-#include <string.h>
+#include "DirectReader.h"
 
-class SarReader : virtual public BaseReader
+class SarReader : virtual public DirectReader
 {
 public:
     SarReader();

@@ -66,15 +66,15 @@ int ScriptParser::timeCommand()
     struct tm *tm = localtime( &t );
 
     readToken( &p_string_buffer, tmp_string_buffer );
-    assert ( tmp_string_buffer[0] == '%' );
+    if ( tmp_string_buffer[0] != '%' ) errorAndExit( string_buffer + string_buffer_offset );
     num_variables[ atoi( tmp_string_buffer + 1 ) ] = tm->tm_hour;
 
     readToken( &p_string_buffer, tmp_string_buffer );
-    assert ( tmp_string_buffer[0] == '%' );
+    if ( tmp_string_buffer[0] != '%' ) errorAndExit( string_buffer + string_buffer_offset );
     num_variables[ atoi( tmp_string_buffer + 1 ) ] = tm->tm_min;
 
     readToken( &p_string_buffer, tmp_string_buffer );
-    assert ( tmp_string_buffer[0] == '%' );
+    if ( tmp_string_buffer[0] != '%' ) errorAndExit( string_buffer + string_buffer_offset );
     num_variables[ atoi( tmp_string_buffer + 1 ) ] = tm->tm_sec;
 
     //printf("timeCommand %d, %d %d\n", tm->tm_hour, tm->tm_min, tm->tm_sec );
@@ -85,18 +85,15 @@ int ScriptParser::timeCommand()
 int ScriptParser::subCommand()
 {
     char *p_string_buffer = string_buffer + string_buffer_offset + 3; // strlen("sub") = 3
-    int no, a;
+    int no;
     
     readToken( &p_string_buffer, tmp_string_buffer );
-
-    assert ( tmp_string_buffer[0] == '%' );
+    if ( tmp_string_buffer[0] != '%' ) errorAndExit( string_buffer + string_buffer_offset );
 
     no = atoi( tmp_string_buffer + 1 );
-    assert ( no < VARIABLE_RANGE );
+    if ( no >= VARIABLE_RANGE ) errorAndExit( string_buffer + string_buffer_offset );
 
-    a = readInt( &p_string_buffer, tmp_string_buffer );
-    num_variables[ no ] -= a;
-    printf("subCommand %d = %d - %d\n", num_variables[ no ], num_variables[ no ]+a, a );
+    num_variables[ no ] -= readInt( &p_string_buffer, tmp_string_buffer );
 
     return RET_CONTINUE;
 }
@@ -148,7 +145,7 @@ int ScriptParser::savenumberCommand()
     char *p_string_buffer = string_buffer + string_buffer_offset + 10; // strlen("savenumber") = 10
 
     num_save_file = readInt( &p_string_buffer, tmp_string_buffer );
-    printf("  savenumberCommand %d\n", num_save_file );
+
     return RET_CONTINUE;
 }
 
@@ -252,17 +249,16 @@ int ScriptParser::numaliasCommand()
 
 int ScriptParser::mulCommand()
 {
-    int no, a;
+    int no;
     char *p_string_buffer = string_buffer + string_buffer_offset + 3; // strlen("mul") = 3
 
     readToken( &p_string_buffer, tmp_string_buffer );
-    assert ( tmp_string_buffer[0] == '%' );
-    no = atoi( tmp_string_buffer + 1 );
-    assert ( no < VARIABLE_RANGE );
+    if ( tmp_string_buffer[0] != '%' ) errorAndExit( string_buffer + string_buffer_offset );
 
-    a = readInt( &p_string_buffer, tmp_string_buffer );
-    printf("mulCommand %d = %d * %d\n", num_variables[ no ] * a, num_variables[ no ], a );
-    num_variables[ no ] *= a;
+    no = atoi( tmp_string_buffer + 1 );
+    if ( no >= VARIABLE_RANGE ) errorAndExit( string_buffer + string_buffer_offset );
+
+    num_variables[ no ] *= readInt( &p_string_buffer, tmp_string_buffer );
 
     return RET_CONTINUE;
 }
@@ -274,45 +270,39 @@ int ScriptParser::movCommand()
     char *p_string_buffer = string_buffer + string_buffer_offset + 3; // strlen("mov") = 3
 
     readToken( &p_string_buffer, tmp_string_buffer );
+    if ( tmp_string_buffer[0] != '%' && tmp_string_buffer[0] != '$' ) errorAndExit( string_buffer + string_buffer_offset );
 
-    assert ( tmp_string_buffer[0] == '%' || tmp_string_buffer[0] == '$' );
-
-    if ( tmp_string_buffer[0] == '%' )      num_flag = true;
-    else                                    num_flag = false;
+    if ( tmp_string_buffer[0] == '%' ) num_flag = true;
+    else                               num_flag = false;
 
     no = atoi( tmp_string_buffer + 1 );
-    assert ( no < VARIABLE_RANGE );
+    if ( no >= VARIABLE_RANGE ) errorAndExit( string_buffer + string_buffer_offset );
     
     if ( num_flag ){
         num_variables[ no ] = readInt( &p_string_buffer, tmp_string_buffer );
-        //printf("movCommand num_variables[ %d ] = %d\n",no, num_variables[no]);
     }
     else{
         readStr( &p_string_buffer, tmp_string_buffer );
         delete[] str_variables[ no ];
         str_variables[ no ] = new char[ strlen( tmp_string_buffer ) + 1 ];
         memcpy( str_variables[ no ], tmp_string_buffer, strlen( tmp_string_buffer ) + 1 );
-        //printf("movCommand str_variables[ %d ] = %s\n",no, str_variables[no]);
     }
-
-    //string_buffer_offset = p_string_buffer - string_buffer;
     
     return RET_CONTINUE;
 }
 
 int ScriptParser::modCommand()
 {
-    int no, a;
+    int no;
     char *p_string_buffer = string_buffer + string_buffer_offset + 3; // strlen("mod") = 3
 
     readToken( &p_string_buffer, tmp_string_buffer );
-    assert ( tmp_string_buffer[0] == '%' );
-    no = atoi( tmp_string_buffer + 1 );
-    assert ( no < VARIABLE_RANGE );
+    if ( tmp_string_buffer[0] != '%' ) errorAndExit( string_buffer + string_buffer_offset );
 
-    a = readInt( &p_string_buffer, tmp_string_buffer );
-    printf("modCommand %d = %d / %d\n", num_variables[ no ] % a, num_variables[ no ], a );
-    num_variables[ no ] %= a;
+    no = atoi( tmp_string_buffer + 1 );
+    if ( no >= VARIABLE_RANGE ) errorAndExit( string_buffer + string_buffer_offset );
+
+    num_variables[ no ] %= readInt( &p_string_buffer, tmp_string_buffer );
 
     return RET_CONTINUE;
 }
@@ -333,11 +323,11 @@ int ScriptParser::menusetwindowCommand()
 
     //menu_font.font.setPixelSize( menu_font.font_size );
     //menu_font.top_xy[1] += menu_font.font_size;
-    
+#if 0    
     printf("ONScripterLabel::menusetwindowCommand font=%d (%d,%d) bold=%d, shadow=%d\n",
            menu_font.font_size, menu_font.pitch_xy[0], menu_font.pitch_xy[1],
            menu_font.display_bold, menu_font.display_shadow );
-
+#endif
     readStr( &p_string_buffer, tmp_string_buffer );
 
     menu_font.display_transparency = true;
@@ -349,10 +339,10 @@ int ScriptParser::menusetwindowCommand()
     sscanf( mask, "%i", &menu_font.window_color_mask[1] );
     mask[2] = menu_font.window_color[5]; mask[3] = menu_font.window_color[6];
     sscanf( mask, "%i", &menu_font.window_color_mask[2] );
-
+#if 0
     printf("    trans %s\n",
            menu_font.window_color );
-
+#endif
     return RET_CONTINUE;
 }
 
@@ -477,15 +467,17 @@ int ScriptParser::itoaCommand()
     char *p_string_buffer = string_buffer + string_buffer_offset + 4; // strlen("itoa") = 4
     
     readToken( &p_string_buffer, tmp_string_buffer );
-    assert ( tmp_string_buffer[0] == '$' );
+    if ( tmp_string_buffer[0] != '$' ) errorAndExit( string_buffer + string_buffer_offset );
+
     no = atoi( tmp_string_buffer + 1 );
+    if ( no >= VARIABLE_RANGE ) errorAndExit( string_buffer + string_buffer_offset );
+
     num = readInt( &p_string_buffer, tmp_string_buffer );
 
     tmp_buffer = str_variables[ no ];
     sprintf( num_str, "%d", num );
     str_variables[ no ] = new char[ strlen( num_str ) + 1 ];
     memcpy( str_variables[ no ], num_str, strlen( num_str ) + 1 );
-    printf("itoaCommand $ %d %s <= %d\n", no, str_variables[ no ], num );
     delete[] tmp_buffer;
     
     return RET_CONTINUE;
@@ -494,13 +486,15 @@ int ScriptParser::itoaCommand()
 int ScriptParser::incCommand()
 {
     char *p_string_buffer = string_buffer + string_buffer_offset + 3; // strlen("inc") = 3
+    int no;
 
     readToken( &p_string_buffer, tmp_string_buffer );
+    if ( tmp_string_buffer[0] != '%' ) errorAndExit( string_buffer + string_buffer_offset );
+    
+    no = atoi( tmp_string_buffer + 1 );
+    if ( no >= VARIABLE_RANGE ) errorAndExit( string_buffer + string_buffer_offset );
 
-    assert ( tmp_string_buffer[0] == '%' );
-    num_variables[ atoi( tmp_string_buffer + 1 ) ]++;
-
-    printf("incCommand %s = %d\n", tmp_string_buffer, num_variables[ atoi( tmp_string_buffer + 1 ) ] );
+    num_variables[ no ]++;
 
     return RET_CONTINUE;
 }
@@ -667,17 +661,16 @@ int ScriptParser::effectCommand()
 
 int ScriptParser::divCommand()
 {
-    int no, a;
+    int no;
     char *p_string_buffer = string_buffer + string_buffer_offset + 3; // strlen("div") = 3
 
     readToken( &p_string_buffer, tmp_string_buffer );
-    assert ( tmp_string_buffer[0] == '%' );
-    no = atoi( tmp_string_buffer + 1 );
-    assert ( no < VARIABLE_RANGE );
+    if ( tmp_string_buffer[0] != '%' ) errorAndExit( string_buffer + string_buffer_offset );
 
-    a = readInt( &p_string_buffer, tmp_string_buffer );
-    printf("divCommand %d = %d / %d\n", num_variables[ no ] / a, num_variables[ no ], a );
-    num_variables[ no ] /= a;
+    no = atoi( tmp_string_buffer + 1 );
+    if ( no >= VARIABLE_RANGE ) errorAndExit( string_buffer + string_buffer_offset );
+
+    num_variables[ no ] /= readInt( &p_string_buffer, tmp_string_buffer );
 
     return RET_CONTINUE;
 }
@@ -685,13 +678,15 @@ int ScriptParser::divCommand()
 int ScriptParser::decCommand()
 {
     char *p_string_buffer = string_buffer + string_buffer_offset + 3; // strlen("dec") = 3
-
+    int no;
+    
     readToken( &p_string_buffer, tmp_string_buffer );
+    if ( tmp_string_buffer[0] != '%' ) errorAndExit( string_buffer + string_buffer_offset );
 
-    assert ( tmp_string_buffer[0] == '%' );
-    num_variables[ atoi( tmp_string_buffer + 1 ) ]--;
+    no = atoi( tmp_string_buffer + 1 );
+    if ( no >= VARIABLE_RANGE ) errorAndExit( string_buffer + string_buffer_offset );
 
-    printf("decCommand %s = %d\n", tmp_string_buffer, num_variables[ atoi( tmp_string_buffer + 1 ) ] );
+    num_variables[ no ]--;
 
     return RET_CONTINUE;
 }
@@ -703,15 +698,15 @@ int ScriptParser::dateCommand()
     struct tm *tm = localtime( &t );
 
     readToken( &p_string_buffer, tmp_string_buffer );
-    assert ( tmp_string_buffer[0] == '%' );
+    if ( tmp_string_buffer[0] != '%' ) errorAndExit( string_buffer + string_buffer_offset );
     num_variables[ atoi( tmp_string_buffer + 1 ) ] = tm->tm_year + 1900;
 
     readToken( &p_string_buffer, tmp_string_buffer );
-    assert ( tmp_string_buffer[0] == '%' );
+    if ( tmp_string_buffer[0] != '%' ) errorAndExit( string_buffer + string_buffer_offset );
     num_variables[ atoi( tmp_string_buffer + 1 ) ] = tm->tm_mon + 1;
 
     readToken( &p_string_buffer, tmp_string_buffer );
-    assert ( tmp_string_buffer[0] == '%' );
+    if ( tmp_string_buffer[0] != '%' ) errorAndExit( string_buffer + string_buffer_offset );
     num_variables[ atoi( tmp_string_buffer + 1 ) ] = tm->tm_mday;
 
     //printf("dateCommand %d, %d %d\n", tm->tm_year + 1900, tm->tm_mon + 1, tm->tm_mday );
@@ -727,16 +722,16 @@ int ScriptParser::cmpCommand()
     
     readToken( &p_string_buffer, tmp_string_buffer );
 
-    assert ( tmp_string_buffer[0] == '%' );
+    if ( tmp_string_buffer[0] != '%' ) errorAndExit( string_buffer + string_buffer_offset );
+
     no = atoi( tmp_string_buffer + 1 );
+    if ( no >= VARIABLE_RANGE ) errorAndExit( string_buffer + string_buffer_offset );
+    
     readStr( &p_string_buffer, tmp_string_buffer );
     tmp_buffer = new char[ strlen( tmp_string_buffer ) + 1 ];
     memcpy( tmp_buffer, tmp_string_buffer, strlen( tmp_string_buffer ) + 1 );
     readStr( &p_string_buffer, tmp_string_buffer );
     num_variables[ no ] = strcmp( tmp_buffer, tmp_string_buffer );
-
-    printf("cmpCommand %s %s = %d\n", tmp_buffer, tmp_string_buffer, num_variables[ no ] );
-
     delete[] tmp_buffer;
     
     return RET_CONTINUE;
@@ -765,23 +760,25 @@ int ScriptParser::atoiCommand()
     char *p_string_buffer = string_buffer + string_buffer_offset + 4; // strlen("atoi") = 4
     
     readToken( &p_string_buffer, tmp_string_buffer );
-    assert ( tmp_string_buffer[0] == '%' );
-    no = atoi( tmp_string_buffer + 1 );
-    readStr( &p_string_buffer, tmp_string_buffer );
+    if ( tmp_string_buffer[0] != '%' ) errorAndExit( string_buffer + string_buffer_offset );
 
+    no = atoi( tmp_string_buffer + 1 );
+    if ( no >= VARIABLE_RANGE ) errorAndExit( string_buffer + string_buffer_offset );
+
+    readStr( &p_string_buffer, tmp_string_buffer );
     num_variables[ no ] = atoi( tmp_string_buffer );
-    printf("atoiCommand %% %d %d <= %s\n", no, num_variables[ no ], tmp_string_buffer );
     
     return RET_CONTINUE;
 }
 
 int ScriptParser::arcCommand()
 {
-    printf("arcCommand\n");
-    
     delete cBR;
-    cBR = new SarReader();
-    cBR->open();
+    cBR = new NsaReader();
+    if ( cBR->open() ){
+        printf(" *** failed to open archive, exitting ...  ***\n");
+        exit(-1);
+    }
     return RET_CONTINUE;
 }
 
@@ -793,10 +790,10 @@ int ScriptParser::addCommand()
     
     readToken( &p_string_buffer, tmp_string_buffer );
 
-    assert ( tmp_string_buffer[0] == '%' || tmp_string_buffer[0] == '$' );
+    if ( tmp_string_buffer[0] != '%' && tmp_string_buffer[0] != '$' ) errorAndExit( string_buffer + string_buffer_offset );
 
     no = atoi( tmp_string_buffer + 1 );
-    assert ( no < VARIABLE_RANGE );
+    if ( no >= VARIABLE_RANGE ) errorAndExit( string_buffer + string_buffer_offset );
 
     if ( tmp_string_buffer[0] == '%' ){
         a = readInt( &p_string_buffer, tmp_string_buffer );

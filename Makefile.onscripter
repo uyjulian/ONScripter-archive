@@ -4,8 +4,8 @@
 #
 
 GUI_OBJS = ONScripterLabel$(OBJSUFFIX) ONScripterLabel_rmenu$(OBJSUFFIX)
-SAR_OBJS = sardec$(OBJSUFFIX) BaseReader$(OBJSUFFIX) SarReader$(OBJSUFFIX)
-NSA_OBJS = nsadec$(OBJSUFFIX) BaseReader$(OBJSUFFIX) SarReader$(OBJSUFFIX) NsaReader$(OBJSUFFIX)
+SAR_OBJS = sardec$(OBJSUFFIX) DirectReader$(OBJSUFFIX) BaseReader$(OBJSUFFIX) SarReader$(OBJSUFFIX)
+NSA_OBJS = nsadec$(OBJSUFFIX) DirectReader$(OBJSUFFIX) BaseReader$(OBJSUFFIX) SarReader$(OBJSUFFIX) NsaReader$(OBJSUFFIX)
 DECODER_OBJS = BaseReader$(OBJSUFFIX) DirectReader$(OBJSUFFIX) SarReader$(OBJSUFFIX) NsaReader$(OBJSUFFIX)
 ONSCRIPTER_OBJS = onscripter$(OBJSUFFIX) $(DECODER_OBJS) ScriptParser$(OBJSUFFIX) ScriptParser_command$(OBJSUFFIX) $(GUI_OBJS) sjis2utf16$(OBJSUFFIX)
 PARSER_HEADER = BaseReader.h SarReader.h NsaReader.h DirectReader.h ScriptParser.h

@@ -25,6 +25,9 @@
 #define __DIRECT_READER_H__
 
 #include "BaseReader.h"
+#include <string.h>
+
+#define MAX_FILE_NAME_LENGTH 512
 
 class DirectReader : virtual public BaseReader
 {
@@ -42,6 +45,9 @@ public:
     struct FileInfo getFileByIndex( int index );
     size_t getFileLength( char *file_name );
     size_t getFile( char *file_name, unsigned char *buffer );
+
+protected:
+    char capital_name[ MAX_FILE_NAME_LENGTH + 1 ];
 };
 
 #endif // __DIRECT_READER_H__

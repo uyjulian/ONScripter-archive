@@ -41,14 +41,6 @@
 
 #define MAX_SPRITE_NUM 50
 
-#if defined(LINUX)
-#define DELIMITER "/"
-#elif defined(WIN32)
-#define DELIMITER "\\"
-#elif
-#define DELIMITER "/"
-#endif
-
 typedef unsigned char uchar3[3];
 
 class ONScripterLabel : public ScriptParser
@@ -66,7 +58,6 @@ public:
 
     /* ---------------------------------------- */
     /* Commands */
-    int clickNormal( char *out_text );
     int clickWait( char *out_text );
     int clickNewPage( char *out_text );
     int textCommand( char *text );
@@ -80,6 +71,7 @@ public:
     int systemcallCommand();
     int stopCommand();
     int setwindowCommand();
+    int setcursorCommand();
     int selectCommand();
     int savegameCommand();
     int resettimerCommand();
@@ -129,7 +121,8 @@ private:
                       WAIT_BUTTON_MODE  = 2, // For select and btnwait.
                       WAIT_MOUSE_MODE   = 4,  // For select and text wait. It allows the right click menu.
                       WAIT_KEY_MODE     = 8,
-                      WAIT_SLEEP_MODE   = 16
+                      WAIT_SLEEP_MODE   = 16,
+                      WAIT_CURSOR_MODE  = 32
                       } EVENT_MODE;
     typedef enum{
         COLOR_EFFECT_IMAGE            = 0,
@@ -188,22 +181,23 @@ private:
             file_name = NULL;
         }
         void remove(){
-            if ( duration_list ) delete[] duration_list;
-            if ( color_list )    delete[] color_list;
-            if ( file_name )     delete[] file_name;
+            if ( duration_list ){
+                delete[] duration_list;
+                duration_list = NULL;
+            }
+            if ( color_list ){
+                delete[] color_list;
+                color_list = NULL;
+            }
+            if ( file_name ){
+                delete[] file_name;
+                file_name = NULL;
+            }
+            num_of_cells = 0;
         }
         ~TaggedInfo(){
             remove();
         }
-    };
-
-    struct SpriteInfo{
-        bool valid;
-        int x, y;
-        int trans;
-        struct TaggedInfo tag;
-        char *name;
-        SDL_Surface *image_surface;
     };
 
     long internal_timer;
@@ -250,7 +244,31 @@ private:
     
     /* ---------------------------------------- */
     /* Sprite related variables */
-    struct SpriteInfo sprite_info[MAX_SPRITE_NUM];
+    struct SpriteInfo{
+        bool valid;
+        int x, y;
+        int trans;
+        struct TaggedInfo tag;
+        char *name;
+        SDL_Surface *image_surface;
+    } sprite_info[MAX_SPRITE_NUM];
+    
+    /* ---------------------------------------- */
+    /* Cursor related variables */
+    struct CursorInfo{
+        int xy[2];
+        int w, h;
+        int count;
+        int direction;
+        struct TaggedInfo tag;
+        char *image_name;
+        SDL_Surface *image_surface;
+        SDL_Surface *preserve_surface;
+    } cursor_info[2];
+
+    void loadCursor( int no, char *str, int x, int y );
+    void startCursor( int click );
+    void endCursor( int click );
     
     /* ---------------------------------------- */
     /* Sound related variables */

@@ -252,6 +252,8 @@ protected:
     void addStringBuffer( char ch, int string_counter );
     unsigned char convHexToDec( char ch );
 
+    void errorAndExit( char *str );
+
     void saveInt( FILE *fp, int var );
     void loadInt( FILE *fp, int *var );
     void saveStr( FILE *fp, char *str );

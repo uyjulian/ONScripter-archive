@@ -45,10 +45,12 @@ static struct FuncLUT{
     {"skip",     &ScriptParser::skipCommand},
     {"savenumber",     &ScriptParser::savenumberCommand},
     {"savename",     &ScriptParser::savenameCommand},
+    {"sar",    &ScriptParser::arcCommand},
     {"rmenu",    &ScriptParser::rmenuCommand},
     {"return",   &ScriptParser::returnCommand},
     {"numalias", &ScriptParser::numaliasCommand},
     {"notif",    &ScriptParser::ifCommand},
+    {"nsa",    &ScriptParser::arcCommand},
     {"mul",      &ScriptParser::mulCommand},
     {"mov",      &ScriptParser::movCommand},
     {"mod",      &ScriptParser::modCommand},
@@ -80,11 +82,8 @@ ScriptParser::ScriptParser()
 {
     unsigned int i;
     
-    cBR = new NsaReader();
-    if ( cBR->open() ){
-        delete cBR;
-        cBR = new DirectReader();
-    }
+    cBR = new DirectReader();
+    cBR->open();
     script_buffer = NULL;
 
     globalon_flag = false;
@@ -287,7 +286,10 @@ int ScriptParser::readScript()
     }
     
     if ( script_buffer ) delete[] script_buffer;
-    assert ((script_buffer = new char[ script_buffer_length ]) != NULL );
+    if ( ( script_buffer = new char[ script_buffer_length ]) == NULL ){
+        printf(" *** can't allocate memory for the script ***\n");
+        exit( -1 );
+    }
     p_script_buffer = script_buffer;
     
     if ( encrypt_flag ){
@@ -993,3 +995,8 @@ void ScriptParser::loadVariables( FILE *fp, int from, int to )
     }
 }
 
+void ScriptParser::errorAndExit( char *str )
+{
+    fprintf( stderr, " *** Invalid command %s ***\n", str );
+    exit(-1);
+}

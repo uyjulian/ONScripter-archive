@@ -31,6 +31,14 @@
 #define SEEK_END 2
 #endif
 
+#if defined(LINUX)
+#define DELIMITER '/'
+#elif defined(WIN32)
+#define DELIMITER '\\'
+#elif
+#define DELIMITER '/'
+#endif
+
 struct BaseReader
 {
     struct FileInfo{

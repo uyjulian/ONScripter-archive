@@ -67,7 +67,7 @@ int NsaReader::open()
     for ( i=0 ; i<MAX_EXTRA_ARCHIVE ; i++ ){
         sprintf( archive_name, NSA_ARCHIVE_NAME2, i+1 );
         if ( ( archive_info2[i].file_handle = fopen( archive_name, "rb" ) ) == NULL ){
-            fprintf( stderr, "can't open file %s\n", archive_name );
+            //fprintf( stderr, "can't open file %s\n", archive_name );
             return 0;
         }
         num_of_archives = i+1;
@@ -134,10 +134,13 @@ size_t NsaReader::getFileLengthSub( ArchiveInfo *ai, char *file_name )
 size_t NsaReader::getFileLength( char *file_name )
 {
     if ( sar_flag ) return SarReader::getFileLength( file_name );
+
     size_t ret;
     int i;
     
-    if ( (ret = getFileLengthSub( &archive_info, file_name )) ) return ret;
+    if ( ( ret = DirectReader::getFileLength( file_name ) ) ) return ret;
+    
+    if ( ( ret = getFileLengthSub( &archive_info, file_name )) ) return ret;
 
     for ( i=0 ; i<num_of_archives ; i++ ){
         if ( (ret = getFileLengthSub( &archive_info2[i], file_name )) ) return ret;
@@ -165,6 +168,8 @@ size_t NsaReader::getFile( char *file_name, unsigned char *buffer )
     size_t ret;
 
     if ( sar_flag ) return SarReader::getFile( file_name, buffer );
+
+    if ( ( ret = DirectReader::getFile( file_name, buffer ) ) ) return ret;
 
     if ( (ret = getFileSub( &archive_info, file_name, buffer )) ) return ret;
 

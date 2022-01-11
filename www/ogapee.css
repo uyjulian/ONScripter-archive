@@ -1,6 +1,6 @@
 /* 
  * CSS resource file for ONScripter web page
- *  Copyright (c) 2001-2010 Ogapee. All rights reserved.
+ *  Copyright (c) 2001-2021 Ogapee. All rights reserved.
  *  ogapee@aqua.dti2.ne.jp
  */
 
@@ -35,7 +35,7 @@ text-indent: 0em;
 position: absolute;
 left: 50%;
 width: 800px;
-margin-left: -400px; 
+margin-left: -400px;
 background-color: white;
 }
 
@@ -70,21 +70,20 @@ text-align: center;
 #toc-container{
 float: left;
 width: 180px;
-font-size: 90%;
 }
 
 #toc{
 padding: 5px;
 text-align: left;
+background-color: white;
 }
 
-#toc h3{
-margin: 0px;
-padding: 5px;
-font-size: 100%;
+#toc-container h3{
+margin: 5px;
+padding: 0px;
 text-align: center;
-border-top: solid 1px #eef;
-border-bottom: solid 1px #eef;
+border-top: solid 1px #bbc;
+border-bottom: solid 1px #bbc;
 background-color: #f5f5ff;
 }
 
@@ -129,12 +128,13 @@ border: none;
 /* -------------------- */
 /* main page */
 #main-container{
-margin-left: 180px;
+    margin-left: 180px;
+    position: static;
+    background-color: white;
 }
 
 #main{
 text-align: left;
-font-size: 100%;
 }
 
 #main h2{
@@ -150,24 +150,26 @@ padding: 0px;
 /*border-bottom: solid 1px black;*/
 }
 
-#main .content h2{
+#main .content p{
 margin: 0px;
-margin-bottom: 5px;
+padding: 5px;
+}
+
+#main .content h2{
+margin: 5px;
 padding: 15px 30px;
 font-size: 110%;
 font-weight: bold;
 color: black;
-border-top: solid 1px #eef;
-border-bottom: solid 1px #eef;
+border-top: solid 1px #bbc;
+border-bottom: solid 1px #bbc;
 background-color: #f5f5ff;
 }
 
 #main .content h3{
 margin: 5px;
-margin-top: 15px;
 padding: 0px;
 padding-left: 10px;
-font-size: 100%;
 border-left: solid 5px #0000aa;
 border-bottom: dotted 1px gray;
 }
@@ -196,7 +198,6 @@ margin-left: 180px;
 
 #diary{
 text-align: left;
-font-size: 100%;
 }
 
 #diary h2{
@@ -210,7 +211,6 @@ text-align: center;
 margin: 5px;
 margin-bottom: 25px;
 padding: 0px;
-font-size: 100%;
 /*border-top: dashed 1px gray;*/
 }
 
@@ -235,8 +235,8 @@ text-align: left;
 color: black;
 background-color: #fcfcff;
 margin: 5px;
-margin-bottom: 10pt;
 padding: 2pt;
+font-size: 100%;
 }
 
 th {

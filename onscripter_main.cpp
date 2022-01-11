@@ -2,7 +2,7 @@
  * 
  *  onscripter_main.cpp -- main function of ONScripter
  *
- *  Copyright (c) 2001-2020 Ogapee. All rights reserved.
+ *  Copyright (c) 2001-2022 Ogapee. All rights reserved.
  *
  *  ogapee@aqua.dti2.ne.jp
  *
@@ -102,7 +102,7 @@ void optionHelp()
 void optionVersion()
 {
     printf("Written by Ogapee <ogapee@aqua.dti2.ne.jp>\n\n");
-    printf("Copyright (c) 2001-2020 Ogapee.\n");
+    printf("Copyright (c) 2001-2022 Ogapee.\n");
     printf("This is free software; see the source for copying conditions.\n");
     exit(0);
 }
@@ -186,7 +186,7 @@ FILE *fopen_ons(const char *path, const char *mode)
     if (mode[0] == 'w') mode2 = 1;
 
     FILE *fp = fopen(path, mode);
-    if (fp || mode2 ==0 || errno != EACCES) return fp;
+    if (fp) return fp;
     
     JNIEnv * jniEnv = NULL;
     jniVM->AttachCurrentThread(&jniEnv, NULL);

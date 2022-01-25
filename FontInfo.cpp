@@ -109,13 +109,18 @@ void *FontInfo::openFont( char *font_file, int ratio1, int ratio2 )
         fc->next->power_resume_number = psp_power_resume_number;
         strcpy(fc->next->name, font_file);
 #else
-        FILE *fp1 = fopen(font_file, "rb");
-        SDL_RWops *src = SDL_RWFromFP(fp1, SDL_TRUE);
-        fc->next->font[0] = TTF_OpenFontRW( src, 1, font_size * ratio1 / ratio2 );
+        fp = fopen(font_file, "rb");
+        fseek(fp, 0, SEEK_END);
+        long length = ftell(fp);
+        unsigned char *buf = new unsigned char[length]; // not released
+        fseek(fp, 0, SEEK_SET);
+        fread(buf, 1, length, fp);
+        fclose(fp);
+        SDL_RWops *src = SDL_RWFromMem(buf, length);
+        fc->next->font[0] = TTF_OpenFontRW(src, 1, font_size * ratio1 / ratio2);
 #if (SDL_TTF_MAJOR_VERSION>=2) && (SDL_TTF_MINOR_VERSION>=0) && (SDL_TTF_PATCHLEVEL>=10)
-        FILE *fp2 = fopen(font_file, "rb");
-        SDL_RWops *src2 = SDL_RWFromFP(fp2, SDL_TRUE);
-        fc->next->font[1] = TTF_OpenFontRW( src2, 1, font_size * ratio1 / ratio2 );
+        SDL_RWops *src2 = SDL_RWFromMem(buf, length);
+        fc->next->font[1] = TTF_OpenFontRW(src2, 1, font_size * ratio1 / ratio2);
         TTF_SetFontOutline(fc->next->font[1], 1);
 #endif
 #endif
